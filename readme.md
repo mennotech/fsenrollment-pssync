@@ -9,6 +9,12 @@ What’s here now:
 	- `Filter-ParentsByStudentExampleFile.ps1` to filter parent rows by student list
 	- `Anonymize-ParentsExampleFile.ps1` to anonymize sample data for sharing/tests
 
+## Documentation
+
+- Start here: `docs/readme.md` (documentation overview and structure)
+- PowerSchool API spec (OpenAPI): `docs/powerschool_api.yaml`
+- PowerSchool API plugin XML: `docs/powerschool api plugin/plugin.xml`
+
 Next steps (high level):
 - Parse incoming CSVs, detect changes, and stage an approval file
 - Apply approved changes to PowerSchool via API with retries and logging
