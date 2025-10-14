@@ -1,0 +1,67 @@
+# PowerShell compiled files
+*.dll
+*.exe
+*.pdb
+
+# Build artifacts
+bin/
+obj/
+out/
+dist/
+
+# Logs
+logs/*.log
+logs/*.txt
+*.log
+
+# Config files with secrets
+config/*credentials*
+config/*secrets*
+config/*.key
+config/*.pfx
+config/*.p12
+*.env
+
+# CSV data files (may contain sensitive data)
+data/*.csv
+data/**/processed/
+data/**/archive/
+
+# Keep example files
+!data/examples/
+!data/examples/*.csv
+
+# PowerShell Gallery packaging
+*.nupkg
+*.nuspec
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Test results
+TestResults/
+*.trx
+coverage/
+*.coverage
+
+# PowerShell specific
+*.ps1xml
+
+# SFTP and credentials
+sftp-config.json
+*.ppk
+*.pem
+
+# Keep directory structure with .gitkeep files
+!**/.gitkeep

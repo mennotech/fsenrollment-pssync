@@ -1,0 +1,72 @@
+New Contact Identifier,Contact ID,Prefix,First Name,Middle Name,Last Name,Suffix,Gender,Employer,Is Active,Email Address,Contact Email Address ID,Is Primary Email Address,Phone Number Priority Order,Phone Type,phoneNumberAsEntered,Is Preferred,Is SMS,Contact Phone Number ID,Address Type,Street,Line Two,Unit,City,State,Postal Code,Contact Address ID,Address Priority Order,* NOT MAPPED *,studentNumber,Contact Priority Order,Student Contact ID,Student Contact Detail ID,Relationship Type,Relationship Note,STUDENTCONTACTDETAILCOREFIELDS.legalGuardian,Contact Has Custody,Contact Lives With,Contact Allow School Pickup,Is Emergency Contact,Contact Receives Mailings
+87020242-99aa-11ec-b1e3-025d0f476dca,,Mr.,Arden,,Hayes,,M,self employed,1,arden.hayes54@gmail.com,,1,1,Mobile,151-275-1722,1,,,Home,332 Deer Street,,,Quebec City,QC,W5K 1B7,,,,,,,,,,,,,,,
+87020242-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Morgan Hayes,316301,1,,,Father,,1,1,1,1,1,1
+87020249-99aa-11ec-b1e3-025d0f476dca,,Ms,Blake,,Kennedy,,F,U of M,1,blake.kennedy57@yahoo.com,,1,1,Mobile,196-510-3580,1,,,Home,873 Ash Street,,,Ottawa,NS,B7R 1G7,,,,,,,,,,,,,,,
+87020249-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Morgan Hayes,316301,2,,,Mother,,1,1,1,1,1,1
+87b573df-99aa-11ec-b1e3-025d0f476dca,,Mrs.,Elliot,,Carter,,F,TELUS Health Pharmacy,1,elliot.carter16@yahoo.com,,1,1,Mobile,650-476-2032,1,,,Home,70 Raven Street,,,Winnipeg,MB,V4N 4A8,,,,,,,,,,,,,,,
+87b573df-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,2,Home,060-994-3603,1,,,,,,,,,,,,,,,,,,,,,,,,
+87b573df-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Avery Carter,324403,1,,,Mother,,1,1,1,1,1,1
+87c3fcca-99aa-11ec-b1e3-025d0f476dca,,Mr.,Elliot,,Vaughn,,M,Canada Revenue Agency ,1,elliot.vaughn39@yahoo.com,,1,1,Mobile,754-295-7089,1,,,Home,71 Pine Court,,,London,PE,J7C 1G5,,,,,,,,,,,,,,,
+87c3fcca-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,2,Home,767-259-6039,1,,,,,,,,,,,,,,,,,,,,,,,,
+87c3fcca-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,3,Work,022-025-4091,1,,,,,,,,,,,,,,,,,,,,,,,,
+87c3fcca-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Avery Carter,324403,2,,,Father,,1,1,1,1,1,1
+d39a8193-e5a3-11ec-b1e3-025d0f476dca,,Mr.,Dakota,,Quincy,,M,Canada Revenue Agency,1,dakota.quincy34@yahoo.com,,1,1,Mobile,378-008-8298,1,,,Home,56 Kenwood Road,,,Kelowna,ON,H1A 2Y9,,,,,,,,,,,,,,,
+d39a8193-e5a3-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,3,Work,812-557-1538,1,,,,,,,,,,,,,,,,,,,,,,,,
+d39a8193-e5a3-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Riley Brooks,396302,1,,,Father,,1,1,1,1,1,1
+d39a819e-e5a3-11ec-b1e3-025d0f476dca,,Mrs.,Quinn,,Ramsey,,F,Westland Insurance,1,quinn.ramsey74@yahoo.com,,1,1,Mobile,945-981-1019,1,,,Home,45 Lake Avenue,,,Waterloo,PE,Y9X 1J5,,,,,,,,,,,,,,,
+d39a819e-e5a3-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,3,Work,872-358-2861,1,,,,,,,,,,,,,,,,,,,,,,,,
+d39a819e-e5a3-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Riley Brooks,396302,2,,,Mother,,1,1,1,1,1,1
+d39a8193-e5a3-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Casey Parker,396301,1,,,Father,,1,1,1,1,1,1
+d39a819e-e5a3-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Casey Parker,396301,2,,,Mother,,1,1,1,1,1,1
+d39a8193-e5a3-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Jamie Parker,396303,1,,,Father,,1,1,1,1,1,1
+d39a819e-e5a3-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Jamie Parker,396303,2,,,Mother,,1,1,1,1,1,1
+79482e1c-b0fd-11ee-9923-e03a352b12f9,,Mrs.,Jordan,Rey,Quinn,,F,St. James-Assiniboia School Division,1,jordan.quinn96@gmail.com,,1,1,Mobile,604-887-9948,1,,,Home,15 Spruce Boulevard,,,Victoria,BC,N7C 8J5,,,,,,,,,,,,,,,
+79482e1c-b0fd-11ee-9923-e03a352b12f9,,,,,,,,,,,,,3,Work,575-190-0231,1,,,,,,,,,,,,,,,,,,,,,,,,
+79482e1c-b0fd-11ee-9923-e03a352b12f9,,,,,,,,,,,,,,,,,,,,,,,,,,,,Quinn Collins,411001,1,,,Mother,,1,1,1,1,1,1
+7992fc6c-b0fd-11ee-9b5f-6ec21265f923,,Mr.,Jules,,Nolan,,M,MTN Communications,1,jules.nolan64@gmail.com,,1,1,Mobile,843476-938-3195,1,,,Home,39 Cedar Ct,,,Ottawa,QC,X3Y 8X0,,,,,,,,,,,,,,,
+7992fc6c-b0fd-11ee-9b5f-6ec21265f923,,,,,,,,,,,,,2,Mobile,084669-297-0360,1,,,,,,,,,,,,,,,,,,,,,,,,
+7992fc6c-b0fd-11ee-9b5f-6ec21265f923,,,,,,,,,,,,,,,,,,,,,,,,,,,,Quinn Collins,411001,2,,,Father,,1,1,1,1,1,1
+e880a3f7-78bd-11ec-8267-025d0f476dca,,Ms,Bailey,,Bishop,,F,University of Manitoba,1,bailey.bishop84@gmail.com,,1,1,Mobile,332-666-3601,1,,,Home,293 Maple Gate,,,Calgary,NS,K1E 6C9,,,,,,,,,,,,,,,
+e880a3f7-78bd-11ec-8267-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Parker Turner,390701,1,,,Mother,,1,1,1,1,1,1
+e880a402-78bd-11ec-8267-025d0f476dca,,Mr.,Frankie,,Hughes,,M,Manitoba Public Insurance,1,frankie.hughes69@yahoo.com,,1,1,Mobile,683-644-1755,1,,,Home,469 Stanley Road,,,Kelowna,SK,J5W 6J5,,,,,,,,,,,,,,,
+e880a402-78bd-11ec-8267-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Parker Turner,390701,2,,,Father,,1,1,1,1,1,1
+e2857c92-c511-11ed-b1e3-025d0f476dca,,Mr.,Sunny,,Zimmer,,M,NetraScale,1,sunny.zimmer37@gmail.com,,1,1,Mobile,804-415-4094,1,,,Home,474-0 Willow Terrace,,,Moncton,NS,M9Y 5G9,,,,,,,,,,,,,,,
+e2857c92-c511-11ed-b1e3-025d0f476dca,,,,,,,,,,,,,2,Mobile,68530-196-9513,1,,,,,,,,,,,,,,,,,,,,,,,,
+e2857c92-c511-11ed-b1e3-025d0f476dca,,,,,,,,,,,,,3,Work,13106-029-8835,1,,,,,,,,,,,,,,,,,,,,,,,,
+e2857c92-c511-11ed-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Reese Foster,405301,1,,,Father,,1,1,1,1,1,1
+e2e98482-c511-11ed-b1e3-025d0f476dca,,Mrs.,Drew,Snow,Owens,,F,,1,drew.owens70@gmail.com,,1,1,Mobile,500-605-7579,1,,,Home,834-8 Poplarwood Way,,,Quebec City,ON,Y8S 0V9,,,,,,,,,,,,,,,
+e2e98482-c511-11ed-b1e3-025d0f476dca,,,,,,,,,,,,,2,Mobile,798849-128-3599,1,,,,,,,,,,,,,,,,,,,,,,,,
+e2e98482-c511-11ed-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Reese Foster,405301,2,,,Mother,,1,1,1,1,1,1
+e2857c92-c511-11ed-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Rowan Foster,405302,1,,,Father,,1,1,1,1,1,1
+e2e98482-c511-11ed-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Rowan Foster,405302,2,,,Mother,,1,1,1,1,1,1
+88803ca0-99aa-11ec-b1e3-025d0f476dca,,Ms,Cameron,,Reid,,F,TJX Canada,1,cameron.reid59@yahoo.com,,1,1,Mobile,383-191-8590,1,,,Home,631 Willow Ln,,,Victoria,BC,C1M 3P9,,,,,,,,,,,,,,,
+88803ca0-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Sidney Morgan,332503,1,,,Mother,,1,1,1,1,1,1
+88803ca9-99aa-11ec-b1e3-025d0f476dca,,Mr.,Sunny,Grey,Franklin,,M,Seetal Partners Inc. ,1,sunny.franklin83@gmail.com,,1,1,Mobile,502-898-9324,1,,,Home,80-8487 Almington Rd,,,Saskatoon,NS,X1R 6M7,,,,,,,,,,,,,,,
+88803ca9-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Sidney Morgan,332503,2,,,Father,,1,1,0,1,1,1
+dd81ad3a-77d1-11ec-8267-025d0f476dca,,Mrs.,Jordan,Sage,Hayes,,F,Coughlin and associates ,1,jordan.hayes41@gmail.com,,1,1,Mobile,114-534-6167,1,,,Home,8 Arbourwood Dr,,,St. John's,AB,H2L 5C1,,,,,,,,,,,,,,,
+dd81ad3a-77d1-11ec-8267-025d0f476dca,,,,,,,,,,,,,3,Work,764-948-1426,1,,,,,,,,,,,,,,,,,,,,,,,,
+dd81ad3a-77d1-11ec-8267-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Dakota Reed,389501,1,,,Mother,,1,1,1,1,1,1
+dd81ad45-77d1-11ec-8267-025d0f476dca,,Mr.,Theo,Ray,Owens,,M,Infosys public services,1,theo.owens39@gmail.com,,1,1,Mobile,735-491-6245,1,,,Home,6 Chestnut Ave,,,Victoria,AB,M0C 1G2,,,,,,,,,,,,,,,
+dd81ad45-77d1-11ec-8267-025d0f476dca,,,,,,,,,,,,,3,Work,804-080-1568,1,,,,,,,,,,,,,,,,,,,,,,,,
+dd81ad45-77d1-11ec-8267-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Dakota Reed,389501,2,,,Father,,1,1,1,1,1,1
+dd81ad3a-77d1-11ec-8267-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Hayden Reed,389502,1,,,Mother,,1,1,1,1,1,1
+dd81ad45-77d1-11ec-8267-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Hayden Reed,389502,2,,,Father,,1,1,1,1,1,1
+f5015652-994e-11ef-8cfd-f244e3fa3e83,,Mrs.,Tristan,James,Douglas,,F,,1,tristan.douglas32@gmail.com,,1,1,Mobile,980-192-1201,1,,,Home,16 Kenwood Court,,,Saskatoon,QC,B5T 8P3,,,,,,,,,,,,,,,
+f5015652-994e-11ef-8cfd-f244e3fa3e83,,,,,,,,,,,,,,,,,,,,,,,,,,,,Cameron James,416001,1,,,Mother,,1,1,1,1,1,1
+f5362ce2-994e-11ef-841f-6409167b20df,,Mr.,Blake,Rue,Owens,,M,Whyte Ridge Heating and Air Conditioning,1,blake.owens14@gmail.com,,1,1,Mobile,519-848-2651,1,,,Home,02 Oblik Boulevard,,,Regina,NB,B8X 1X2,,,,,,,,,,,,,,,
+f5362ce2-994e-11ef-841f-6409167b20df,,,,,,,,,,,,,3,Work,411-942-4301,1,,,,,,,,,,,,,,,,,,,,,,,,
+f5362ce2-994e-11ef-841f-6409167b20df,,,,,,,,,,,,,,,,,,,,,,,,,,,,Cameron James,416001,2,,,Father,,1,1,1,1,1,1
+6b6b998c-d6be-11ee-9cde-d958fb6d5a54,,Mrs.,Bailey,Faye,Archer,,F,South sherbrook health centre,1,bailey.archer53@yahoo.com,,1,1,Mobile,326-490-0204,1,,,Home,992 Barrmill Boulevard,,,Hamilton,AB,W0B 1K4,,,,,,,,,,,,,,,
+6b6b998c-d6be-11ee-9cde-d958fb6d5a54,,,,,,,,,,,,,3,Work,874-180-8525,1,,,,,,,,,,,,,,,,,,,,,,,,
+6b6b998c-d6be-11ee-9cde-d958fb6d5a54,,,,,,,,,,,,,,,,,,,,,,,,,,,,Finley Rivera,412902,1,,,Mother,,1,1,1,1,1,1
+6bbcab06-d6be-11ee-8345-765ddc30730c,,Mr.,Devin,Rain,Jensen,,M,South sherbrook pharmacy,1,devin.jensen94@hotmail.com,,1,1,Mobile,791-344-7605,1,,,Home,771 Elm Boulevard,,,Calgary,NS,N6Z 5K6,,,,,,,,,,,,,,,
+6bbcab06-d6be-11ee-8345-765ddc30730c,,,,,,,,,,,,,3,Work,840-597-3504,1,,,,,,,,,,,,,,,,,,,,,,,,
+6bbcab06-d6be-11ee-8345-765ddc30730c,,,,,,,,,,,,,,,,,,,,,,,,,,,,Finley Rivera,412902,2,,,Father,,1,1,1,1,1,1
+6b6b998c-d6be-11ee-9cde-d958fb6d5a54,,,,,,,,,,,,,,,,,,,,,,,,,,,,Skyler Rivera,412901,1,,,Mother,,1,1,1,1,1,1
+6bbcab06-d6be-11ee-8345-765ddc30730c,,,,,,,,,,,,,,,,,,,,,,,,,,,,Skyler Rivera,412901,2,,,Father,,1,1,1,1,1,1
+896299b8-99aa-11ec-b1e3-025d0f476dca,,Mrs.,Charlie,,Foster,,F,African Ethnic Food Gateway Inc,1,charlie.foster16@gmail.com,,1,1,Mobile,989-996-8244,1,,,Home,8 Edgewood Square,,,Kelowna,QC,S9V 0W1,,,,,,,,,,,,,,,
+896299b8-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,3,Work,404-172-1463,1,,,,,,,,,,,,,,,,,,,,,,,,
+896299b8-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Charlie Cooper,334803,1,,,Mother,,1,1,1,1,1,1
+896299bf-99aa-11ec-b1e3-025d0f476dca,,Mr.,Charlie,,Archer,,M,African Food General Inc,1,charlie.archer42@gmail.com,,1,1,Mobile,777-957-8914,1,,,Home,2 Kingfisher Street,,,Montreal,AB,B4V 0R9,,,,,,,,,,,,,,,
+896299bf-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,3,Work,385-895-1077,1,,,,,,,,,,,,,,,,,,,,,,,,
+896299bf-99aa-11ec-b1e3-025d0f476dca,,,,,,,,,,,,,,,,,,,,,,,,,,,,Charlie Cooper,334803,2,,,Father,,1,1,1,1,1,1

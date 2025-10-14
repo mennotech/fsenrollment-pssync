@@ -1,0 +1,1328 @@
+openapi: 3.0.0
+info:
+  title: PowerSchool API - Students and Contacts
+  version: 1.0.0
+  description: >-
+    Postman collection for PowerSchool API endpoints related to students and
+    contact records.
+servers:
+  - url: '{{base_url}}'
+paths:
+  /oauth/access_token:
+    parameters: []
+    post:
+      summary: Access Token
+      tags:
+        - token
+      parameters:
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                deprecated: false
+              example: application/json;charset=UTF-8
+          description: Access Token
+  /ws/v1/district/student:
+    parameters: []
+    get:
+      summary: Get District Students
+      tags: &ref_0
+        - v1
+      parameters:
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                deprecated: false
+              example: application/json
+          description: Get District Students
+  /ws/v1/student/{student_id}:
+    parameters:
+      - name: student_id
+        in: path
+        required: true
+        description: Student ID
+        example: '{{studentId}}'
+        schema:
+          deprecated: false
+    get:
+      summary: Student
+      tags: *ref_0
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            deprecated: false
+        - name: expansions
+          in: query
+          required: false
+          description: >-
+            Options: demographics, addresses, alerts, phones, school_enrollment,
+            ethnicity_race, contact, contact_info, initial_enrollment,
+            schedule_setup, fees, lunch, counselors, global_id
+          example: >-
+            demographics,contact,addresses,contact_info,global_id,contact_info,initial_enrollment
+          schema:
+            deprecated: false
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Mickey Mouse
+  /ws/v1/student:
+    parameters: []
+    post:
+      summary: Update Student Information
+      tags: *ref_0
+      parameters:
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Update Student Information
+  /ws/contacts/student/{studentdcid}:
+    parameters:
+      - name: studentdcid
+        in: path
+        required: true
+        description: Student DCID
+        example: '1'
+        schema:
+          deprecated: false
+          type: integer
+    get:
+      summary: Student Contacts
+      tags:
+        - core
+        - students
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                deprecated: false
+              example: application/json
+          description: Student Contacts
+  /ws/contacts/{contactId}/addresses:
+    parameters:
+      - name: contactId
+        in: path
+        required: true
+        description: Contact ID
+        example: '{{contactId_last_created}}'
+        schema:
+          deprecated: false
+          type: integer
+    get:
+      summary: Addresses
+      tags: &ref_1
+        - core
+        - contacts
+        - addresses
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Addresses
+    post:
+      summary: Address
+      tags: *ref_1
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Address
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+            example:
+              deleted: false
+              sequence: 2
+              addressId: 851
+              addressType: null
+              street: 843 3rd Ave.
+              linetwo: null
+              unit: null
+              city: Winnipeg
+              state: MB
+              country: CA
+              postalcode: R3P 3A3
+              countyCodeSetId: null
+              verification: null
+              isVerified: null
+              addressLine3: null
+              addressLine4: null
+              addressLine5: null
+              startDate: null
+              endDate: null
+  /ws/contacts/{contactId}/addresses/{contactsaddressid}:
+    parameters:
+      - name: contactId
+        in: path
+        required: true
+        description: Contact ID
+        example: '{{contactId_last_created}}'
+        schema:
+          deprecated: false
+          type: integer
+      - name: contactsaddressid
+        in: path
+        required: true
+        description: Contacts Address ID
+        example: '{{contactsAddressId}}'
+        schema:
+          deprecated: false
+          type: integer
+    get:
+      summary: Address
+      tags: *ref_1
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Address
+    put:
+      summary: Address
+      tags: *ref_1
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Address
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+            example:
+              deleted: false
+              sequence: 2
+              addressId: 851
+              addressType: null
+              street: 843 3rd Ave.
+              linetwo: null
+              unit: null
+              city: Winnipeg
+              state: MB
+              country: CA
+              postalcode: R3P 3A3
+              startDate: null
+              endDate: null
+    delete:
+      summary: Address
+      tags: *ref_1
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Address
+  /ws/contacts/{contactId}/emails:
+    parameters:
+      - name: contactId
+        in: path
+        required: true
+        description: Contact ID
+        example: '{{contactId_last_created}}'
+        schema:
+          deprecated: false
+          type: integer
+    get:
+      summary: Emails
+      tags: &ref_2
+        - core
+        - contacts
+        - email
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Email
+    post:
+      summary: Email
+      tags: *ref_2
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Email
+        '400':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Duplicate Error
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+            example:
+              deleted: false
+              primary: true
+              type: Current
+              address: mouse@example.com
+  /ws/contacts/{contactId}/emails/{contactemailid}:
+    parameters:
+      - name: contactId
+        in: path
+        required: true
+        description: Contact ID
+        example: '{{contactId_last_created}}'
+        schema:
+          deprecated: false
+          type: integer
+      - name: contactemailid
+        in: path
+        required: true
+        description: Contact Email ID
+        example: '{{contactEmailId}}'
+        schema:
+          deprecated: false
+          type: integer
+    get:
+      summary: Email
+      tags: *ref_2
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Email
+    put:
+      summary: Email
+      tags: *ref_2
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Email
+    delete:
+      summary: Email
+      tags: *ref_2
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Email
+  /ws/contacts/{contactId}/phones:
+    parameters:
+      - name: contactId
+        in: path
+        required: true
+        description: Contact ID
+        example: '{{contactId_last_created}}'
+        schema:
+          deprecated: false
+          type: integer
+    get:
+      summary: Phones
+      tags: &ref_3
+        - core
+        - contacts
+        - phone
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Phones
+    post:
+      summary: Phone
+      tags: *ref_3
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Phone
+        '400':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Duplicate Error
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+            example:
+              deleted: false
+              contactsPhoneId: 52
+              sequence: 1
+              preferred: true
+              phoneType: Work
+              phoneNumberId: 52
+              phoneNumber: 204-555-9876
+              extension: null
+              sms: false
+  /ws/contacts/{contactId}/phones/{contactsphoneid}:
+    parameters:
+      - name: contactId
+        in: path
+        required: true
+        description: Contact ID
+        example: '{{contactId_last_created}}'
+        schema:
+          deprecated: false
+          type: integer
+      - name: contactsphoneid
+        in: path
+        required: true
+        description: Contact Phone ID
+        example: '{{contactsPhoneId}}'
+        schema:
+          deprecated: false
+          type: integer
+    get:
+      summary: Phone
+      tags: *ref_3
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Phone
+    put:
+      summary: Phone
+      tags: *ref_3
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Phone
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+            example:
+              deleted: false
+              sequence: 1
+              preferred: true
+              phoneType: Work
+              phoneNumberId: 52
+              phoneNumber: 204-555-5232
+              extension: null
+              sms: false
+    delete:
+      summary: Phone
+      tags: *ref_3
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Phones
+  /ws/contacts/{contactId}/demographics:
+    parameters:
+      - name: contactId
+        in: path
+        required: true
+        description: Contact ID
+        example: '{{contactId_last_created}}'
+        schema:
+          deprecated: false
+          type: integer
+    put:
+      summary: Demographics
+      tags:
+        - core
+        - contacts
+        - demographics
+      parameters: []
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Demographics
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+            example:
+              firstName: Marcy
+              middleName: Nice
+              lastName: Mouse
+              prefix: null
+              suffix: null
+              gender: F
+              employer: null
+              stateContactNumber: null
+              contactNumber: null
+              stateExcludeFromReporting: false
+              active: true
+  /ws/contacts/contact/{contactId}:
+    parameters:
+      - name: contactId
+        in: path
+        required: true
+        description: Contact ID
+        example: '{{contactId_last_created}}'
+        schema:
+          deprecated: false
+          type: integer
+    get:
+      summary: Contact
+      tags: &ref_4
+        - core
+        - contacts
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Contact
+  /ws/contacts/contacts:
+    parameters: []
+    get:
+      summary: Multiple Contacts
+      tags: *ref_4
+      parameters:
+        - name: extensions
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: contactids
+          in: query
+          required: false
+          description: First Contact ID
+          example: '{{contactId}}'
+          schema:
+            deprecated: false
+            type: integer
+        - name: Authorization
+          in: header
+          required: false
+          example: Bearer {{access_token}}
+          schema:
+            deprecated: false
+        - name: Content-Type
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+        - name: Accept
+          in: header
+          required: false
+          example: application/json
+          schema:
+            deprecated: false
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Multiple Contacts
+  /ws/contacts/{contactId}:
+    parameters:
+      - name: contactId
+        in: path
+        required: true
+        description: Contact ID
+        example: '{{contactId_last_created}}'
+        schema:
+          deprecated: false
+          type: integer
+    delete:
+      summary: Contact
+      tags: *ref_4
+      parameters: []
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Contact
+        '500':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Error
+  /ws/contacts/contact:
+    parameters: []
+    post:
+      summary: Contact
+      tags: *ref_4
+      parameters: []
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+          description: Contact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              x-contactId: 0
+              x-firstName: string
+              x-middleName: string
+              x-lastName: string
+              x-prefix: string
+              x-suffix: string
+              x-gender: string
+              x-employer: string
+              x-stateContactNumber: string
+              x-contactNumber: string
+              x-stateExcludeFromReporting: true
+              x-active: true
+              x-emails:
+                - deleted: false
+                  contactEmailId: 0
+                  primary: true
+                  emailId: 0
+                  type: string
+                  address: string
+                  contactEmailAssocExtension:
+                    id: 0
+                    '@extensions': ''
+                    _extension_data:
+                      _table_extension:
+                        - name: string
+                          _field:
+                            - name: string
+                              type: string
+                              value: string
+              x-phones:
+                - deleted: false
+                  contactsPhoneId: 0
+                  sequence: 0
+                  preferred: true
+                  phoneType: string
+                  phoneNumberId: 0
+                  phoneNumber: string
+                  extension: string
+                  sms: true
+                  contactPhoneAssocExtension:
+                    id: 0
+                    '@extensions': ''
+                    _extension_data:
+                      _table_extension:
+                        - name: string
+                          _field:
+                            - name: string
+                              type: string
+                              value: string
+              x-languages:
+                - null
+              x-contactAccount:
+                deleted: false
+                enabled: true
+                userName: string
+                password: string
+                extensions:
+                  - id: 0
+                    '@extensions': ''
+                    _extension_data:
+                      _table_extension:
+                        - name: string
+                          _field:
+                            - name: string
+                              type: string
+                              value: string
+              x-addresses:
+                - deleted: false
+                  contactsAddressId: 0
+                  sequence: 0
+                  addressId: 0
+                  addressType: string
+                  street: string
+                  linetwo: string
+                  unit: string
+                  city: string
+                  state: 0
+                  country: 0
+                  postalcode: string
+                  startDate: '2025-10-12'
+                  endDate: '2025-10-12'
+                  contactAddressAssocExtension:
+                    id: 0
+                    '@extensions': ''
+                    _extension_data:
+                      _table_extension:
+                        - name: string
+                          _field:
+                            - name: string
+                              type: string
+                              value: string
+              x-contactStudents:
+                - deleted: false
+                  studentContactId: 0
+                  sequence: 0
+                  dcid: 0
+                  studentNumber: string
+                  firstName: string
+                  middleName: string
+                  lastName: string
+                  schoolAbbr: string
+                  schoolNumber: 0
+                  originalContactType: string
+                  autosendHowOften: 0
+                  emailSummary: true
+                  assignmentDetails: true
+                  attendanceDetails: true
+                  schoolAnnouncements: true
+                  balanceAlert: true
+                  guardianId: 0
+                  canAccessData: true
+                  restrictions:
+                    - restrictionId: 0
+                      pluginDefId: 0
+                      pluginName: string
+                      guardianStudentId: 0
+                      restricted: true
+                  notificationEmails: string
+                  contactStudentAssocExtension:
+                    id: 0
+                    '@extensions': ''
+                    _extension_data:
+                      _table_extension:
+                        - name: string
+                          _field:
+                            - name: string
+                              type: string
+                              value: string
+                  studentDetails:
+                    - deleted: false
+                      studentContactDetailId: 0
+                      studentContactId: 0
+                      relationship: string
+                      relationshipNote: string
+                      custodial: true
+                      emergency: true
+                      livesWith: true
+                      schoolPickup: true
+                      startDate: '2025-10-12'
+                      endDate: '2025-10-12'
+                      receivesMail: true
+                      excludeFromStateReporting: true
+                      active: true
+                      contactStudentDetailExtension:
+                        id: 0
+                        '@extensions': ''
+                        _extension_data:
+                          _table_extension:
+                            - name: string
+                              _field:
+                                - name: string
+                                  type: string
+                                  value: string
+              x-@extensions: ''
+              x-_extension_data:
+                _table_extension:
+                  - name: string
+                    _field:
+                      - name: string
+                        type: string
+                        value: string
+            example:
+              firstName: Marcy
+              middleName: null
+              lastName: Mouse
+              prefix: null
+              suffix: null
+              gender: F
+              employer: null
+              stateContactNumber: null
+              contactNumber: null
+              stateExcludeFromReporting: false
+              active: true
+              emails: []
+              phones:
+                - deleted: false
+                  sequence: 1
+                  preferred: true
+                  phoneType: Work
+                  phoneNumberId: 52
+                  phoneNumber: 204-555-1234
+                  extension: null
+                  sms: false
+                  contactPhoneAssocExtension:
+                    id: 52
+                    '@extensions': ''
+                  contactPhoneExtension:
+                    id: 52
+                    '@extensions': phonenumbercorefields
+                - deleted: false
+                  sequence: 2
+                  preferred: false
+                  phoneType: Mobile
+                  phoneNumberId: 2101
+                  phoneNumber: 204-555-2345
+                  extension: null
+                  sms: true
+                  contactPhoneAssocExtension:
+                    id: 2551
+                    '@extensions': ''
+                  contactPhoneExtension:
+                    id: 2101
+                    '@extensions': phonenumbercorefields
+              language: null
+              contactAccount: null
+              addresses:
+                - deleted: false
+                  sequence: 1
+                  addressId: 53
+                  addressType: null
+                  street: 132 Main St.
+                  linetwo: null
+                  unit: null
+                  city: Winnipeg
+                  state: MB
+                  country: CA
+                  postalcode: R3P 1A1
+                  countyCodeSetId: null
+                  verification: null
+                  isVerified: null
+                  addressLine3: null
+                  addressLine4: null
+                  addressLine5: null
+                  startDate: null
+                  endDate: null
+                  contactAddressAssocExtension:
+                    id: 101
+                    '@extensions': ''

@@ -1,0 +1,20 @@
+Student_Number,SchoolID,First_Name,Middle_Name,Last_Name,Grade_Level,Home_Phone,Gender,DOB,FTEID,Enroll_Status,EntryDate,ExitDate,Street,City,State,Zip,Mailing_Street,Mailing_City,Mailing_State,Mailing_Zip,Sched_NextYearGrade,Next_School,Sched_Scheduled,Sched_YearOfGraduation,TransferComment,Family_Ident
+313202,300,Arden,Skye,Griffin,12,512-751-7225,F,06/19/2007,102,0,9/2/25,6/30/2026,33 Poplar Bay,Winnipeg,QC,E0T 8N0,08 Hillcrest Crescent,Montreal,NL,T1Y 6N1,99,999999,1,2026,,3632
+355101,200,Alex,Wren,Parker,8,731-007-6127,M,09/26/2012,102,0,9/2/25,6/30/2026,26 Ash Street,Regina,SK,T6G 0K2,65 Oak Court,London,MB,B7B 4A7,9,300,1,2030,,3521
+355102,100,Shiloh,Lee,Archer,3,060-994-3603,F,04/05/2017,102,0,9/2/25,6/30/2026,14 Poplarwood Bay,Vancouver,QC,T0X 9J7,42 Oblik Gate,Edmonton,QC,E1M 3V1,4,100,1,2035,,3521
+316301,300,Sunny,True,Irwin,12,725-960-3902,M,04/21/2008,102,0,9/2/25,6/30/2026,20 Spruce Boulevard,Ottawa,NS,C3J 7W0,40 Edge Park Avenue,London,NS,A8X 2Y8,99,999999,1,2026,,3163
+324403,300,Frankie,Lane,Jensen,11,029-971-8125,F,09/08/2009,102,0,9/2/25,6/30/2026,57 Elm Boulevard,Kitchener,ON,Z4N 9W1,38 Sunset Dr,Regina,PE,C0E 9T4,12,300,1,2027,,3244
+396302,200,Nova,Max,Ingram,6,356-987-2358,M,07/07/2014,102,0,9/2/25,6/30/2026,28 Barrmill Road,Edmonton,QC,B4W 8V9,22 Kingfisher Blvd,Waterloo,NB,Y4X 9E5,7,200,1,2032,,3963
+396301,100,Dakota,Blue,Ramsey,4,572-575-1900,F,11/03/2016,102,0,9/2/25,6/30/2026,23 Birch Drive,Charlottetown,SK,M7S 9K8,28 Raven Crescent,Toronto,NL,J1Y 5R3,5,200,1,2034,,3963
+396303,100,Kai,June,Thompson,2,802-508-4669,F,07/27/2018,102,0,9/2/25,6/30/2026,29 Edgewood Street,Ottawa,AB,N3J 2R6,36 Oak Lane,Charlottetown,MB,R3S 0C8,3,100,1,2036,,3963
+411001,200,Shay,Blair,Hayes,8,161-916-1668,F,02/16/2013,102,0,9/2/25,6/30/2026,36 Sunset Court,Kelowna,PE,S4S 9S2,17 Hillcrest Bay,Saskatoon,QC,J5W 6J5,9,300,1,2030,,4110
+390701,100,Tristan,James,Ulrich,3,415-409-4347,M,04/30/2017,102,0,9/2/25,6/30/2026,401 Poplarwood Ct,Calgary,ON,X6R 8N3,995 Willow Square,Halifax,AB,B1Y 6Y5,4,100,1,2035,,3907
+405301,300,Dakota,Lee,Hughes,12,029-883-5172,F,07/28/2009,102,0,9/2/25,6/30/2026,500 Southbridge Avenue,St. John's,ON,S8K 4X7,575 Dodds Place,Quebec City,NB,W9W 6B7,99,999999,1,2026,,4053
+405302,300,Nova,Blue,Parker,9,491-283-5990,F,10/17/2012,102,0,9/2/25,6/30/2026,838 River Avenue,Charlottetown,BC,A5S 3C1,918 Deer Trail,Victoria,PE,T1E 4K5,10,300,1,2029,,4053
+332503,300,River,Ash,Bishop,11,028-989-3248,F,12/15/2009,102,0,9/2/25,6/30/2026,808 Raven Way,London,SK,R6M 7M6,782 Almington Ave,Halifax,NS,H3C 1C4,12,300,1,2027,,3325
+389501,100,Emerson,Ash,Nelson,3,389-322-4511,M,08/03/2017,102,0,9/2/25,6/30/2026,9 River Ln,Saskatoon,ON,L8C 4G6,6 Fox Square,Charlottetown,NS,Y0H 7K5,4,100,1,2035,,3895
+389502,100,Jesse,Grey,Bishop,1,362-140-1122,F,02/05/2019,102,0,9/2/25,6/30/2026,7 Prairie Place,Vancouver,BC,X0E 5S8,0 Sunset Street,Charlottetown,ON,X0P 9X0,2,100,1,2037,,3895
+416001,100,Jordan,Ray,Hayes,0,216-640-5785,M,09/10/2020,102,0,9/2/25,6/30/2026,34 Deer Street,Waterloo,NL,Y8M 8G6,92 Highland Avenue,Toronto,NL,P1A 0G9,1,100,1,2038,,4160
+412902,200,Frankie,Max,Keller,6,474-119-4243,F,08/19/2014,102,0,9/2/25,6/30/2026,016 Stanley Street,Toronto,ON,A0H 0M4,326 Raven Square,Toronto,AB,Z9H 6R8,7,200,1,2032,,4129
+412901,300,Parker,Fox,Porter,11,874-180-8525,F,08/01/2009,102,0,9/2/25,6/30/2026,751 Edgewood Trail,London,NS,S0N 9T7,134 Raven Lane,Halifax,ON,E1R 5R9,12,300,1,2027,,4129
+334803,300,Toni,Max,Vaughn,9,059-735-0401,F,06/18/2011,102,0,9/2/25,6/30/2026,9 Poplarwood Square,Quebec City,NB,W2M 4B8,9 Edge Park Blvd,Vancouver,QC,V9S 9V0,10,300,1,2029,,3348

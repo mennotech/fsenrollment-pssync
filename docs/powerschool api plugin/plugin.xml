@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://plugin.powerschool.pearson.com"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://plugin.powerschool.pearson.com plugin.xsd"
+        name="SchoolAdmin Sync API Access Plugin"
+        version="1.0.1"
+        description="API Access for data sync from SchoolAdmin">
+	<oauth accessLevelV1Api="FULL"/>
+	<publisher name="Mennotech">
+		<contact email="support@mennotech.ca"/>
+	</publisher>
+	<access_request>
+		<field table="codeset" field="code" access="FullAccess" />
+		<field table="codeset" field="codesetid" access="FullAccess" />		
+		<field table="codeset" field="codetype" access="FullAccess" />
+		<field table="courses" field="course_name" access="ViewOnly" />
+		<field table="courses" field="course_number" access="ViewOnly" />
+		<field table="emailaddress" field="emailaddress" access="FullAccess" />
+		<field table="emailaddress" field="emailaddressid" access="FullAccess" />
+		<field table="originalcontactmap" field="originalcontacttype" access="FullAccess" />
+		<field table="pcas_account" field="isenabled" access="FullAccess" />
+		<field table="pcas_account" field="username" access="FullAccess" />
+		<field table="period" field="abbreviation" access="ViewOnly" />
+		<field table="period" field="period_number" access="ViewOnly" />
+		<field table="period" field="schoolid" access="ViewOnly" />
+		<field table="period" field="year_id" access="ViewOnly" />
+		<field table="person" field="employer" access="FullAccess" />
+		<field table="person" field="excludefromstatereporting" access="FullAccess" />
+		<field table="person" field="firstname" access="FullAccess" />
+		<field table="person" field="gendercodesetid" access="FullAccess" />
+		<field table="person" field="id" access="FullAccess" />
+		<field table="person" field="isactive" access="FullAccess" />
+		<field table="person" field="lastname" access="FullAccess" />
+		<field table="person" field="middlename" access="FullAccess" />
+		<field table="person" field="prefixcodesetid" access="FullAccess" />
+		<field table="person" field="statecontactid" access="FullAccess" />
+		<field table="person" field="statecontactnumber" access="FullAccess" />
+		<field table="person" field="suffixcodesetid" access="FullAccess" />
+		<field table="personaddress" field="city" access="FullAccess" />
+		<field table="personaddress" field="countrycodesetid" access="FullAccess" />
+		<field table="personaddress" field="geocodelatitude" access="FullAccess" />
+		<field table="personaddress" field="geocodelongitude" access="FullAccess" />
+		<field table="personaddress" field="linetwo" access="FullAccess" />
+		<field table="personaddress" field="personaddressid" access="FullAccess" />
+		<field table="personaddress" field="postalcode" access="FullAccess" />
+		<field table="personaddress" field="statescodesetid" access="FullAccess" />
+		<field table="personaddress" field="street" access="FullAccess" />
+		<field table="personaddress" field="unit" access="FullAccess" />
+		<field table="personaddressassoc" field="addresspriorityorder" access="FullAccess" />
+		<field table="personaddressassoc" field="addresstypecodesetid" access="FullAccess" />
+		<field table="personaddressassoc" field="enddate" access="FullAccess" />
+		<field table="personaddressassoc" field="personaddressassocid" access="FullAccess" />
+		<field table="personaddressassoc" field="personaddressid" access="FullAccess" />
+		<field table="personaddressassoc" field="personid" access="FullAccess" />
+		<field table="personaddressassoc" field="startdate" access="FullAccess" />
+		<field table="personemailaddressassoc" field="emailaddressid" access="FullAccess" />
+		<field table="personemailaddressassoc" field="emailaddresspriorityorder" access="FullAccess" />
+		<field table="personemailaddressassoc" field="emailtypecodesetid" access="FullAccess" />
+		<field table="personemailaddressassoc" field="isprimaryemailaddress" access="FullAccess" />
+		<field table="personemailaddressassoc" field="personemailaddressassocid" access="FullAccess" />
+		<field table="personemailaddressassoc" field="personid" access="FullAccess" />
+		<field table="personphonenumberassoc" field="ispreferred" access="FullAccess" />
+		<field table="personphonenumberassoc" field="personid" access="FullAccess" />
+		<field table="personphonenumberassoc" field="personphonenumberassocid" access="FullAccess" />
+		<field table="personphonenumberassoc" field="phonenumberasentered" access="FullAccess" />
+		<field table="personphonenumberassoc" field="phonenumberid" access="FullAccess" />
+		<field table="personphonenumberassoc" field="phonenumberpriorityorder" access="FullAccess" />
+		<field table="personphonenumberassoc" field="phonetypecodesetid" access="FullAccess" />
+		<field table="phonenumber" field="issms" access="FullAccess" />
+		<field table="phonenumber" field="phonenumber" access="FullAccess" />
+		<field table="phonenumber" field="phonenumberext" access="FullAccess" />
+		<field table="phonenumber" field="phonenumberid" access="FullAccess" />
+		<field table="prefs" field="name" access="ViewOnly" />
+		<field table="prefs" field="value" access="ViewOnly" />
+		<field table="schools" field="abbreviation" access="FullAccess" />
+		<field table="schools" field="school_number" access="FullAccess" />
+		<field table="section_meeting" field="cycle_day_letter" access="ViewOnly" />
+		<field table="section_meeting" field="period_number" access="ViewOnly" />
+		<field table="section_meeting" field="sectionid" access="ViewOnly" />
+		<field table="sections" field="course_number" access="ViewOnly" />
+		<field table="sections" field="dcid" access="ViewOnly" />
+		<field table="sections" field="id" access="ViewOnly" />
+		<field table="sections" field="schoolid" access="ViewOnly" />
+		<field table="sections" field="teacher" access="ViewOnly" />
+		<field table="sections" field="termid" access="ViewOnly" />
+		<field table="studentcontactassoc" field="contactpriorityorder" access="FullAccess" />
+		<field table="studentcontactassoc" field="currreltypecodesetid" access="FullAccess" />
+		<field table="studentcontactassoc" field="personid" access="FullAccess" />
+		<field table="studentcontactassoc" field="studentcontactassocid" access="FullAccess" />
+		<field table="studentcontactassoc" field="studentdcid" access="FullAccess" />
+		<field table="studentcontactdetail" field="enddate" access="FullAccess" />
+		<field table="studentcontactdetail" field="excludefromstatereportingflg" access="FullAccess" />
+		<field table="studentcontactdetail" field="isactive" access="FullAccess" />
+		<field table="studentcontactdetail" field="iscustodial" access="FullAccess" />
+		<field table="studentcontactdetail" field="isemergency" access="FullAccess" />
+		<field table="studentcontactdetail" field="liveswithflg" access="FullAccess" />
+		<field table="studentcontactdetail" field="receivesmailflg" access="FullAccess" />
+		<field table="studentcontactdetail" field="relationshipnote" access="FullAccess" />
+		<field table="studentcontactdetail" field="relationshiptypecodesetid" access="FullAccess" />
+		<field table="studentcontactdetail" field="schoolpickupflg" access="FullAccess" />
+		<field table="studentcontactdetail" field="startdate" access="FullAccess" />
+		<field table="studentcontactdetail" field="studentcontactassocid" access="FullAccess" />
+		<field table="studentcontactdetail" field="studentcontactdetailid" access="FullAccess" />
+		<field table="studentcorefields" field="autosend_howoften" access="FullAccess" />
+		<field table="studentcorefields" field="family_rep" access="FullAccess" />
+		<field table="studentcorefields" field="studentsdcid" access="FullAccess" />
+		<field table="students" field="dcid" access="ViewOnly" />
+		<field table="students" field="enroll_status" access="ViewOnly" />
+		<field table="students" field="first_name" access="FullAccess" />
+		<field table="students" field="grade_level" access="FullAccess" />
+		<field table="students" field="home_room" access="FullAccess" />		
+		<field table="students" field="id" access="ViewOnly" />
+		<field table="students" field="last_name" access="FullAccess" />
+		<field table="students" field="lastfirst" access="FullAccess" />
+		<field table="students" field="person_id" access="ViewOnly" />
+		<field table="students" field="schoolid" access="ViewOnly" />
+		<field table="students" field="state_studentnumber" access="FullAccess" />
+		<field table="students" field="student_number" access="FullAccess" />
+		<field table="terms" field="firstday" access="ViewOnly" />
+		<field table="terms" field="isyearrec" access="ViewOnly" />
+		<field table="terms" field="lastday" access="ViewOnly" />
+		<field table="terms" field="schoolid" access="ViewOnly" />
+		<field table="terms" field="yearid" access="ViewOnly" />
+	</access_request>
+</plugin>
