@@ -9,7 +9,7 @@
     CompatiblePSEditions = @('Core')
 
     # ID used to uniquely identify this module
-    GUID = '12345678-1234-1234-1234-123456789012'
+    GUID = 'd3a9f2b4-6f1a-4c3b-8d2e-1f0a9b2c3d4e'
 
     # Author of this module
     Author = 'Mennotech'
