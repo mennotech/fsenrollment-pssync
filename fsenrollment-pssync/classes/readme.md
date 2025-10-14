@@ -1,6 +1,6 @@
 # PowerShell Classes
 
-This directory contains PowerShell class definitions used by the fsenrollmentpssync module.
+This directory contains PowerShell class definitions used by the fsenrollment-pssync module.
 
 ## Guidelines
 

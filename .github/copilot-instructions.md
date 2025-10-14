@@ -46,7 +46,7 @@ The application follows this workflow:
 - **Variables**: Use PascalCase for script/module-level variables, camelCase for local variables
 - **Parameters**: Use PascalCase for all parameter names
 - **Constants**: Use PascalCase with descriptive names
-- **Module Names**: Use PascalCase without hyphens (e.g., `FSEnrollmentPSSync`)
+- **Module Names**: Use PascalCase with hyphens for readability (e.g., `fsenrollment-pssync`)
 - **Script Files**: Use PascalCase with hyphens for readability (e.g., `Sync-PowerSchoolData.ps1`)
 
 ### PowerShell Module Structure

@@ -1,6 +1,6 @@
 # tests
 
-This directory contains Pester tests for the fsenrollmentpssync module.
+This directory contains Pester tests for the fsenrollment-pssync module.
 
 ## Guidelines
 
@@ -19,7 +19,7 @@ This directory contains Pester tests for the fsenrollmentpssync module.
 Invoke-Pester
 
 # Run tests with code coverage
-Invoke-Pester -CodeCoverage 'fsenrollmentpssync.psm1'
+Invoke-Pester -CodeCoverage 'fsenrollment-pssync.psm1'
 
 # Run specific test file
 Invoke-Pester -Path ./tests/Get-StudentData.Tests.ps1
@@ -29,7 +29,7 @@ Invoke-Pester -Path ./tests/Get-StudentData.Tests.ps1
 
 ```powershell
 BeforeAll {
-    Import-Module ./fsenrollmentpssync.psd1 -Force
+    Import-Module ./fsenrollment-pssync.psd1 -Force
 }
 
 Describe 'Get-StudentData' {

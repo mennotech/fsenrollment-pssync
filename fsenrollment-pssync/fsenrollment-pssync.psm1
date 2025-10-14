@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    FSEnrollmentPSSync module for integrating Final Site Enrollment data with PowerSchool.
+    FSEnrollment-PSSync module for integrating Final Site Enrollment data with PowerSchool.
 
 .DESCRIPTION
     This module provides functions to synchronize data between Final Site Enrollment
@@ -35,7 +35,7 @@ Export-ModuleMember -Function $Public.BaseName
 
 # Module variables
 $script:ModuleRoot = $PSScriptRoot
-$script:ModuleVersion = (Test-ModuleManifest -Path "$PSScriptRoot/fsenrollmentpssync.psd1").Version
-$script:ModuleName = 'fsenrollmentpssync'
+$script:ModuleVersion = (Test-ModuleManifest -Path "$PSScriptRoot/fsenrollment-pssync.psd1").Version
+$script:ModuleName = 'fsenrollment-pssync'
 
-Write-Verbose "fsenrollmentpssync module loaded successfully (Version: $script:ModuleVersion)"
+Write-Verbose "fsenrollment-pssync module loaded successfully (Version: $script:ModuleVersion)"

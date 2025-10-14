@@ -1,6 +1,6 @@
 # configuration
 
-This directory contains configuration files for the fsenrollmentpssync application.
+This directory contains configuration files for the fsenrollment-pssync application.
 
 ## Security Warning
 

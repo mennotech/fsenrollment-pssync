@@ -1,6 +1,6 @@
 # Private Functions
 
-This directory contains internal (non-exported) functions used by the fsenrollmentpssync module.
+This directory contains internal (non-exported) functions used by the fsenrollment-pssync module.
 
 ## Guidelines
 
