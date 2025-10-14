@@ -26,6 +26,11 @@ config/*.p12
 data/*.csv
 data/**/processed/
 data/**/archive/
+data/**/incoming/
+
+# Normalized output files
+data/**/*.json
+data/**/*_normalized.*
 
 # Keep example files
 !data/examples/

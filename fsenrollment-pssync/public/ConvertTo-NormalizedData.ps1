@@ -119,12 +119,10 @@ function ConvertTo-NormalizedData {
             foreach ($apiField in $fieldMappings.Keys) {
                 $possibleColumns = $fieldMappings[$apiField]
                 $value = $null
-                $foundColumn = $null
 
                 foreach ($column in $possibleColumns) {
                     $matchedColumn = $csvColumns | Where-Object { $_ -eq $column } | Select-Object -First 1
                     if ($matchedColumn) {
-                        $foundColumn = $matchedColumn
                         $value = $row.$matchedColumn
                         break
                     }
