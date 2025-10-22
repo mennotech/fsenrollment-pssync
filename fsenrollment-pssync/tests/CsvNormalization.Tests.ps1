@@ -33,7 +33,6 @@ Describe 'Get-CsvNormalizationTemplate' {
             $template = Get-CsvNormalizationTemplate
             $template.SupportedTypes | Should -Contain 'students'
             $template.SupportedTypes | Should -Contain 'parents'
-            $template.SupportedTypes | Should -Contain 'staff'
         }
     }
 

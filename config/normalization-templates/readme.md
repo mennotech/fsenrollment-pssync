@@ -70,9 +70,6 @@ The default normalization template for Final Site Enrollment CSV exports to Powe
 **Supported Data Types:**
 - Students
 - Parents/Contacts
-- Staff
-- Courses
-- Enrollments
 
 **Key Features:**
 - Handles multiple column name variations (e.g., 'Student_Number', 'studentNumber', 'StudentId')

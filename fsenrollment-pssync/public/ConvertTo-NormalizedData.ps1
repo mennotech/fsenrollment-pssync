@@ -61,7 +61,7 @@ function ConvertTo-NormalizedData {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [ValidateSet('students', 'parents', 'staff', 'courses', 'enrollments')]
+        [ValidateSet('students', 'parents', 'parent-student-relationships', 'staff', 'courses', 'enrollments')]
         [string]$DataType,
 
         [Parameter(Mandatory = $false)]

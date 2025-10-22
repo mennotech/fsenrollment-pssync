@@ -3,13 +3,13 @@
     Name = 'fs_powerschool_nonapi_report'
     
     # Description
-    Description = 'Default normalization template for Final Site Enrollment CSV export to PowerSchool API format'
+    Description = 'Default normalization template for Final Site Enrollment CSV export to PowerSchool API format. Includes mappings for student and parent/contact data.'
     
     # Version
     Version = '1.0.0'
     
     # Supported CSV Types
-    SupportedTypes = @('students', 'parents', 'staff', 'courses', 'enrollments')
+    SupportedTypes = @('students', 'parents')
     
     # Field Mappings for Students
     Students = @{
@@ -86,36 +86,6 @@
         contact_priority_order = @('Contact Priority Order', 'Priority', 'priority')
     }
     
-    # Field Mappings for Staff
-    Staff = @{
-        id = @('staffNumber', 'Staff_Number', 'StaffId', 'staff_id')
-        staff_number = @('staffNumber', 'Staff_Number', 'StaffId', 'staff_id')
-        first_name = @('First_Name', 'FirstName', 'first_name')
-        middle_name = @('Middle_Name', 'MiddleName', 'middle_name')
-        last_name = @('Last_Name', 'LastName', 'last_name')
-        email = @('Email', 'email', 'Email_Addr')
-        school_id = @('SchoolID', 'school_id', 'School_ID')
-        status = @('Status', 'status', 'Active')
-    }
-    
-    # Field Mappings for Courses
-    Courses = @{
-        course_number = @('Course_Number', 'CourseNumber', 'course_number', 'course_id')
-        course_name = @('Course_Name', 'CourseName', 'course_name', 'title')
-        school_id = @('SchoolID', 'school_id', 'School_ID')
-        credit_hours = @('Credit_Hours', 'CreditHours', 'credit_hours', 'credits')
-        sched_department = @('Department', 'department', 'dept')
-    }
-    
-    # Field Mappings for Enrollments
-    Enrollments = @{
-        student_number = @('studentNumber', 'Student_Number', 'StudentId', 'student_id')
-        course_number = @('Course_Number', 'CourseNumber', 'course_number', 'course_id')
-        section_number = @('Section_Number', 'SectionNumber', 'section_number', 'section')
-        school_id = @('SchoolID', 'school_id', 'School_ID')
-        enrollment_date = @('EntryDate', 'entry_date', 'EnrollmentDate', 'enrollment_date')
-        drop_date = @('ExitDate', 'exit_date', 'DropDate', 'drop_date')
-    }
     
     # Data Type Conversions
     DataTypes = @{
@@ -156,9 +126,6 @@
         }
         Parents = @{
             RequiredFields = @('id')
-        }
-        Staff = @{
-            RequiredFields = @('staff_number', 'first_name', 'last_name')
         }
     }
 }
