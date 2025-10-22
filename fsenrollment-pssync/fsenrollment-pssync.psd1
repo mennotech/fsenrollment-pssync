@@ -75,10 +75,10 @@
             Tags = @('PowerSchool', 'FinalSiteEnrollment', 'Sync', 'Integration', 'SIS')
 
             # A URL to the license for this module
-            LicenseUri = 'https://github.com/mennotech/schooladmin-powerschool-sync/blob/main/LICENSE'
+            LicenseUri = 'https://github.com/mennotech/fsenrollment-pssync/blob/main/LICENSE'
 
             # A URL to the main website for this project
-            ProjectUri = 'https://github.com/mennotech/schooladmin-powerschool-sync'
+            ProjectUri = 'https://github.com/mennotech/fsenrollment-pssync'
 
             # A URL to an icon representing this module
             # IconUri = ''

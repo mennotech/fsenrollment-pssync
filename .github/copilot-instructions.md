@@ -48,6 +48,7 @@ The application follows this workflow:
 - **Constants**: Use PascalCase with descriptive names
 - **Module Names**: Use PascalCase with hyphens for readability (e.g., `FSEnrollmentPSSync`)
 - **Script Files**: Use PascalCase with hyphens for readability (e.g., `Sync-PowerSchoolData.ps1`)
+- **Folder Names**: Use lower case with hyphens for readability (e.g., `fsenrollment-pssync`)
 
 ### PowerShell Module Structure
 - Organize code into proper PowerShell modules with manifests (.psd1)
