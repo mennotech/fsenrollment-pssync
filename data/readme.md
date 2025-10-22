@@ -1,6 +1,6 @@
 # data
 
-This directory contains CSV data files and sample data for the fsenrollment-pssync application.
+This directory contains CSV data files and sample data for the FSEnrollment-PSSync application.
 
 ## Important Notes
 

@@ -1,6 +1,6 @@
 # public functions
 
-This directory contains all public (exported) functions for the fsenrollment-pssync module.
+This directory contains all public (exported) functions for the FSEnrollment-PSSync module.
 
 ## Guidelines
 

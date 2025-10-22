@@ -3,7 +3,7 @@
 Basic PowerShell 7+ tooling to process Final Site Enrollment CSVs and prepare/sync changes to PowerSchool SIS.
 
 What’s here now:
-- Module scaffold (`fsenrollment-pssync/`) for future sync cmdlets
+- Module scaffold (`FSEnrollment-PSSync/`) for future sync cmdlets
 - Example CSVs under `data/examples/`
 - Utility scripts:
 	- `Filter-ParentsByStudentExampleFile.ps1` to filter parent rows by student list

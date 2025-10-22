@@ -1,6 +1,6 @@
 # scripts
 
-This directory contains utility scripts and standalone PowerShell scripts that support the fsenrollment-pssync module.
+This directory contains utility scripts and standalone PowerShell scripts that support the FSEnrollment-PSSync module.
 
 ## Purpose
 
@@ -23,7 +23,7 @@ This directory contains utility scripts and standalone PowerShell scripts that s
 
 ```powershell
 #Requires -Version 7.0
-#Requires -Modules fsenrollment-pssync
+#Requires -Modules FSEnrollment-PSSync
 
 <#
 .SYNOPSIS

@@ -35,7 +35,7 @@ Export-ModuleMember -Function $Public.BaseName
 
 # Module variables
 $script:ModuleRoot = $PSScriptRoot
-$script:ModuleVersion = (Test-ModuleManifest -Path "$PSScriptRoot/fsenrollment-pssync.psd1").Version
-$script:ModuleName = 'fsenrollment-pssync'
+$script:ModuleVersion = (Test-ModuleManifest -Path "$PSScriptRoot/FSEnrollment-PSSync.psd1").Version
+$script:ModuleName = 'FSEnrollment-PSSync'
 
-Write-Verbose "fsenrollment-pssync module loaded successfully (Version: $script:ModuleVersion)"
+Write-Verbose "FSEnrollment-PSSync module loaded successfully (Version: $script:ModuleVersion)"
