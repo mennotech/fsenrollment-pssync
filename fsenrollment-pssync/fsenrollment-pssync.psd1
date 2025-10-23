@@ -48,7 +48,8 @@
     # Use an empty array if there are no functions to export
     FunctionsToExport = @(
         'Get-CsvNormalizationTemplate',
-        'ConvertTo-NormalizedData'
+        'ConvertTo-NormalizedData',
+        'ConvertTo-ParentStudentRelationships'
     )
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry
