@@ -189,6 +189,11 @@ Describe 'Import-FSParentsCsv' {
             $FirstRel.StudentNumber | Should -Be '316301'
         }
 
+        It 'Should parse student name in relationship' {
+            $FirstRel = $Result.Relationships[0]
+            $FirstRel.StudentName | Should -Be 'Morgan Hayes'
+        }
+
         It 'Should parse relationship type' {
             $FirstRel = $Result.Relationships[0]
             $FirstRel.RelationshipType | Should -Be 'Father'

@@ -46,8 +46,9 @@ function Import-FSStudentsCsv {
     begin {
         Write-Verbose "Starting student CSV import from: $Path"
         
-        # Load the template configuration
-        $templatePath = Join-Path $script:ModuleRoot "/../config/templates/$TemplateName.psd1"
+        # Load the template configuration using module root
+        $configRoot = Join-Path $script:ModuleRoot '..'
+        $templatePath = Join-Path $configRoot "config/templates/$TemplateName.psd1"
         
         if (-not (Test-Path $templatePath)) {
             throw "Template configuration not found: $templatePath"

@@ -71,6 +71,7 @@ function ConvertFrom-CsvRow {
                         $false
                     }
                     else {
+                        Write-Warning "Unexpected boolean value '$value' for property $entityProperty. Expected '0', '1', 'true', or 'false'. Attempting standard conversion."
                         [bool]$value
                     }
                 }

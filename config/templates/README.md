@@ -42,7 +42,11 @@ Maps student data from Final Site Enrollment's PowerSchool Non-API Report studen
 
 ### fs_powerschool_nonapi_report_parents
 
-The parents/contacts CSV uses a more complex multi-row format handled directly in the `Import-FSParentsCsv` function:
+The parents/contacts CSV uses a more complex multi-row format that requires custom parsing logic in the `Import-FSParentsCsv` function rather than a template configuration file.
+
+**Note**: Unlike the students CSV, the parents CSV does not use a .psd1 template configuration due to its complex multi-row format. The parsing logic is implemented directly in the function.
+
+**Multi-row format handled**:
 
 - **Contact rows**: Full contact information (name, email, primary phone, address)
 - **Additional phone rows**: Same contact ID, only phone data

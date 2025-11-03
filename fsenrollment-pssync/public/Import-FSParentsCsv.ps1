@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    Imports and normalizes parent/contact data from a CSV file using the fs_powerschool_nonapi_report_parents template.
+    Imports and normalizes parent/contact data from a CSV file.
 
 .DESCRIPTION
     Parses a Final Site Enrollment parents CSV export and converts it to normalized
@@ -12,12 +12,15 @@
     - First row for a contact contains full contact information (name, email, address, first phone)
     - Additional rows with same ContactIdentifier but only phone data are extra phone numbers
     - Rows with a studentNumber value are relationship records linking contact to student
+    
+    Note: This function uses direct column mapping rather than a template configuration file
+    due to the complex multi-row format that requires custom parsing logic.
 
 .PARAMETER Path
     Path to the parents CSV file to import.
 
 .PARAMETER TemplateName
-    Optional template name. Defaults to 'fs_powerschool_nonapi_report_parents'.
+    Reserved for future use. Currently not utilized as the function uses direct column mapping.
 
 .OUTPUTS
     PSNormalizedData object containing Contacts, PhoneNumbers, EmailAddresses, Addresses, and Relationships.
@@ -83,7 +86,7 @@ function Import-FSParentsCsv {
                     $relationship = [PSStudentContactRelationship]::new()
                     $relationship.ContactIdentifier = $contactId
                     $relationship.StudentNumber = $row.studentNumber
-                    $relationship.StudentName = $row.studentNumber  # Will be populated from student name column
+                    $relationship.StudentName = $row.'* NOT MAPPED *'
                     $relationship.ContactPriorityOrder = if ($row.'Contact Priority Order') { [int]$row.'Contact Priority Order' } else { 0 }
                     $relationship.StudentContactID = $row.'Student Contact ID'
                     $relationship.StudentContactDetailID = $row.'Student Contact Detail ID'
