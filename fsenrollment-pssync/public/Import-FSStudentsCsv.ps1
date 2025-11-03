@@ -74,10 +74,28 @@ function Import-FSStudentsCsv {
             # Create normalized data container
             $normalizedData = [PSNormalizedData]::new()
 
-            # Process each row
-            foreach ($row in $csvData) {
-                $student = ConvertFrom-CsvRow -CsvRow $row -TemplateConfig $templateConfig
-                $normalizedData.Students.Add($student)
+            # Check if template specifies a custom parser
+            if ($templateConfig.CustomParser) {
+                Write-Verbose "Using custom parser: $($templateConfig.CustomParser)"
+                
+                # Get the custom parser function
+                $parserFunction = Get-Command -Name $templateConfig.CustomParser -ErrorAction SilentlyContinue
+                
+                if (-not $parserFunction) {
+                    throw "Custom parser function '$($templateConfig.CustomParser)' not found"
+                }
+                
+                # Invoke the custom parser
+                $normalizedData = & $templateConfig.CustomParser -CsvData $csvData
+            }
+            else {
+                # Use standard template-based parsing with ConvertFrom-CsvRow
+                Write-Verbose "Using standard template-based parsing"
+                
+                foreach ($row in $csvData) {
+                    $student = ConvertFrom-CsvRow -CsvRow $row -TemplateConfig $templateConfig
+                    $normalizedData.Students.Add($student)
+                }
             }
 
             Write-Verbose "Successfully imported $($normalizedData.Students.Count) students"

@@ -4,23 +4,55 @@ This directory contains template configuration files that define how to parse di
 
 ## Overview
 
-Each template is a PowerShell Data File (.psd1) that maps CSV columns to PowerSchool entity properties with data type information.
+Each template is a PowerShell Data File (.psd1) that maps CSV columns to PowerSchool entity properties with data type information. Templates can use either standard column mappings or custom parser functions for complex formats.
 
 ## Template Structure
 
 A template configuration contains:
 - **TemplateName**: Unique identifier for the template
 - **Description**: Human-readable description of the template
-- **EntityType**: PowerShell class name for the entity (e.g., 'PSStudent', 'PSContact')
-- **ColumnMappings**: Array of mappings from CSV columns to entity properties
+- **EntityType**: PowerShell class name for the entity (e.g., 'PSStudent', 'PSNormalizedData')
+- **CustomParser**: (Optional) Name of a custom parser function for complex CSV formats
+- **ColumnMappings**: Array of mappings from CSV columns to entity properties (used when CustomParser is not specified)
 
-### Column Mapping Format
+### Standard Template Format
+
+For simple CSV formats with one entity per row, use column mappings:
 
 ```powershell
 @{
-    CSVColumn = 'CSV_Column_Name'
-    EntityProperty = 'PropertyName'
-    DataType = 'string|int|bool|datetime'
+    TemplateName = 'template_name'
+    Description = 'Template description'
+    EntityType = 'PSStudent'
+    CustomParser = $null
+    ColumnMappings = @(
+        @{ CSVColumn = 'CSV_Column_Name'; EntityProperty = 'PropertyName'; DataType = 'string' }
+        # ... more mappings
+    )
+}
+```
+
+### Custom Parser Format
+
+For complex CSV formats (multi-row, conditional logic, etc.), specify a custom parser function:
+
+```powershell
+@{
+    TemplateName = 'template_name'
+    Description = 'Template description'
+    EntityType = 'PSNormalizedData'
+    CustomParser = 'Import-CustomParserFunction'
+    ColumnMappings = @()
+}
+```
+
+The custom parser function receives the CSV data and returns a PSNormalizedData object:
+
+```powershell
+function Import-CustomParserFunction {
+    param([object[]]$CsvData)
+    # Custom parsing logic here
+    return [PSNormalizedData]::new()
 }
 ```
 
@@ -31,6 +63,7 @@ A template configuration contains:
 Maps student data from Final Site Enrollment's PowerSchool Non-API Report students export.
 
 - **Entity Type**: PSStudent
+- **Parser Type**: Standard column mappings
 - **Usage**: `Import-FSStudentsCsv -Path students.csv`
 - **Format**: Standard CSV with one row per student
 
@@ -40,14 +73,16 @@ Maps student data from Final Site Enrollment's PowerSchool Non-API Report studen
 - Contact information (phone, addresses)
 - Scheduling information
 
-### fs_powerschool_nonapi_report_parents
+### fs_powerschool_nonapi_report_parents.psd1
 
-The parents/contacts CSV uses a more complex multi-row format that requires custom parsing logic in the `Import-FSParentsCsv` function rather than a template configuration file.
+Maps parent/contact data from Final Site Enrollment's PowerSchool Non-API Report parents export.
 
-**Note**: Unlike the students CSV, the parents CSV does not use a .psd1 template configuration due to its complex multi-row format. The parsing logic is implemented directly in the function.
+- **Entity Type**: PSNormalizedData
+- **Parser Type**: Custom parser (`Import-FSParentsCustomParser`)
+- **Usage**: `Import-FSParentsCsv -Path parents.csv`
+- **Format**: Complex multi-row format
 
-**Multi-row format handled**:
-
+**Multi-row format handled by custom parser**:
 - **Contact rows**: Full contact information (name, email, primary phone, address)
 - **Additional phone rows**: Same contact ID, only phone data
 - **Relationship rows**: Identified by presence of studentNumber field

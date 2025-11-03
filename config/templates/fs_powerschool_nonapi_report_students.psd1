@@ -2,6 +2,9 @@
     TemplateName = 'fs_powerschool_nonapi_report_students'
     Description = 'Final Site Enrollment PowerSchool Non-API Report - Students Export'
     EntityType = 'PSStudent'
+    # Optional: Custom parser function for complex CSV formats
+    # If not provided, the default ConvertFrom-CsvRow function is used with ColumnMappings
+    CustomParser = $null
     ColumnMappings = @(
         @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; DataType = 'string' }
         @{ CSVColumn = 'SchoolID'; EntityProperty = 'SchoolID'; DataType = 'string' }

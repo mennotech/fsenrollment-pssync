@@ -13,14 +13,14 @@
     - Additional rows with same ContactIdentifier but only phone data are extra phone numbers
     - Rows with a studentNumber value are relationship records linking contact to student
     
-    Note: This function uses direct column mapping rather than a template configuration file
-    due to the complex multi-row format that requires custom parsing logic.
+    This function uses a template-based approach with a custom parser function specified in the
+    template configuration to handle the complex multi-row format.
 
 .PARAMETER Path
     Path to the parents CSV file to import.
 
 .PARAMETER TemplateName
-    Reserved for future use. Currently not utilized as the function uses direct column mapping.
+    Template name to use for parsing. Defaults to 'fs_powerschool_nonapi_report_parents'.
 
 .OUTPUTS
     PSNormalizedData object containing Contacts, PhoneNumbers, EmailAddresses, Addresses, and Relationships.
@@ -36,7 +36,7 @@
     Write-Host "Imported $($data.Relationships.Count) student-contact relationships"
 
 .NOTES
-    This function handles the complex multi-row format of the parents CSV export.
+    This function handles the complex multi-row format using a custom parser defined in the template.
     It is designed to work cross-platform on Linux and Windows.
 #>
 function Import-FSParentsCsv {
@@ -52,6 +52,17 @@ function Import-FSParentsCsv {
 
     begin {
         Write-Verbose "Starting parent CSV import from: $Path"
+        
+        # Load the template configuration
+        $configRoot = Join-Path $script:ModuleRoot '..'
+        $templatePath = Join-Path $configRoot "config/templates/$TemplateName.psd1"
+        
+        if (-not (Test-Path $templatePath)) {
+            throw "Template configuration not found: $templatePath"
+        }
+        
+        Write-Verbose "Loading template: $templatePath"
+        $templateConfig = Import-PowerShellDataFile -Path $templatePath
     }
 
     process {
@@ -67,131 +78,33 @@ function Import-FSParentsCsv {
 
             Write-Verbose "Found $($csvData.Count) rows in CSV"
 
-            # Create normalized data container
-            $normalizedData = [PSNormalizedData]::new()
-            
-            # Track processed contacts to avoid duplicates
-            $processedContacts = @{}
-
-            # Process each row
-            foreach ($row in $csvData) {
-                $contactId = $row.'New Contact Identifier'
+            # Check if template specifies a custom parser
+            if ($templateConfig.CustomParser) {
+                Write-Verbose "Using custom parser: $($templateConfig.CustomParser)"
                 
-                # Determine row type
-                $isRelationshipRow = -not [string]::IsNullOrWhiteSpace($row.studentNumber)
-                $hasContactInfo = -not [string]::IsNullOrWhiteSpace($row.'First Name')
+                # Get the custom parser function
+                $parserFunction = Get-Command -Name $templateConfig.CustomParser -ErrorAction SilentlyContinue
                 
-                if ($isRelationshipRow) {
-                    # This is a relationship row
-                    $relationship = [PSStudentContactRelationship]::new()
-                    $relationship.ContactIdentifier = $contactId
-                    $relationship.StudentNumber = $row.studentNumber
-                    $relationship.StudentName = $row.'* NOT MAPPED *'
-                    $relationship.ContactPriorityOrder = if ($row.'Contact Priority Order') { [int]$row.'Contact Priority Order' } else { 0 }
-                    $relationship.StudentContactID = $row.'Student Contact ID'
-                    $relationship.StudentContactDetailID = $row.'Student Contact Detail ID'
-                    $relationship.RelationshipType = $row.'Relationship Type'
-                    $relationship.RelationshipNote = $row.'Relationship Note'
-                    $relationship.IsLegalGuardian = $row.'STUDENTCONTACTDETAILCOREFIELDS.legalGuardian' -eq '1'
-                    $relationship.HasCustody = $row.'Contact Has Custody' -eq '1'
-                    $relationship.LivesWith = $row.'Contact Lives With' -eq '1'
-                    $relationship.AllowSchoolPickup = $row.'Contact Allow School Pickup' -eq '1'
-                    $relationship.IsEmergencyContact = $row.'Is Emergency Contact' -eq '1'
-                    $relationship.ReceivesMail = $row.'Contact Receives Mailings' -eq '1'
-                    
-                    $normalizedData.Relationships.Add($relationship)
-                    Write-Verbose "Added relationship: Contact $contactId -> Student $($row.studentNumber) as $($row.'Relationship Type')"
+                if (-not $parserFunction) {
+                    throw "Custom parser function '$($templateConfig.CustomParser)' not found"
                 }
-                elseif ($hasContactInfo) {
-                    # This is a new contact row
-                    if (-not $processedContacts.ContainsKey($contactId)) {
-                        $contact = [PSContact]::new()
-                        $contact.ContactIdentifier = $contactId
-                        $contact.ContactID = $row.'Contact ID'
-                        $contact.Prefix = $row.Prefix
-                        $contact.FirstName = $row.'First Name'
-                        $contact.MiddleName = $row.'Middle Name'
-                        $contact.LastName = $row.'Last Name'
-                        $contact.Suffix = $row.Suffix
-                        $contact.Gender = $row.Gender
-                        $contact.Employer = $row.Employer
-                        $contact.IsActive = $row.'Is Active' -eq '1'
-                        
-                        $normalizedData.Contacts.Add($contact)
-                        $processedContacts[$contactId] = $true
-                        Write-Verbose "Added contact: $($contact.FirstName) $($contact.LastName) ($contactId)"
-                    }
-                    
-                    # Add email address if present
-                    if (-not [string]::IsNullOrWhiteSpace($row.'Email Address')) {
-                        $email = [PSEmailAddress]::new()
-                        $email.ContactIdentifier = $contactId
-                        $email.EmailAddress = $row.'Email Address'
-                        $email.EmailAddressID = $row.'Contact Email Address ID'
-                        $email.IsPrimary = $row.'Is Primary Email Address' -eq '1'
-                        
-                        $normalizedData.EmailAddresses.Add($email)
-                        Write-Verbose "Added email for $contactId : $($email.EmailAddress)"
-                    }
-                    
-                    # Add address if present
-                    if (-not [string]::IsNullOrWhiteSpace($row.Street)) {
-                        $address = [PSAddress]::new()
-                        $address.ContactIdentifier = $contactId
-                        $address.AddressType = $row.'Address Type'
-                        $address.Street = $row.Street
-                        $address.LineTwo = $row.'Line Two'
-                        $address.Unit = $row.Unit
-                        $address.City = $row.City
-                        $address.State = $row.State
-                        $address.PostalCode = $row.'Postal Code'
-                        $address.AddressID = $row.'Contact Address ID'
-                        $address.PriorityOrder = if ($row.'Address Priority Order') { [int]$row.'Address Priority Order' } else { 0 }
-                        
-                        $normalizedData.Addresses.Add($address)
-                        Write-Verbose "Added address for $contactId : $($address.City), $($address.State)"
-                    }
-                    
-                    # Add phone number if present
-                    if (-not [string]::IsNullOrWhiteSpace($row.phoneNumberAsEntered)) {
-                        $phone = [PSPhoneNumber]::new()
-                        $phone.ContactIdentifier = $contactId
-                        $phone.PriorityOrder = if ($row.'Phone Number Priority Order') { [int]$row.'Phone Number Priority Order' } else { 0 }
-                        $phone.PhoneType = $row.'Phone Type'
-                        $phone.PhoneNumber = $row.phoneNumberAsEntered
-                        $phone.IsPreferred = $row.'Is Preferred' -eq '1'
-                        $phone.IsSMS = $row.'Is SMS' -eq '1'
-                        $phone.PhoneNumberID = $row.'Contact Phone Number ID'
-                        
-                        $normalizedData.PhoneNumbers.Add($phone)
-                        Write-Verbose "Added phone for $contactId : $($phone.PhoneType) - $($phone.PhoneNumber)"
-                    }
-                }
-                else {
-                    # This is an additional phone number row (no contact info, just phone data)
-                    if (-not [string]::IsNullOrWhiteSpace($row.phoneNumberAsEntered)) {
-                        $phone = [PSPhoneNumber]::new()
-                        $phone.ContactIdentifier = $contactId
-                        $phone.PriorityOrder = if ($row.'Phone Number Priority Order') { [int]$row.'Phone Number Priority Order' } else { 0 }
-                        $phone.PhoneType = $row.'Phone Type'
-                        $phone.PhoneNumber = $row.phoneNumberAsEntered
-                        $phone.IsPreferred = $row.'Is Preferred' -eq '1'
-                        $phone.IsSMS = $row.'Is SMS' -eq '1'
-                        $phone.PhoneNumberID = $row.'Contact Phone Number ID'
-                        
-                        $normalizedData.PhoneNumbers.Add($phone)
-                        Write-Verbose "Added additional phone for $contactId : $($phone.PhoneType) - $($phone.PhoneNumber)"
-                    }
+                
+                # Invoke the custom parser
+                $normalizedData = & $templateConfig.CustomParser -CsvData $csvData
+            }
+            else {
+                # Use standard template-based parsing (for future simple formats)
+                Write-Verbose "Using standard template-based parsing"
+                $normalizedData = [PSNormalizedData]::new()
+                
+                foreach ($row in $csvData) {
+                    $entity = ConvertFrom-CsvRow -CsvRow $row -TemplateConfig $templateConfig
+                    # Add to appropriate collection based on EntityType
+                    # This would need to be expanded based on entity type
+                    $normalizedData.Contacts.Add($entity)
                 }
             }
 
-            Write-Verbose "Successfully imported:"
-            Write-Verbose "  - $($normalizedData.Contacts.Count) contacts"
-            Write-Verbose "  - $($normalizedData.EmailAddresses.Count) email addresses"
-            Write-Verbose "  - $($normalizedData.PhoneNumbers.Count) phone numbers"
-            Write-Verbose "  - $($normalizedData.Addresses.Count) addresses"
-            Write-Verbose "  - $($normalizedData.Relationships.Count) student-contact relationships"
-            
             return $normalizedData
         }
         catch {
