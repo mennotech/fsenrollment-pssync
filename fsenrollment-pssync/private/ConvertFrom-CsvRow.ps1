@@ -8,7 +8,7 @@
     This private helper function takes CSV row data and a template mapping configuration,
     then creates PowerSchool entity objects with proper data type conversions.
     
-    Uses the Apply-ColumnMappings helper function to apply the column mappings.
+    Uses the Invoke-ColumnMapping helper function to apply the column mappings.
 
 .PARAMETER CsvRow
     A hashtable or PSCustomObject representing one row from the CSV file.
@@ -41,7 +41,7 @@ function ConvertFrom-CsvRow {
         $entity = New-Object -TypeName $entityTypeName
 
         # Apply column mappings to the entity
-        Apply-ColumnMappings -CsvRow $CsvRow -Entity $entity -ColumnMappings $TemplateConfig.ColumnMappings
+        Invoke-ColumnMapping -CsvRow $CsvRow -Entity $entity -ColumnMappings $TemplateConfig.ColumnMappings
 
         return $entity
     }

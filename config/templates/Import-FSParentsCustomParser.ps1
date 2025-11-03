@@ -11,7 +11,7 @@
     - Relationship rows link contacts to students
     
     Uses column mappings from the template configuration to map CSV fields to entity properties.
-    Utilizes the Apply-ColumnMappings private function for field conversion.
+    Utilizes the Invoke-ColumnMapping private function for field conversion.
 
 .PARAMETER CsvData
     Array of CSV rows to parse.
@@ -60,7 +60,7 @@ function Import-FSParentsCustomParser {
             if ($isRelationshipRow) {
                 # This is a relationship row
                 $relationship = [PSStudentContactRelationship]::new()
-                Apply-ColumnMappings -CsvRow $row -Entity $relationship -ColumnMappings $relationshipMappings
+                Invoke-ColumnMapping -CsvRow $row -Entity $relationship -ColumnMappings $relationshipMappings
                 
                 $normalizedData.Relationships.Add($relationship)
                 Write-Verbose "Added relationship: Contact $contactId -> Student $($row.studentNumber) as $($row.'Relationship Type')"
@@ -69,7 +69,7 @@ function Import-FSParentsCustomParser {
                 # This is a new contact row
                 if (-not $processedContacts.ContainsKey($contactId)) {
                     $contact = [PSContact]::new()
-                    Apply-ColumnMappings -CsvRow $row -Entity $contact -ColumnMappings $contactMappings
+                    Invoke-ColumnMapping -CsvRow $row -Entity $contact -ColumnMappings $contactMappings
                     
                     $normalizedData.Contacts.Add($contact)
                     $processedContacts[$contactId] = $true
@@ -79,7 +79,7 @@ function Import-FSParentsCustomParser {
                 # Add email address if present
                 if (-not [string]::IsNullOrWhiteSpace($row.'Email Address')) {
                     $email = [PSEmailAddress]::new()
-                    Apply-ColumnMappings -CsvRow $row -Entity $email -ColumnMappings $emailMappings
+                    Invoke-ColumnMapping -CsvRow $row -Entity $email -ColumnMappings $emailMappings
                     
                     $normalizedData.EmailAddresses.Add($email)
                     Write-Verbose "Added email for $contactId : $($email.EmailAddress)"
@@ -88,7 +88,7 @@ function Import-FSParentsCustomParser {
                 # Add address if present
                 if (-not [string]::IsNullOrWhiteSpace($row.Street)) {
                     $address = [PSAddress]::new()
-                    Apply-ColumnMappings -CsvRow $row -Entity $address -ColumnMappings $addressMappings
+                    Invoke-ColumnMapping -CsvRow $row -Entity $address -ColumnMappings $addressMappings
                     
                     $normalizedData.Addresses.Add($address)
                     Write-Verbose "Added address for $contactId : $($address.City), $($address.State)"
@@ -97,7 +97,7 @@ function Import-FSParentsCustomParser {
                 # Add phone number if present
                 if (-not [string]::IsNullOrWhiteSpace($row.phoneNumberAsEntered)) {
                     $phone = [PSPhoneNumber]::new()
-                    Apply-ColumnMappings -CsvRow $row -Entity $phone -ColumnMappings $phoneMappings
+                    Invoke-ColumnMapping -CsvRow $row -Entity $phone -ColumnMappings $phoneMappings
                     
                     $normalizedData.PhoneNumbers.Add($phone)
                     Write-Verbose "Added phone for $contactId : $($phone.PhoneType) - $($phone.PhoneNumber)"
@@ -107,7 +107,7 @@ function Import-FSParentsCustomParser {
                 # This is an additional phone number row (no contact info, just phone data)
                 if (-not [string]::IsNullOrWhiteSpace($row.phoneNumberAsEntered)) {
                     $phone = [PSPhoneNumber]::new()
-                    Apply-ColumnMappings -CsvRow $row -Entity $phone -ColumnMappings $phoneMappings
+                    Invoke-ColumnMapping -CsvRow $row -Entity $phone -ColumnMappings $phoneMappings
                     
                     $normalizedData.PhoneNumbers.Add($phone)
                     Write-Verbose "Added additional phone for $contactId : $($phone.PhoneType) - $($phone.PhoneNumber)"

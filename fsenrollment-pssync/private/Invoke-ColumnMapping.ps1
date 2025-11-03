@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    Applies column mappings from a CSV row to a PowerSchool entity object.
+    Invokes column mappings from a CSV row to a PowerSchool entity object.
 
 .DESCRIPTION
     This private helper function takes a CSV row, an entity object, and column mappings,
@@ -19,12 +19,12 @@
 
 .EXAMPLE
     $student = [PSStudent]::new()
-    Apply-ColumnMappings -CsvRow $row -Entity $student -ColumnMappings $mappings
+    Invoke-ColumnMapping -CsvRow $row -Entity $student -ColumnMappings $mappings
 
 .NOTES
     This is a private helper function used by CSV parsing functions and custom parsers.
 #>
-function Apply-ColumnMappings {
+function Invoke-ColumnMapping {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
