@@ -13,11 +13,14 @@ A template configuration contains:
 - **Description**: Human-readable description of the template
 - **EntityType**: PowerShell class name for the entity (e.g., 'PSStudent', 'PSNormalizedData')
 - **CustomParser**: (Optional) Name of a custom parser function for complex CSV formats
-- **ColumnMappings**: Array of mappings from CSV columns to entity properties (used when CustomParser is not specified)
+- **ColumnMappings**: Column mappings from CSV to entity properties
+  - For simple formats: Array of mappings (EntityType inherited from template)
+  - For complex formats: Hashtable organized by entity type
+- **EntityTypeMap**: (Optional, for complex formats) Maps hashtable keys to EntityType class names
 
 ### Standard Template Format
 
-For simple CSV formats with one entity per row, use column mappings:
+For simple CSV formats with one entity per row, use column mappings with EntityType inherited from the template:
 
 ```powershell
 @{
@@ -25,9 +28,10 @@ For simple CSV formats with one entity per row, use column mappings:
     Description = 'Template description'
     EntityType = 'PSStudent'
     CustomParser = $null
+    # EntityType is inherited from template-level setting for all mappings
     ColumnMappings = @(
         @{ CSVColumn = 'CSV_Column_Name'; EntityProperty = 'PropertyName'; DataType = 'string' }
-        # ... more mappings
+        # ... more mappings (no EntityType needed in each mapping)
     )
 }
 ```
@@ -43,22 +47,70 @@ For complex CSV formats (multi-row, conditional logic, etc.), create a custom pa
     Description = 'Template description'
     EntityType = 'PSNormalizedData'
     CustomParser = 'Import-CustomParserFunction'
-    ColumnMappings = @()
+    # EntityTypeMap defines entity types for hashtable keys
+    EntityTypeMap = @{
+        Contact = 'PSContact'
+        EmailAddress = 'PSEmailAddress'
+        PhoneNumber = 'PSPhoneNumber'
+    }
+    # ColumnMappings organized by entity type (EntityType inferred from hashtable key via EntityTypeMap)
+    ColumnMappings = @{
+        Contact = @(
+            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string' }
+            # ... more contact mappings
+        )
+        EmailAddress = @(
+            @{ CSVColumn = 'Email'; EntityProperty = 'EmailAddress'; DataType = 'string' }
+            # ... more email mappings
+        )
+        PhoneNumber = @(
+            @{ CSVColumn = 'Phone'; EntityProperty = 'PhoneNumber'; DataType = 'string' }
+            # ... more phone mappings
+        )
+    }
 }
 ```
 
 **Custom Parser File (config/templates/Import-CustomParserFunction.ps1):**
 ```powershell
 function Import-CustomParserFunction {
-    param([object[]]$CsvData)
-    # Custom parsing logic here
-    return [PSNormalizedData]::new()
+    param(
+        [object[]]$CsvData,
+        [hashtable]$TemplateConfig
+    )
+    
+    # Access entity-specific mappings from template
+    $contactMappings = $TemplateConfig.ColumnMappings.Contact
+    $emailMappings = $TemplateConfig.ColumnMappings.EmailAddress
+    
+    # Custom parsing logic here using Apply-ColumnMappings private function
+    $normalizedData = [PSNormalizedData]::new()
+    
+    foreach ($row in $CsvData) {
+        $contact = [PSContact]::new()
+        Apply-ColumnMappings -CsvRow $row -Entity $contact -ColumnMappings $contactMappings
+        $normalizedData.Contacts.Add($contact)
+    }
+    
+    return $normalizedData
 }
 ```
 
 The custom parser is stored alongside the template configuration in the `config/templates/` folder. This keeps format-specific parsing logic separate from the generic import functions in the module.
-}
-```
+
+## Design Benefits
+
+### Simplified Configuration
+
+- **Simple formats**: No redundant EntityType in each column mapping (inherited from template)
+- **Complex formats**: EntityType inferred from hashtable key via EntityTypeMap
+- **Less repetition**: Cleaner, more maintainable configuration files
+
+### Separation of Concerns
+
+- **Generic logic**: Module functions handle CSV import orchestration
+- **Format-specific logic**: Templates define mappings, custom parsers handle complex formats
+- **Shared utilities**: Apply-ColumnMappings function used by both standard and custom parsers
 
 ## Available Templates
 
@@ -67,8 +119,8 @@ The custom parser is stored alongside the template configuration in the `config/
 Maps student data from Final Site Enrollment's PowerSchool Non-API Report students export.
 
 - **Entity Type**: PSStudent
-- **Parser Type**: Standard column mappings
-- **Usage**: `Import-FSStudentsCsv -Path students.csv`
+- **Parser Type**: Standard column mappings (EntityType inherited from template)
+- **Usage**: `Import-FSCsv -Path students.csv -TemplateName 'fs_powerschool_nonapi_report_students'`
 - **Format**: Standard CSV with one row per student
 
 **Mapped Fields**:

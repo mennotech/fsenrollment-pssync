@@ -4,62 +4,70 @@
     EntityType = 'PSNormalizedData'
     # Custom parser for complex multi-row format (contact rows, phone rows, relationship rows)
     CustomParser = 'Import-FSParentsCustomParser'
-    # Column mappings for each entity type (used by custom parser)
+    # Entity type mappings for hashtable keys (used by custom parser to infer EntityType)
+    EntityTypeMap = @{
+        Contact = 'PSContact'
+        EmailAddress = 'PSEmailAddress'
+        PhoneNumber = 'PSPhoneNumber'
+        Address = 'PSAddress'
+        Relationship = 'PSStudentContactRelationship'
+    }
+    # Column mappings for each entity type (EntityType is inferred from hashtable key via EntityTypeMap)
     ColumnMappings = @{
         Contact = @(
-            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string'; EntityType = 'PSContact' }
-            @{ CSVColumn = 'Contact ID'; EntityProperty = 'ContactID'; DataType = 'string'; EntityType = 'PSContact' }
-            @{ CSVColumn = 'Prefix'; EntityProperty = 'Prefix'; DataType = 'string'; EntityType = 'PSContact' }
-            @{ CSVColumn = 'First Name'; EntityProperty = 'FirstName'; DataType = 'string'; EntityType = 'PSContact' }
-            @{ CSVColumn = 'Middle Name'; EntityProperty = 'MiddleName'; DataType = 'string'; EntityType = 'PSContact' }
-            @{ CSVColumn = 'Last Name'; EntityProperty = 'LastName'; DataType = 'string'; EntityType = 'PSContact' }
-            @{ CSVColumn = 'Suffix'; EntityProperty = 'Suffix'; DataType = 'string'; EntityType = 'PSContact' }
-            @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string'; EntityType = 'PSContact' }
-            @{ CSVColumn = 'Employer'; EntityProperty = 'Employer'; DataType = 'string'; EntityType = 'PSContact' }
-            @{ CSVColumn = 'Is Active'; EntityProperty = 'IsActive'; DataType = 'bool'; EntityType = 'PSContact' }
+            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
+            @{ CSVColumn = 'Contact ID'; EntityProperty = 'ContactID'; DataType = 'string' }
+            @{ CSVColumn = 'Prefix'; EntityProperty = 'Prefix'; DataType = 'string' }
+            @{ CSVColumn = 'First Name'; EntityProperty = 'FirstName'; DataType = 'string' }
+            @{ CSVColumn = 'Middle Name'; EntityProperty = 'MiddleName'; DataType = 'string' }
+            @{ CSVColumn = 'Last Name'; EntityProperty = 'LastName'; DataType = 'string' }
+            @{ CSVColumn = 'Suffix'; EntityProperty = 'Suffix'; DataType = 'string' }
+            @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string' }
+            @{ CSVColumn = 'Employer'; EntityProperty = 'Employer'; DataType = 'string' }
+            @{ CSVColumn = 'Is Active'; EntityProperty = 'IsActive'; DataType = 'bool' }
         )
         EmailAddress = @(
-            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string'; EntityType = 'PSEmailAddress' }
-            @{ CSVColumn = 'Email Address'; EntityProperty = 'EmailAddress'; DataType = 'string'; EntityType = 'PSEmailAddress' }
-            @{ CSVColumn = 'Contact Email Address ID'; EntityProperty = 'EmailAddressID'; DataType = 'string'; EntityType = 'PSEmailAddress' }
-            @{ CSVColumn = 'Is Primary Email Address'; EntityProperty = 'IsPrimary'; DataType = 'bool'; EntityType = 'PSEmailAddress' }
+            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
+            @{ CSVColumn = 'Email Address'; EntityProperty = 'EmailAddress'; DataType = 'string' }
+            @{ CSVColumn = 'Contact Email Address ID'; EntityProperty = 'EmailAddressID'; DataType = 'string' }
+            @{ CSVColumn = 'Is Primary Email Address'; EntityProperty = 'IsPrimary'; DataType = 'bool' }
         )
         PhoneNumber = @(
-            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string'; EntityType = 'PSPhoneNumber' }
-            @{ CSVColumn = 'Phone Number Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int'; EntityType = 'PSPhoneNumber' }
-            @{ CSVColumn = 'Phone Type'; EntityProperty = 'PhoneType'; DataType = 'string'; EntityType = 'PSPhoneNumber' }
-            @{ CSVColumn = 'phoneNumberAsEntered'; EntityProperty = 'PhoneNumber'; DataType = 'string'; EntityType = 'PSPhoneNumber' }
-            @{ CSVColumn = 'Is Preferred'; EntityProperty = 'IsPreferred'; DataType = 'bool'; EntityType = 'PSPhoneNumber' }
-            @{ CSVColumn = 'Is SMS'; EntityProperty = 'IsSMS'; DataType = 'bool'; EntityType = 'PSPhoneNumber' }
-            @{ CSVColumn = 'Contact Phone Number ID'; EntityProperty = 'PhoneNumberID'; DataType = 'string'; EntityType = 'PSPhoneNumber' }
+            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
+            @{ CSVColumn = 'Phone Number Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int' }
+            @{ CSVColumn = 'Phone Type'; EntityProperty = 'PhoneType'; DataType = 'string' }
+            @{ CSVColumn = 'phoneNumberAsEntered'; EntityProperty = 'PhoneNumber'; DataType = 'string' }
+            @{ CSVColumn = 'Is Preferred'; EntityProperty = 'IsPreferred'; DataType = 'bool' }
+            @{ CSVColumn = 'Is SMS'; EntityProperty = 'IsSMS'; DataType = 'bool' }
+            @{ CSVColumn = 'Contact Phone Number ID'; EntityProperty = 'PhoneNumberID'; DataType = 'string' }
         )
         Address = @(
-            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string'; EntityType = 'PSAddress' }
-            @{ CSVColumn = 'Address Type'; EntityProperty = 'AddressType'; DataType = 'string'; EntityType = 'PSAddress' }
-            @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string'; EntityType = 'PSAddress' }
-            @{ CSVColumn = 'Line Two'; EntityProperty = 'LineTwo'; DataType = 'string'; EntityType = 'PSAddress' }
-            @{ CSVColumn = 'Unit'; EntityProperty = 'Unit'; DataType = 'string'; EntityType = 'PSAddress' }
-            @{ CSVColumn = 'City'; EntityProperty = 'City'; DataType = 'string'; EntityType = 'PSAddress' }
-            @{ CSVColumn = 'State'; EntityProperty = 'State'; DataType = 'string'; EntityType = 'PSAddress' }
-            @{ CSVColumn = 'Postal Code'; EntityProperty = 'PostalCode'; DataType = 'string'; EntityType = 'PSAddress' }
-            @{ CSVColumn = 'Contact Address ID'; EntityProperty = 'AddressID'; DataType = 'string'; EntityType = 'PSAddress' }
-            @{ CSVColumn = 'Address Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int'; EntityType = 'PSAddress' }
+            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
+            @{ CSVColumn = 'Address Type'; EntityProperty = 'AddressType'; DataType = 'string' }
+            @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string' }
+            @{ CSVColumn = 'Line Two'; EntityProperty = 'LineTwo'; DataType = 'string' }
+            @{ CSVColumn = 'Unit'; EntityProperty = 'Unit'; DataType = 'string' }
+            @{ CSVColumn = 'City'; EntityProperty = 'City'; DataType = 'string' }
+            @{ CSVColumn = 'State'; EntityProperty = 'State'; DataType = 'string' }
+            @{ CSVColumn = 'Postal Code'; EntityProperty = 'PostalCode'; DataType = 'string' }
+            @{ CSVColumn = 'Contact Address ID'; EntityProperty = 'AddressID'; DataType = 'string' }
+            @{ CSVColumn = 'Address Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int' }
         )
         Relationship = @(
-            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'studentNumber'; EntityProperty = 'StudentNumber'; DataType = 'string'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = '* NOT MAPPED *'; EntityProperty = 'StudentName'; DataType = 'string'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'Contact Priority Order'; EntityProperty = 'ContactPriorityOrder'; DataType = 'int'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'Student Contact ID'; EntityProperty = 'StudentContactID'; DataType = 'string'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'Student Contact Detail ID'; EntityProperty = 'StudentContactDetailID'; DataType = 'string'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'Relationship Type'; EntityProperty = 'RelationshipType'; DataType = 'string'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'Relationship Note'; EntityProperty = 'RelationshipNote'; DataType = 'string'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'STUDENTCONTACTDETAILCOREFIELDS.legalGuardian'; EntityProperty = 'IsLegalGuardian'; DataType = 'bool'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'Contact Has Custody'; EntityProperty = 'HasCustody'; DataType = 'bool'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'Contact Lives With'; EntityProperty = 'LivesWith'; DataType = 'bool'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'Contact Allow School Pickup'; EntityProperty = 'AllowSchoolPickup'; DataType = 'bool'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'Is Emergency Contact'; EntityProperty = 'IsEmergencyContact'; DataType = 'bool'; EntityType = 'PSStudentContactRelationship' }
-            @{ CSVColumn = 'Contact Receives Mailings'; EntityProperty = 'ReceivesMail'; DataType = 'bool'; EntityType = 'PSStudentContactRelationship' }
+            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
+            @{ CSVColumn = 'studentNumber'; EntityProperty = 'StudentNumber'; DataType = 'string' }
+            @{ CSVColumn = '* NOT MAPPED *'; EntityProperty = 'StudentName'; DataType = 'string' }
+            @{ CSVColumn = 'Contact Priority Order'; EntityProperty = 'ContactPriorityOrder'; DataType = 'int' }
+            @{ CSVColumn = 'Student Contact ID'; EntityProperty = 'StudentContactID'; DataType = 'string' }
+            @{ CSVColumn = 'Student Contact Detail ID'; EntityProperty = 'StudentContactDetailID'; DataType = 'string' }
+            @{ CSVColumn = 'Relationship Type'; EntityProperty = 'RelationshipType'; DataType = 'string' }
+            @{ CSVColumn = 'Relationship Note'; EntityProperty = 'RelationshipNote'; DataType = 'string' }
+            @{ CSVColumn = 'STUDENTCONTACTDETAILCOREFIELDS.legalGuardian'; EntityProperty = 'IsLegalGuardian'; DataType = 'bool' }
+            @{ CSVColumn = 'Contact Has Custody'; EntityProperty = 'HasCustody'; DataType = 'bool' }
+            @{ CSVColumn = 'Contact Lives With'; EntityProperty = 'LivesWith'; DataType = 'bool' }
+            @{ CSVColumn = 'Contact Allow School Pickup'; EntityProperty = 'AllowSchoolPickup'; DataType = 'bool' }
+            @{ CSVColumn = 'Is Emergency Contact'; EntityProperty = 'IsEmergencyContact'; DataType = 'bool' }
+            @{ CSVColumn = 'Contact Receives Mailings'; EntityProperty = 'ReceivesMail'; DataType = 'bool' }
         )
     }
 }
