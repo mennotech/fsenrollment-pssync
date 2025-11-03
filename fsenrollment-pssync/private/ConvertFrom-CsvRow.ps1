@@ -7,6 +7,8 @@
 .DESCRIPTION
     This private helper function takes CSV row data and a template mapping configuration,
     then creates PowerSchool entity objects with proper data type conversions.
+    
+    Uses the Apply-ColumnMappings helper function to apply the column mappings.
 
 .PARAMETER CsvRow
     A hashtable or PSCustomObject representing one row from the CSV file.
@@ -38,63 +40,8 @@ function ConvertFrom-CsvRow {
         $entityTypeName = $TemplateConfig.EntityType
         $entity = New-Object -TypeName $entityTypeName
 
-        # Process each column mapping
-        foreach ($mapping in $TemplateConfig.ColumnMappings) {
-            $csvColumn = $mapping.CSVColumn
-            $entityProperty = $mapping.EntityProperty
-            $dataType = $mapping.DataType
-
-            # Get the value from CSV row
-            $value = $CsvRow.$csvColumn
-
-            # Skip if value is null or empty string
-            if ([string]::IsNullOrWhiteSpace($value)) {
-                continue
-            }
-
-            # Convert to appropriate data type
-            $convertedValue = switch ($dataType) {
-                'int' {
-                    try {
-                        [int]$value
-                    }
-                    catch {
-                        Write-Warning "Failed to convert '$value' to int for property $entityProperty"
-                        $null
-                    }
-                }
-                'bool' {
-                    if ($value -eq '1' -or $value -eq 'true' -or $value -eq 'True') {
-                        $true
-                    }
-                    elseif ($value -eq '0' -or $value -eq 'false' -or $value -eq 'False') {
-                        $false
-                    }
-                    else {
-                        Write-Warning "Unexpected boolean value '$value' for property $entityProperty. Expected '0', '1', 'true', or 'false'. Attempting standard conversion."
-                        [bool]$value
-                    }
-                }
-                'datetime' {
-                    try {
-                        [datetime]::Parse($value)
-                    }
-                    catch {
-                        Write-Warning "Failed to convert '$value' to datetime for property $entityProperty"
-                        $null
-                    }
-                }
-                default {
-                    # Default to string
-                    [string]$value
-                }
-            }
-
-            # Set the property value
-            if ($null -ne $convertedValue) {
-                $entity.$entityProperty = $convertedValue
-            }
-        }
+        # Apply column mappings to the entity
+        Apply-ColumnMappings -CsvRow $CsvRow -Entity $entity -ColumnMappings $TemplateConfig.ColumnMappings
 
         return $entity
     }
