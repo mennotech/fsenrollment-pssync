@@ -15,6 +15,18 @@
     License: MIT
 #>
 
+# Load classes first (order matters for dependencies)
+$Classes = @(Get-ChildItem -Path $PSScriptRoot/classes/*.ps1 -ErrorAction SilentlyContinue)
+foreach ($import in $Classes) {
+    try {
+        . $import.FullName
+        Write-Verbose "Imported class: $($import.BaseName)"
+    }
+    catch {
+        Write-Error "Failed to import class $($import.FullName): $_"
+    }
+}
+
 # Get public and private function definition files
 $Public = @(Get-ChildItem -Path $PSScriptRoot/public/*.ps1 -ErrorAction SilentlyContinue)
 $Private = @(Get-ChildItem -Path $PSScriptRoot/private/*.ps1 -ErrorAction SilentlyContinue)
@@ -35,7 +47,7 @@ Export-ModuleMember -Function $Public.BaseName
 
 # Module variables
 $script:ModuleRoot = $PSScriptRoot
-$script:ModuleVersion = (Test-ModuleManifest -Path "$PSScriptRoot/FSEnrollment-PSSync.psd1").Version
-$script:ModuleName = 'FSEnrollment-PSSync'
+$script:ModuleVersion = (Test-ModuleManifest -Path "$PSScriptRoot/fsenrollment-pssync.psd1").Version
+$script:ModuleName = 'fsenrollment-pssync'
 
-Write-Verbose "FSEnrollment-PSSync module loaded successfully (Version: $script:ModuleVersion)"
+Write-Verbose "fsenrollment-pssync module loaded successfully (Version: $script:ModuleVersion)"
