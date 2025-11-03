@@ -15,6 +15,18 @@
     License: MIT
 #>
 
+# Load classes first (order matters for dependencies)
+$Classes = @(Get-ChildItem -Path $PSScriptRoot/classes/*.ps1 -ErrorAction SilentlyContinue)
+foreach ($import in $Classes) {
+    try {
+        . $import.FullName
+        Write-Verbose "Imported class: $($import.BaseName)"
+    }
+    catch {
+        Write-Error "Failed to import class $($import.FullName): $_"
+    }
+}
+
 # Get public and private function definition files
 $Public = @(Get-ChildItem -Path $PSScriptRoot/public/*.ps1 -ErrorAction SilentlyContinue)
 $Private = @(Get-ChildItem -Path $PSScriptRoot/private/*.ps1 -ErrorAction SilentlyContinue)
