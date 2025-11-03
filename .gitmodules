@@ -1,0 +1,3 @@
+[submodule "docs/powerschool-api-docs"]
+	path = docs/powerschool-api-docs
+	url = https://github.com/mennotech/powerschool-api-docs.git
