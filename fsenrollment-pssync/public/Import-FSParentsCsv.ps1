@@ -82,14 +82,17 @@ function Import-FSParentsCsv {
             if ($templateConfig.CustomParser) {
                 Write-Verbose "Using custom parser: $($templateConfig.CustomParser)"
                 
-                # Get the custom parser function
-                $parserFunction = Get-Command -Name $templateConfig.CustomParser -ErrorAction SilentlyContinue
+                # Load the custom parser from templates folder
+                $parserPath = Join-Path $configRoot "config/templates/$($templateConfig.CustomParser).ps1"
                 
-                if (-not $parserFunction) {
-                    throw "Custom parser function '$($templateConfig.CustomParser)' not found"
+                if (-not (Test-Path $parserPath)) {
+                    throw "Custom parser file not found: $parserPath"
                 }
                 
-                # Invoke the custom parser
+                Write-Verbose "Loading custom parser from: $parserPath"
+                . $parserPath
+                
+                # Invoke the custom parser function
                 $normalizedData = & $templateConfig.CustomParser -CsvData $csvData
             }
             else {

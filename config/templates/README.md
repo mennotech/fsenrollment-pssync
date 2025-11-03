@@ -34,8 +34,9 @@ For simple CSV formats with one entity per row, use column mappings:
 
 ### Custom Parser Format
 
-For complex CSV formats (multi-row, conditional logic, etc.), specify a custom parser function:
+For complex CSV formats (multi-row, conditional logic, etc.), create a custom parser function in the templates folder and reference it in the template:
 
+**Template Configuration:**
 ```powershell
 @{
     TemplateName = 'template_name'
@@ -46,13 +47,16 @@ For complex CSV formats (multi-row, conditional logic, etc.), specify a custom p
 }
 ```
 
-The custom parser function receives the CSV data and returns a PSNormalizedData object:
-
+**Custom Parser File (config/templates/Import-CustomParserFunction.ps1):**
 ```powershell
 function Import-CustomParserFunction {
     param([object[]]$CsvData)
     # Custom parsing logic here
     return [PSNormalizedData]::new()
+}
+```
+
+The custom parser is stored alongside the template configuration in the `config/templates/` folder. This keeps format-specific parsing logic separate from the generic import functions in the module.
 }
 ```
 
