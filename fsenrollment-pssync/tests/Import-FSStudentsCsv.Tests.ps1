@@ -3,7 +3,7 @@
 
 BeforeAll {
     # Import the module
-    $ModulePath = Join-Path $PSScriptRoot '../fsenrollment-pssync.psd1'
+    $ModulePath = Join-Path $PSScriptRoot '../FSEnrollment-PSSync.psd1'
     Import-Module $ModulePath -Force
 }
 

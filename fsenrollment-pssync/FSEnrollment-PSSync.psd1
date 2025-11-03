@@ -1,6 +1,6 @@
 @{
     # Script module or binary module file associated with this manifest
-    RootModule = 'fsenrollment-pssync.psm1'
+    RootModule = 'FSEnrollment-PSSync.psm1'
 
     # Version number of this module
     ModuleVersion = '0.1.0'
