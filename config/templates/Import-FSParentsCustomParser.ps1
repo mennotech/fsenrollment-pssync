@@ -9,9 +9,14 @@
     - Contact rows contain full contact information
     - Additional phone rows contain only phone data for the same contact
     - Relationship rows link contacts to students
+    
+    Uses column mappings from the template configuration to map CSV fields to entity properties.
 
 .PARAMETER CsvData
     Array of CSV rows to parse.
+
+.PARAMETER TemplateConfig
+    Template configuration hashtable containing column mappings for each entity type.
 
 .OUTPUTS
     PSNormalizedData object containing Contacts, PhoneNumbers, EmailAddresses, Addresses, and Relationships.
@@ -23,7 +28,10 @@ function Import-FSParentsCustomParser {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [object[]]$CsvData
+        [object[]]$CsvData,
+
+        [Parameter(Mandatory = $false)]
+        [hashtable]$TemplateConfig
     )
 
     try {
@@ -32,6 +40,75 @@ function Import-FSParentsCustomParser {
         
         # Track processed contacts to avoid duplicates
         $processedContacts = @{}
+
+        # Get column mappings for each entity type
+        $contactMappings = if ($TemplateConfig -and $TemplateConfig.ColumnMappings.Contact) { $TemplateConfig.ColumnMappings.Contact } else { @() }
+        $emailMappings = if ($TemplateConfig -and $TemplateConfig.ColumnMappings.EmailAddress) { $TemplateConfig.ColumnMappings.EmailAddress } else { @() }
+        $phoneMappings = if ($TemplateConfig -and $TemplateConfig.ColumnMappings.PhoneNumber) { $TemplateConfig.ColumnMappings.PhoneNumber } else { @() }
+        $addressMappings = if ($TemplateConfig -and $TemplateConfig.ColumnMappings.Address) { $TemplateConfig.ColumnMappings.Address } else { @() }
+        $relationshipMappings = if ($TemplateConfig -and $TemplateConfig.ColumnMappings.Relationship) { $TemplateConfig.ColumnMappings.Relationship } else { @() }
+
+        # Helper function to apply mappings to an entity
+        function Apply-ColumnMappings {
+            param($Row, $Entity, $Mappings)
+            
+            foreach ($mapping in $Mappings) {
+                $csvColumn = $mapping.CSVColumn
+                $entityProperty = $mapping.EntityProperty
+                $dataType = $mapping.DataType
+                
+                # Get the value from CSV row
+                $value = $Row.$csvColumn
+                
+                # Skip if value is null or empty string
+                if ([string]::IsNullOrWhiteSpace($value)) {
+                    continue
+                }
+                
+                # Convert to appropriate data type
+                $convertedValue = switch ($dataType) {
+                    'int' {
+                        try {
+                            [int]$value
+                        }
+                        catch {
+                            Write-Warning "Failed to convert '$value' to int for property $entityProperty"
+                            0
+                        }
+                    }
+                    'bool' {
+                        if ($value -eq '1' -or $value -eq 'true' -or $value -eq 'True') {
+                            $true
+                        }
+                        elseif ($value -eq '0' -or $value -eq 'false' -or $value -eq 'False') {
+                            $false
+                        }
+                        else {
+                            Write-Warning "Unexpected boolean value '$value' for property $entityProperty. Expected '0', '1', 'true', or 'false'. Attempting standard conversion."
+                            [bool]$value
+                        }
+                    }
+                    'datetime' {
+                        try {
+                            [datetime]::Parse($value)
+                        }
+                        catch {
+                            Write-Warning "Failed to convert '$value' to datetime for property $entityProperty"
+                            $null
+                        }
+                    }
+                    default {
+                        # Default to string
+                        [string]$value
+                    }
+                }
+                
+                # Set the property value
+                if ($null -ne $convertedValue -or $dataType -eq 'bool') {
+                    $Entity.$entityProperty = $convertedValue
+                }
+            }
+        }
 
         # Process each row
         foreach ($row in $CsvData) {
@@ -44,20 +121,7 @@ function Import-FSParentsCustomParser {
             if ($isRelationshipRow) {
                 # This is a relationship row
                 $relationship = [PSStudentContactRelationship]::new()
-                $relationship.ContactIdentifier = $contactId
-                $relationship.StudentNumber = $row.studentNumber
-                $relationship.StudentName = $row.'* NOT MAPPED *'
-                $relationship.ContactPriorityOrder = if ($row.'Contact Priority Order') { [int]$row.'Contact Priority Order' } else { 0 }
-                $relationship.StudentContactID = $row.'Student Contact ID'
-                $relationship.StudentContactDetailID = $row.'Student Contact Detail ID'
-                $relationship.RelationshipType = $row.'Relationship Type'
-                $relationship.RelationshipNote = $row.'Relationship Note'
-                $relationship.IsLegalGuardian = $row.'STUDENTCONTACTDETAILCOREFIELDS.legalGuardian' -eq '1'
-                $relationship.HasCustody = $row.'Contact Has Custody' -eq '1'
-                $relationship.LivesWith = $row.'Contact Lives With' -eq '1'
-                $relationship.AllowSchoolPickup = $row.'Contact Allow School Pickup' -eq '1'
-                $relationship.IsEmergencyContact = $row.'Is Emergency Contact' -eq '1'
-                $relationship.ReceivesMail = $row.'Contact Receives Mailings' -eq '1'
+                Apply-ColumnMappings -Row $row -Entity $relationship -Mappings $relationshipMappings
                 
                 $normalizedData.Relationships.Add($relationship)
                 Write-Verbose "Added relationship: Contact $contactId -> Student $($row.studentNumber) as $($row.'Relationship Type')"
@@ -66,16 +130,7 @@ function Import-FSParentsCustomParser {
                 # This is a new contact row
                 if (-not $processedContacts.ContainsKey($contactId)) {
                     $contact = [PSContact]::new()
-                    $contact.ContactIdentifier = $contactId
-                    $contact.ContactID = $row.'Contact ID'
-                    $contact.Prefix = $row.Prefix
-                    $contact.FirstName = $row.'First Name'
-                    $contact.MiddleName = $row.'Middle Name'
-                    $contact.LastName = $row.'Last Name'
-                    $contact.Suffix = $row.Suffix
-                    $contact.Gender = $row.Gender
-                    $contact.Employer = $row.Employer
-                    $contact.IsActive = $row.'Is Active' -eq '1'
+                    Apply-ColumnMappings -Row $row -Entity $contact -Mappings $contactMappings
                     
                     $normalizedData.Contacts.Add($contact)
                     $processedContacts[$contactId] = $true
@@ -85,10 +140,7 @@ function Import-FSParentsCustomParser {
                 # Add email address if present
                 if (-not [string]::IsNullOrWhiteSpace($row.'Email Address')) {
                     $email = [PSEmailAddress]::new()
-                    $email.ContactIdentifier = $contactId
-                    $email.EmailAddress = $row.'Email Address'
-                    $email.EmailAddressID = $row.'Contact Email Address ID'
-                    $email.IsPrimary = $row.'Is Primary Email Address' -eq '1'
+                    Apply-ColumnMappings -Row $row -Entity $email -Mappings $emailMappings
                     
                     $normalizedData.EmailAddresses.Add($email)
                     Write-Verbose "Added email for $contactId : $($email.EmailAddress)"
@@ -97,16 +149,7 @@ function Import-FSParentsCustomParser {
                 # Add address if present
                 if (-not [string]::IsNullOrWhiteSpace($row.Street)) {
                     $address = [PSAddress]::new()
-                    $address.ContactIdentifier = $contactId
-                    $address.AddressType = $row.'Address Type'
-                    $address.Street = $row.Street
-                    $address.LineTwo = $row.'Line Two'
-                    $address.Unit = $row.Unit
-                    $address.City = $row.City
-                    $address.State = $row.State
-                    $address.PostalCode = $row.'Postal Code'
-                    $address.AddressID = $row.'Contact Address ID'
-                    $address.PriorityOrder = if ($row.'Address Priority Order') { [int]$row.'Address Priority Order' } else { 0 }
+                    Apply-ColumnMappings -Row $row -Entity $address -Mappings $addressMappings
                     
                     $normalizedData.Addresses.Add($address)
                     Write-Verbose "Added address for $contactId : $($address.City), $($address.State)"
@@ -115,13 +158,7 @@ function Import-FSParentsCustomParser {
                 # Add phone number if present
                 if (-not [string]::IsNullOrWhiteSpace($row.phoneNumberAsEntered)) {
                     $phone = [PSPhoneNumber]::new()
-                    $phone.ContactIdentifier = $contactId
-                    $phone.PriorityOrder = if ($row.'Phone Number Priority Order') { [int]$row.'Phone Number Priority Order' } else { 0 }
-                    $phone.PhoneType = $row.'Phone Type'
-                    $phone.PhoneNumber = $row.phoneNumberAsEntered
-                    $phone.IsPreferred = $row.'Is Preferred' -eq '1'
-                    $phone.IsSMS = $row.'Is SMS' -eq '1'
-                    $phone.PhoneNumberID = $row.'Contact Phone Number ID'
+                    Apply-ColumnMappings -Row $row -Entity $phone -Mappings $phoneMappings
                     
                     $normalizedData.PhoneNumbers.Add($phone)
                     Write-Verbose "Added phone for $contactId : $($phone.PhoneType) - $($phone.PhoneNumber)"
@@ -131,13 +168,7 @@ function Import-FSParentsCustomParser {
                 # This is an additional phone number row (no contact info, just phone data)
                 if (-not [string]::IsNullOrWhiteSpace($row.phoneNumberAsEntered)) {
                     $phone = [PSPhoneNumber]::new()
-                    $phone.ContactIdentifier = $contactId
-                    $phone.PriorityOrder = if ($row.'Phone Number Priority Order') { [int]$row.'Phone Number Priority Order' } else { 0 }
-                    $phone.PhoneType = $row.'Phone Type'
-                    $phone.PhoneNumber = $row.phoneNumberAsEntered
-                    $phone.IsPreferred = $row.'Is Preferred' -eq '1'
-                    $phone.IsSMS = $row.'Is SMS' -eq '1'
-                    $phone.PhoneNumberID = $row.'Contact Phone Number ID'
+                    Apply-ColumnMappings -Row $row -Entity $phone -Mappings $phoneMappings
                     
                     $normalizedData.PhoneNumbers.Add($phone)
                     Write-Verbose "Added additional phone for $contactId : $($phone.PhoneType) - $($phone.PhoneNumber)"

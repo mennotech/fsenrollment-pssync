@@ -88,8 +88,8 @@ function Import-FSCsv {
                 Write-Verbose "Loading custom parser from: $parserPath"
                 . $parserPath
                 
-                # Invoke the custom parser function
-                $normalizedData = & $templateConfig.CustomParser -CsvData $csvData
+                # Invoke the custom parser function with template configuration
+                $normalizedData = & $templateConfig.CustomParser -CsvData $csvData -TemplateConfig $templateConfig
             }
             else {
                 # Use standard template-based parsing with ConvertFrom-CsvRow
