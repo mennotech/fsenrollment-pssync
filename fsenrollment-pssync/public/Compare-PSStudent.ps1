@@ -9,6 +9,8 @@
     from PowerSchool API to identify new students and updated students.
     Returns a structured change report.
     
+    Only checks name fields (FirstName, MiddleName, LastName) for changes.
+    
     Note: This function does NOT detect removed students (students in PowerSchool but not in CSV).
     It only identifies new students and updates to existing students.
 
@@ -65,10 +67,13 @@ function Compare-PSStudent {
         $unchangedStudents = [System.Collections.Generic.List[PSCustomObject]]::new()
         
         # Create lookup dictionaries for efficient comparison
+        # Note: PowerSchool API returns local_id as Integer, CSV has StudentNumber as String
+        # Convert to string for consistent comparison
         $psLookup = @{}
         foreach ($psStudent in $PowerSchoolData) {
-            # PowerSchool API returns student_number as 'local_id'
-            $key = $psStudent.local_id
+            # PowerSchool API returns student_number as 'local_id' (Integer)
+            # Convert to string to match CSV StudentNumber type
+            $key = $psStudent.local_id.ToString()
             
             if (-not [string]::IsNullOrWhiteSpace($key)) {
                 $psLookup[$key] = $psStudent
