@@ -45,17 +45,18 @@ Write-Host "Imported $($csvData.Students.Count) students from CSV"
 
 ### 3. Fetch PowerSchool Data
 
-```powershool
+```powershell
 # Get all students from PowerSchool
 $psStudents = Get-PowerSchoolStudent -All
 
 Write-Host "Retrieved $($psStudents.Count) students from PowerSchool"
 
-# Get a specific student by student number
+# Get a specific student by student number (recommended for CSV data)
 $student = Get-PowerSchoolStudent -StudentNumber '123456'
 
-# Get a specific student by ID with expansions
-$student = Get-PowerSchoolStudent -StudentId 12345 `
+# Get a specific student by DCID (PowerSchool internal ID) with expansions
+# Note: DCID is not available from CSV imports, only from PowerSchool API responses
+$student = Get-PowerSchoolStudent -DCID 12345 `
     -Expansions @('demographics', 'addresses', 'phones')
 ```
 

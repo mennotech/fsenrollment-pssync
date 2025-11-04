@@ -9,11 +9,14 @@
     a single student by ID or student number, or all students in the district.
     Supports pagination for large datasets and includes retry logic with exponential backoff.
 
-.PARAMETER StudentId
-    The PowerSchool internal student ID (DCID). Use this to fetch a specific student.
+.PARAMETER DCID
+    The PowerSchool internal student database ID (DCID). This is NOT the same as Student_Number.
+    DCID is PowerSchool's internal ID and is not typically available from CSV imports.
+    Use -StudentNumber parameter instead when working with CSV data.
 
 .PARAMETER StudentNumber
-    The student number (student_number). Use this to fetch a specific student.
+    The student number (returned as 'local_id' in PowerSchool API, stored as 'student_number').
+    This is the value from your CSV data. Use this parameter when fetching students from CSV imports.
 
 .PARAMETER All
     Switch to retrieve all students in the district.
@@ -30,7 +33,8 @@
 .EXAMPLE
     $student = Get-PowerSchoolStudent -StudentNumber '123456'
     
-    Retrieves a single student by student number.
+    Retrieves a single student by student number (local_id). This is the recommended approach
+    when working with CSV data since Student_Number is available in CSV exports.
 
 .EXAMPLE
     $students = Get-PowerSchoolStudent -All
@@ -38,19 +42,20 @@
     Retrieves all students in the district.
 
 .EXAMPLE
-    $student = Get-PowerSchoolStudent -StudentId 12345 -Expansions @('demographics', 'addresses')
+    $student = Get-PowerSchoolStudent -DCID 12345 -Expansions @('demographics', 'addresses')
     
-    Retrieves a student with demographics and addresses expanded.
+    Retrieves a student by PowerSchool internal DCID with demographics and addresses expanded.
+    Note: DCID is not typically available from CSV imports.
 
 .NOTES
     Requires an active PowerSchool connection via Connect-PowerSchool.
     Implements exponential backoff retry logic for API failures.
 #>
 function Get-PowerSchoolStudent {
-    [CmdletBinding(DefaultParameterSetName = 'ById')]
+    [CmdletBinding(DefaultParameterSetName = 'ByNumber')]
     param(
-        [Parameter(Mandatory = $true, ParameterSetName = 'ById')]
-        [int]$StudentId,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ByDCID')]
+        [int]$DCID,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'ByNumber')]
         [string]$StudentNumber,
@@ -88,9 +93,9 @@ function Get-PowerSchoolStudent {
             $students = @()
             
             switch ($PSCmdlet.ParameterSetName) {
-                'ById' {
-                    Write-Verbose "Fetching student with ID: $StudentId"
-                    $endpoint = "$script:PowerSchoolBaseUrl/ws/v1/student/$StudentId"
+                'ByDCID' {
+                    Write-Verbose "Fetching student with DCID: $DCID"
+                    $endpoint = "$script:PowerSchoolBaseUrl/ws/v1/student/$DCID"
                     
                     # Add expansions if provided
                     if ($Expansions.Count -gt 0) {

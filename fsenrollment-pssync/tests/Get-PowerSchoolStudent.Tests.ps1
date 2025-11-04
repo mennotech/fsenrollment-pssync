@@ -9,9 +9,9 @@ BeforeAll {
 
 Describe 'Get-PowerSchoolStudent' {
     BeforeEach {
-        # Mock connection state
-        Mock Test-PowerSchoolConnection { }
-        Mock Get-PowerSchoolAccessToken { return 'mock-token-123' }
+        # Mock connection state at module level
+        Mock -ModuleName FSEnrollment-PSSync Test-PowerSchoolConnection { }
+        Mock -ModuleName FSEnrollment-PSSync Get-PowerSchoolAccessToken { return 'mock-token-123' }
         
         # Set up script variables to simulate connected state
         InModuleScope FSEnrollment-PSSync {
@@ -20,25 +20,25 @@ Describe 'Get-PowerSchoolStudent' {
     }
 
     Context 'Parameter Sets' {
-        It 'Should accept StudentId parameter' {
-            Mock Invoke-PowerSchoolApiRequest {
+        It 'Should accept DCID parameter' {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 return @{
                     student = @{
                         id = 12345
-                        student_number = '123456'
+                        local_id = '123456'
                         first_name = 'John'
                         last_name = 'Doe'
                     }
                 }
             }
 
-            $result = Get-PowerSchoolStudent -StudentId 12345
+            $result = Get-PowerSchoolStudent -DCID 12345
             $result | Should -Not -BeNullOrEmpty
             $result.id | Should -Be 12345
         }
 
         It 'Should accept StudentNumber parameter' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 return @{
                     students = @{
                         student = @(
@@ -59,7 +59,7 @@ Describe 'Get-PowerSchoolStudent' {
         }
 
         It 'Should accept All switch parameter' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 return @{
                     students = @{
                         student = @(
@@ -87,77 +87,77 @@ Describe 'Get-PowerSchoolStudent' {
     }
 
     Context 'API Endpoint Construction' {
-        It 'Should construct correct endpoint for StudentId' {
-            Mock Invoke-PowerSchoolApiRequest {
+        It 'Should construct correct endpoint for DCID' {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 param($Uri)
                 $Uri | Should -Be 'https://test.powerschool.com/ws/v1/student/12345'
                 return @{ student = @{ id = 12345 } }
             }
 
-            Get-PowerSchoolStudent -StudentId 12345
-            Should -Invoke Invoke-PowerSchoolApiRequest -Times 1
+            Get-PowerSchoolStudent -DCID 12345
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 1
         }
 
-        It 'Should include expansions in query string for StudentId' {
-            Mock Invoke-PowerSchoolApiRequest {
+        It 'Should include expansions in query string for DCID' {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 param($Uri)
                 $Uri | Should -Match 'expansions=demographics,addresses'
                 return @{ student = @{ id = 12345 } }
             }
 
-            Get-PowerSchoolStudent -StudentId 12345 -Expansions @('demographics', 'addresses')
-            Should -Invoke Invoke-PowerSchoolApiRequest -Times 1
+            Get-PowerSchoolStudent -DCID 12345 -Expansions @('demographics', 'addresses')
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 1
         }
 
         It 'Should construct query for StudentNumber lookup' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 param($Uri)
                 $Uri | Should -Match 'q=student_number==123456'
                 return @{ students = @{ student = @() } }
             }
 
             Get-PowerSchoolStudent -StudentNumber '123456'
-            Should -Invoke Invoke-PowerSchoolApiRequest -Times 1
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 1
         }
 
         It 'Should construct district/student endpoint for All' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 param($Uri)
                 $Uri | Should -Match '/ws/v1/district/student\?'
                 return @{ students = @{ student = @() } }
             }
 
             Get-PowerSchoolStudent -All
-            Should -Invoke Invoke-PowerSchoolApiRequest -Times 1
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 1
         }
     }
 
     Context 'Pagination' {
         It 'Should use default PageSize of 100 for All' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 param($Uri)
                 $Uri | Should -Match 'pagesize=100'
                 return @{ students = @{ student = @() } }
             }
 
             Get-PowerSchoolStudent -All
-            Should -Invoke Invoke-PowerSchoolApiRequest -Times 1
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 1
         }
 
         It 'Should use custom PageSize when provided' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 param($Uri)
                 $Uri | Should -Match 'pagesize=50'
                 return @{ students = @{ student = @() } }
             }
 
             Get-PowerSchoolStudent -All -PageSize 50
-            Should -Invoke Invoke-PowerSchoolApiRequest -Times 1
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 1
         }
 
         It 'Should handle multiple pages of results' {
             $callCount = 0
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 $callCount++
                 if ($callCount -eq 1) {
                     # First page - full page
@@ -182,11 +182,11 @@ Describe 'Get-PowerSchoolStudent' {
 
             $result = Get-PowerSchoolStudent -All -PageSize 10
             $result.Count | Should -Be 11
-            Should -Invoke Invoke-PowerSchoolApiRequest -Times 2
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 2
         }
 
         It 'Should stop pagination when page is not full' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 return @{
                     students = @{
                         student = @(1..5 | ForEach-Object {
@@ -198,11 +198,11 @@ Describe 'Get-PowerSchoolStudent' {
 
             $result = Get-PowerSchoolStudent -All -PageSize 10
             $result.Count | Should -Be 5
-            Should -Invoke Invoke-PowerSchoolApiRequest -Times 1
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 1
         }
 
         It 'Should handle single student response as array' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 return @{
                     students = @{
                         student = @{
@@ -222,7 +222,7 @@ Describe 'Get-PowerSchoolStudent' {
     Context 'Connection Validation' {
         It 'Should call Test-PowerSchoolConnection before making API request' {
             Mock Test-PowerSchoolConnection { }
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 return @{ students = @{ student = @() } }
             }
 
@@ -232,7 +232,7 @@ Describe 'Get-PowerSchoolStudent' {
 
         It 'Should retrieve access token for API request' {
             Mock Get-PowerSchoolAccessToken { return 'test-token' }
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 return @{ students = @{ student = @() } }
             }
 
@@ -243,18 +243,18 @@ Describe 'Get-PowerSchoolStudent' {
 
     Context 'Headers' {
         It 'Should include Bearer token in Authorization header' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 param($Headers)
                 $Headers['Authorization'] | Should -Be 'Bearer mock-token-123'
                 return @{ students = @{ student = @() } }
             }
 
             Get-PowerSchoolStudent -All
-            Should -Invoke Invoke-PowerSchoolApiRequest -Times 1
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 1
         }
 
         It 'Should include correct Content-Type and Accept headers' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 param($Headers)
                 $Headers['Content-Type'] | Should -Be 'application/json'
                 $Headers['Accept'] | Should -Be 'application/json'
@@ -262,17 +262,18 @@ Describe 'Get-PowerSchoolStudent' {
             }
 
             Get-PowerSchoolStudent -All
-            Should -Invoke Invoke-PowerSchoolApiRequest -Times 1
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 1
         }
     }
 
     Context 'Error Handling' {
         It 'Should throw error on API failure' {
-            Mock Invoke-PowerSchoolApiRequest {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 throw "API Error: Not Found"
             }
 
-            { Get-PowerSchoolStudent -StudentId 99999 -ErrorAction Stop } | Should -Throw
+            { Get-PowerSchoolStudent -DCID 99999 -ErrorAction Stop } | Should -Throw
         }
     }
 }
+
