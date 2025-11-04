@@ -98,18 +98,10 @@ if ($changes.Removed.Count -gt 0) {
     Write-Host "`nRemoved Students (in PowerSchool but not in CSV):" -ForegroundColor Red
     foreach ($removed in $changes.Removed) {
         $student = $removed.Student
-        Write-Host "  $($student.student_number): $($student.first_name) $($student.last_name)"
+        # Note: PowerSchool API returns nested name structure
+        Write-Host "  $($student.local_id): $($student.name.first_name) $($student.name.last_name)"
     }
 }
-```
-
-### 5. Alternative: Match on FTEID
-
-```powershell
-# Compare using FTEID instead of StudentNumber
-$changes = Compare-PSStudent -CsvData $csvData `
-    -PowerSchoolData $psStudents `
-    -MatchOn 'FTEID'
 ```
 
 ## Complete Example Script

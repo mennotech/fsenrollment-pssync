@@ -17,7 +17,7 @@
 
 .PARAMETER MatchOn
     Property to use for matching students between CSV and PowerSchool. Default is 'StudentNumber'.
-    Can be 'StudentNumber' or 'FTEID'.
+    Currently only 'StudentNumber' is supported (matches against 'local_id' in PowerSchool API).
 
 .OUTPUTS
     PSCustomObject with properties: New, Updated, Unchanged, Removed, Summary
@@ -28,15 +28,13 @@
     $changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psData
     
     Write-Host "New: $($changes.New.Count), Updated: $($changes.Updated.Count)"
-
-.EXAMPLE
-    $changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psData -MatchOn 'FTEID'
     
-    Matches students using FTEID instead of StudentNumber.
+    Compares students using StudentNumber (default matching field).
 
 .NOTES
     This function performs field-by-field comparison to detect what changed.
     The Updated collection contains objects with OldValue and NewValue properties.
+    StudentNumber from CSV matches against 'local_id' in PowerSchool API response.
 #>
 function Compare-PSStudent {
     [CmdletBinding()]
@@ -48,7 +46,7 @@ function Compare-PSStudent {
         [array]$PowerSchoolData,
 
         [Parameter(Mandatory = $false)]
-        [ValidateSet('StudentNumber', 'FTEID')]
+        [ValidateSet('StudentNumber')]
         [string]$MatchOn = 'StudentNumber'
     )
 
@@ -64,17 +62,15 @@ function Compare-PSStudent {
         # Create lookup dictionaries for efficient comparison
         $psLookup = @{}
         foreach ($psStudent in $PowerSchoolData) {
-            $key = switch ($MatchOn) {
-                'StudentNumber' { $psStudent.student_number }
-                'FTEID' { $psStudent.fteid }
-            }
+            # PowerSchool API returns student_number as 'local_id'
+            $key = $psStudent.local_id
             
             if (-not [string]::IsNullOrWhiteSpace($key)) {
                 $psLookup[$key] = $psStudent
             }
         }
         
-        Write-Verbose "PowerSchool has $($psLookup.Count) students indexed by $MatchOn"
+        Write-Verbose "PowerSchool has $($psLookup.Count) students indexed by local_id (StudentNumber)"
         Write-Verbose "CSV has $($CsvData.Students.Count) students"
     }
 
@@ -85,13 +81,14 @@ function Compare-PSStudent {
             
             # Compare each CSV student with PowerSchool
             foreach ($csvStudent in $CsvData.Students) {
-                $matchKey = switch ($MatchOn) {
-                    'StudentNumber' { $csvStudent.StudentNumber }
-                    'FTEID' { $csvStudent.FTEID }
-                }
+                $matchKey = $csvStudent.StudentNumber
                 
                 if ([string]::IsNullOrWhiteSpace($matchKey)) {
                     Write-Warning "CSV student missing $MatchOn match field, skipping"
+                    continue
+                }
+                if ([string]::IsNullOrWhiteSpace($matchKey)) {
+                    Write-Warning "CSV student missing StudentNumber match field, skipping"
                     continue
                 }
                 
@@ -106,7 +103,7 @@ function Compare-PSStudent {
                         # Student has changes
                         $updatedStudents.Add([PSCustomObject]@{
                             MatchKey = $matchKey
-                            MatchField = $MatchOn
+                            MatchField = 'StudentNumber'
                             CsvStudent = $csvStudent
                             PowerSchoolStudent = $psStudent
                             Changes = $changes
@@ -116,7 +113,7 @@ function Compare-PSStudent {
                         # Student unchanged
                         $unchangedStudents.Add([PSCustomObject]@{
                             MatchKey = $matchKey
-                            MatchField = $MatchOn
+                            MatchField = 'StudentNumber'
                             Student = $csvStudent
                         })
                     }
@@ -124,7 +121,7 @@ function Compare-PSStudent {
                     # Student is new (not in PowerSchool)
                     $newStudents.Add([PSCustomObject]@{
                         MatchKey = $matchKey
-                        MatchField = $MatchOn
+                        MatchField = 'StudentNumber'
                         Student = $csvStudent
                     })
                     Write-Verbose "Student $matchKey is new (not in PowerSchool)"
@@ -136,7 +133,7 @@ function Compare-PSStudent {
                 if (-not $matchedPsStudents.ContainsKey($key)) {
                     $removedStudents.Add([PSCustomObject]@{
                         MatchKey = $key
-                        MatchField = $MatchOn
+                        MatchField = 'StudentNumber'
                         Student = $psLookup[$key]
                     })
                     Write-Verbose "Student $key in PowerSchool but not in CSV (potentially removed)"
@@ -151,7 +148,7 @@ function Compare-PSStudent {
                 UpdatedCount = $updatedStudents.Count
                 UnchangedCount = $unchangedStudents.Count
                 RemovedCount = $removedStudents.Count
-                MatchField = $MatchOn
+                MatchField = 'StudentNumber'
             }
             
             # Create result object

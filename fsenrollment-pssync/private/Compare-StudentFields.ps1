@@ -33,11 +33,9 @@ function Compare-StudentFields {
 
     $changes = [System.Collections.Generic.List[PSCustomObject]]::new()
 
-    # Define field mappings: PSStudent property -> PowerSchool API field
+    # Define field mappings: PSStudent property -> PowerSchool API field path
+    # Note: Name fields are nested in PowerSchool API response under "name" object
     $fieldMappings = @{
-        'FirstName' = 'first_name'
-        'MiddleName' = 'middle_name'
-        'LastName' = 'last_name'
         'GradeLevel' = 'grade_level'
         'Gender' = 'gender'
         'DOB' = 'dob'
@@ -54,6 +52,42 @@ function Compare-StudentFields {
         'MailingZip' = 'mailing_zip'
         'SchoolID' = 'schoolid'
     }
+
+    # Handle name fields separately as they are nested in PowerSchool API
+    $nameFieldMappings = @{
+        'FirstName' = 'first_name'
+        'MiddleName' = 'middle_name'
+        'LastName' = 'last_name'
+    }
+
+    # Compare name fields (nested in PowerSchool response)
+    foreach ($csvField in $nameFieldMappings.Keys) {
+        $psField = $nameFieldMappings[$csvField]
+        $csvValue = $CsvStudent.$csvField
+        
+        # Access nested name object in PowerSchool student
+        $psValue = if ($PowerSchoolStudent.name) {
+            $PowerSchoolStudent.name.$psField
+        } else {
+            $null
+        }
+
+        # Normalize values for comparison
+        $csvValueNormalized = Normalize-ComparisonValue -Value $csvValue
+        $psValueNormalized = Normalize-ComparisonValue -Value $psValue
+
+        # Compare normalized values
+        if ($csvValueNormalized -ne $psValueNormalized) {
+            $changes.Add([PSCustomObject]@{
+                Field = $csvField
+                PowerSchoolField = "name.$psField"
+                OldValue = $psValueNormalized
+                NewValue = $csvValueNormalized
+            })
+        }
+    }
+
+    # Compare other fields (at root level)
 
     foreach ($csvField in $fieldMappings.Keys) {
         $psField = $fieldMappings[$csvField]
