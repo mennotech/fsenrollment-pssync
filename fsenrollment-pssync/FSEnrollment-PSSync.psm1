@@ -50,4 +50,11 @@ $script:ModuleRoot = $PSScriptRoot
 $script:ModuleVersion = (Test-ModuleManifest -Path "$PSScriptRoot/FSEnrollment-PSSync.psd1").Version
 $script:ModuleName = 'FSEnrollment-PSSync'
 
+# PowerSchool session variables (initialized on Connect-PowerSchool)
+$script:PowerSchoolToken = $null
+$script:PowerSchoolTokenExpiry = $null
+$script:PowerSchoolBaseUrl = $null
+$script:PowerSchoolClientId = $null
+$script:PowerSchoolClientSecret = $null
+
 Write-Verbose "FSEnrollment-PSSync module loaded successfully (Version: $script:ModuleVersion)"

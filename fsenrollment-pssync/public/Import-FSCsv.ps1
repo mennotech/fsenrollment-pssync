@@ -96,6 +96,17 @@ function Import-FSCsv {
                 Write-Verbose "Using standard template-based parsing"
                 $normalizedData = [PSNormalizedData]::new()
                 
+                # Store template metadata for use in comparison functions
+                $normalizedData.TemplateMetadata = @{
+                    TemplateName = $templateConfig.TemplateName
+                    EntityType = $templateConfig.EntityType
+                    KeyField = $templateConfig.KeyField
+                    PowerSchoolKeyField = $templateConfig.PowerSchoolKeyField
+                    PowerSchoolKeyDataType = $templateConfig.PowerSchoolKeyDataType
+                    CheckForChanges = $templateConfig.CheckForChanges
+                    ColumnMappings = $templateConfig.ColumnMappings
+                }
+                
                 # Determine the target collection based on EntityType
                 $entityType = $templateConfig.EntityType
                 
