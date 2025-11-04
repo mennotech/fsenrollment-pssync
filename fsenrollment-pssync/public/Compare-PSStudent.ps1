@@ -6,8 +6,11 @@
 
 .DESCRIPTION
     Analyzes student data from CSV (normalized PSNormalizedData) against student data
-    from PowerSchool API to identify new students, updated students, and students that
-    may have been removed. Returns a structured change report.
+    from PowerSchool API to identify new students and updated students.
+    Returns a structured change report.
+    
+    Note: This function does NOT detect removed students (students in PowerSchool but not in CSV).
+    It only identifies new students and updates to existing students.
 
 .PARAMETER CsvData
     PSNormalizedData object containing students from CSV import.
@@ -20,7 +23,9 @@
     Currently only 'StudentNumber' is supported (matches against 'local_id' in PowerSchool API).
 
 .OUTPUTS
-    PSCustomObject with properties: New, Updated, Unchanged, Removed, Summary
+    PSCustomObject with properties: New, Updated, Unchanged, Summary
+    
+    Note: The Removed collection is not included as this function does not detect removed students.
 
 .EXAMPLE
     $csvData = Import-FSCsv -Path './students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
@@ -54,10 +59,10 @@ function Compare-PSStudent {
         Write-Verbose "Starting student comparison using match field: $MatchOn"
         
         # Initialize result collections
+        # Note: We do not track removed students (in PowerSchool but not in CSV)
         $newStudents = [System.Collections.Generic.List[PSCustomObject]]::new()
         $updatedStudents = [System.Collections.Generic.List[PSCustomObject]]::new()
         $unchangedStudents = [System.Collections.Generic.List[PSCustomObject]]::new()
-        $removedStudents = [System.Collections.Generic.List[PSCustomObject]]::new()
         
         # Create lookup dictionaries for efficient comparison
         $psLookup = @{}
@@ -128,39 +133,25 @@ function Compare-PSStudent {
                 }
             }
             
-            # Find students in PowerSchool but not in CSV (potentially removed)
-            foreach ($key in $psLookup.Keys) {
-                if (-not $matchedPsStudents.ContainsKey($key)) {
-                    $removedStudents.Add([PSCustomObject]@{
-                        MatchKey = $key
-                        MatchField = 'StudentNumber'
-                        Student = $psLookup[$key]
-                    })
-                    Write-Verbose "Student $key in PowerSchool but not in CSV (potentially removed)"
-                }
-            }
-            
-            # Create summary
+            # Create summary (excluding removed students)
             $summary = [PSCustomObject]@{
                 TotalInCsv = $CsvData.Students.Count
                 TotalInPowerSchool = $PowerSchoolData.Count
                 NewCount = $newStudents.Count
                 UpdatedCount = $updatedStudents.Count
                 UnchangedCount = $unchangedStudents.Count
-                RemovedCount = $removedStudents.Count
                 MatchField = 'StudentNumber'
             }
             
-            # Create result object
+            # Create result object (no Removed collection)
             $result = [PSCustomObject]@{
                 New = $newStudents
                 Updated = $updatedStudents
                 Unchanged = $unchangedStudents
-                Removed = $removedStudents
                 Summary = $summary
             }
             
-            Write-Verbose "Comparison complete: $($newStudents.Count) new, $($updatedStudents.Count) updated, $($unchangedStudents.Count) unchanged, $($removedStudents.Count) removed"
+            Write-Verbose "Comparison complete: $($newStudents.Count) new, $($updatedStudents.Count) updated, $($unchangedStudents.Count) unchanged"
             
             return $result
         }

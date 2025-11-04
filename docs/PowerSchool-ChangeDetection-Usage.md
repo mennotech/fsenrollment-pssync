@@ -64,6 +64,7 @@ $student = Get-PowerSchoolStudent -DCID 12345 `
 
 ```powershell
 # Compare CSV data with PowerSchool data
+# Note: This only detects new and updated students, NOT removed students
 $changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psStudents
 
 # Display summary
@@ -71,7 +72,6 @@ Write-Host "`nChange Summary:" -ForegroundColor Yellow
 Write-Host "  New students: $($changes.Summary.NewCount)" -ForegroundColor Green
 Write-Host "  Updated students: $($changes.Summary.UpdatedCount)" -ForegroundColor Cyan
 Write-Host "  Unchanged students: $($changes.Summary.UnchangedCount)" -ForegroundColor Gray
-Write-Host "  Removed students: $($changes.Summary.RemovedCount)" -ForegroundColor Red
 
 # Review new students
 if ($changes.New.Count -gt 0) {
@@ -90,16 +90,6 @@ if ($changes.Updated.Count -gt 0) {
         foreach ($change in $updated.Changes) {
             Write-Host "    $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
         }
-    }
-}
-
-# Review removed students
-if ($changes.Removed.Count -gt 0) {
-    Write-Host "`nRemoved Students (in PowerSchool but not in CSV):" -ForegroundColor Red
-    foreach ($removed in $changes.Removed) {
-        $student = $removed.Student
-        # Note: PowerSchool API returns nested name structure
-        Write-Host "  $($student.local_id): $($student.name.first_name) $($student.name.last_name)"
     }
 }
 ```

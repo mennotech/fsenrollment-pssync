@@ -92,7 +92,8 @@ try {
     Write-Host "  New students:       $($changes.Summary.NewCount)" -ForegroundColor Green
     Write-Host "  Updated students:   $($changes.Summary.UpdatedCount)" -ForegroundColor Cyan
     Write-Host "  Unchanged students: $($changes.Summary.UnchangedCount)" -ForegroundColor Gray
-    Write-Host "  Removed students:   $($changes.Summary.RemovedCount)" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Note: Student removal detection is not performed." -ForegroundColor Yellow
     Write-Host ""
     
     # Show details for new students
@@ -126,19 +127,6 @@ try {
         Write-Host ""
     }
     
-    # Show details for removed students
-    if ($changes.Removed.Count -gt 0) {
-        Write-Host "Removed Students (in PowerSchool but not in CSV):" -ForegroundColor Red
-        foreach ($removed in $changes.Removed | Select-Object -First 10) {
-            $student = $removed.Student
-            Write-Host "  [$($student.student_number)] $($student.first_name) $($student.last_name)"
-        }
-        if ($changes.Removed.Count -gt 10) {
-            Write-Host "  ... and $($changes.Removed.Count - 10) more" -ForegroundColor Gray
-        }
-        Write-Host ""
-    }
-    
     # Export changes to JSON
     Write-Host "Exporting change report..." -ForegroundColor Yellow
     
@@ -155,7 +143,7 @@ try {
     
     # Summary
     Write-Host "=== Complete ===" -ForegroundColor Cyan
-    $totalChanges = $changes.Summary.NewCount + $changes.Summary.UpdatedCount + $changes.Summary.RemovedCount
+    $totalChanges = $changes.Summary.NewCount + $changes.Summary.UpdatedCount
     if ($totalChanges -eq 0) {
         Write-Host "No changes detected. All data is synchronized." -ForegroundColor Green
     } else {
