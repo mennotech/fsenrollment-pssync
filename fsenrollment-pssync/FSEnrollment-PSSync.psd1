@@ -48,6 +48,9 @@
     # Use an empty array if there are no functions to export
     FunctionsToExport = @(
         'Import-FSCsv'
+        'Connect-PowerSchool'
+        'Get-PowerSchoolStudent'
+        'Compare-PSStudent'
     )
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry
