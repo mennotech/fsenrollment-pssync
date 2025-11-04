@@ -46,10 +46,22 @@ Write-Host "Imported $($csvData.Students.Count) students from CSV"
 ### 3. Fetch PowerSchool Data
 
 ```powershell
-# Get all students from PowerSchool
-$psStudents = Get-PowerSchoolStudent -All
+# Automatically detect required extensions and expansions from template
+$required = Get-RequiredPowerSchoolFields -TemplateMetadata $csvData.TemplateMetadata
+Write-Host "Required Extensions: $($required.Extensions -join ', ')"
+Write-Host "Required Expansions: $($required.Expansions -join ', ')"
+
+# Get all students from PowerSchool with required extensions and expansions
+$psStudents = Get-PowerSchoolStudent -All `
+    -Extensions $required.Extensions `
+    -Expansions $required.Expansions
 
 Write-Host "Retrieved $($psStudents.Count) students from PowerSchool"
+
+# Alternative: Manual specification
+$psStudents = Get-PowerSchoolStudent -All `
+    -Extensions @('u_students_extension', 'studentcorefields') `
+    -Expansions @('demographics')
 
 # Get a specific student by student number (recommended for CSV data)
 $student = Get-PowerSchoolStudent -StudentNumber '123456'

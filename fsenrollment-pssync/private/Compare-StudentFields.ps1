@@ -59,17 +59,48 @@ function Compare-StudentFields {
         # Find the PowerSchool field mapping for this field
         $mapping = $ColumnMappings | Where-Object { $_.EntityProperty -eq $fieldName } | Select-Object -First 1
         
-        if ($mapping -and $mapping.PowerSchoolField) {
-            $psFieldPath = $mapping.PowerSchoolField
+        if ($mapping -and $mapping.PowerSchoolAPIField) {
+            $psFieldPath = $mapping.PowerSchoolAPIField
             
-            # Handle nested fields (e.g., 'name.first_name')
-            $psValue = $PowerSchoolStudent
-            $fieldParts = $psFieldPath -split '\.'
-            foreach ($part in $fieldParts) {
-                if ($null -ne $psValue) {
-                    $psValue = $psValue.$part
-                } else {
-                    break
+            # Handle different field path formats
+            if ($psFieldPath -match '^extension\.([^.]+)\.(.+)$') {
+                # Extension field: extension.table_name.field_name
+                $extensionTable = $matches[1]
+                $extensionField = $matches[2]
+                
+                # Access nested extension data structure
+                $psValue = $null
+                if ($PowerSchoolStudent._extension_data -and $PowerSchoolStudent._extension_data._table_extension) {
+                    $tableExt = $PowerSchoolStudent._extension_data._table_extension | Where-Object { $_.name -eq $extensionTable } | Select-Object -First 1
+                    if ($tableExt -and $tableExt._field) {
+                        $field = $tableExt._field | Where-Object { $_.name -eq $extensionField } | Select-Object -First 1
+                        if ($field) {
+                            $psValue = $field.value
+                        }
+                    }
+                }
+            }
+            elseif ($psFieldPath -match '^@([^.]+)\.(.+)$') {
+                # Expansion field: @expansion_name.field_name
+                $expansionName = $matches[1]
+                $expansionField = $matches[2]
+                
+                # Access expansion data
+                $psValue = $null
+                if ($PowerSchoolStudent.$expansionName) {
+                    $psValue = $PowerSchoolStudent.$expansionName.$expansionField
+                }
+            }
+            else {
+                # Standard or nested field: 'field' or 'object.field'
+                $psValue = $PowerSchoolStudent
+                $fieldParts = $psFieldPath -split '\.'
+                foreach ($part in $fieldParts) {
+                    if ($null -ne $psValue) {
+                        $psValue = $psValue.$part
+                    } else {
+                        break
+                    }
                 }
             }
         } else {
@@ -93,7 +124,7 @@ function Compare-StudentFields {
         if ($csvValueNormalized -ne $psValueNormalized) {
             $changes.Add([PSCustomObject]@{
                 Field = $fieldName
-                PowerSchoolField = $psFieldPath
+                PowerSchoolAPIField = $psFieldPath
                 OldValue = $psValueNormalized
                 NewValue = $csvValueNormalized
             })

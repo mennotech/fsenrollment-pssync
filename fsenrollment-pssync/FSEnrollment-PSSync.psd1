@@ -51,6 +51,7 @@
         'Connect-PowerSchool'
         'Get-PowerSchoolStudent'
         'Compare-PSStudent'
+        'Get-RequiredPowerSchoolFields'
     )
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry

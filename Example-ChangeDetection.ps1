@@ -70,7 +70,17 @@ try {
     # Step 3: Fetch PowerSchool data
     Write-Host "[3/4] Fetching student data from PowerSchool..." -ForegroundColor Yellow
     Write-Host "  This may take a while for large datasets..." -ForegroundColor Gray
-    $psStudents = Get-PowerSchoolStudent -All
+    
+    # Automatically detect required extensions and expansions from template
+    $required = Get-RequiredPowerSchoolFields -TemplateMetadata $csvData.TemplateMetadata
+    if ($required.Extensions.Count -gt 0) {
+        Write-Host "  Detected required extensions: $($required.Extensions -join ', ')" -ForegroundColor Gray
+    }
+    if ($required.Expansions.Count -gt 0) {
+        Write-Host "  Detected required expansions: $($required.Expansions -join ', ')" -ForegroundColor Gray
+    }
+    
+    $psStudents = Get-PowerSchoolStudent -All -Extensions $required.Extensions -Expansions $required.Expansions
     Write-Host "  Retrieved $($psStudents.Count) students from PowerSchool" -ForegroundColor Green
     Write-Host ""
     
