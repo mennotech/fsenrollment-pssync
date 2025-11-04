@@ -27,6 +27,9 @@
 .PARAMETER Expansions
     Array of expansions to include in the response (e.g., 'demographics', 'addresses', 'phones').
 
+.PARAMETER Extensions
+    Array of extensions to include in the response for custom PowerSchool extensions.
+
 .OUTPUTS
     PSCustomObject or array of PSCustomObjects representing student data from PowerSchool.
 
@@ -47,9 +50,15 @@
     Retrieves a student by PowerSchool internal DCID with demographics and addresses expanded.
     Note: DCID is not typically available from CSV imports.
 
+.EXAMPLE
+    $students = Get-PowerSchoolStudent -All -Extensions @('u_students_extension')
+    
+    Retrieves all students with a custom PowerSchool extension included.
+
 .NOTES
     Requires an active PowerSchool connection via Connect-PowerSchool.
     Implements exponential backoff retry logic for API failures.
+    Supports both expansions (standard fields) and extensions (custom fields).
 #>
 function Get-PowerSchoolStudent {
     [CmdletBinding(DefaultParameterSetName = 'ByNumber')]
@@ -68,7 +77,10 @@ function Get-PowerSchoolStudent {
         [int]$PageSize = 100,
 
         [Parameter(Mandatory = $false)]
-        [string[]]$Expansions = @()
+        [string[]]$Expansions = @(),
+
+        [Parameter(Mandatory = $false)]
+        [string[]]$Extensions = @()
     )
 
     begin {
@@ -97,10 +109,21 @@ function Get-PowerSchoolStudent {
                     Write-Verbose "Fetching student with DCID: $DCID"
                     $endpoint = "$script:PowerSchoolBaseUrl/ws/v1/student/$DCID"
                     
+                    # Build query parameters
+                    $queryParams = @()
+                    
                     # Add expansions if provided
                     if ($Expansions.Count -gt 0) {
-                        $expansionParam = $Expansions -join ','
-                        $endpoint += "?expansions=$expansionParam"
+                        $queryParams += "expansions=$($Expansions -join ',')"
+                    }
+                    
+                    # Add extensions if provided
+                    if ($Extensions.Count -gt 0) {
+                        $queryParams += "extensions=$($Extensions -join ',')"
+                    }
+                    
+                    if ($queryParams.Count -gt 0) {
+                        $endpoint += "?" + ($queryParams -join '&')
                     }
                     
                     $response = Invoke-PowerSchoolApiRequest -Uri $endpoint -Headers $headers -Method Get
@@ -117,6 +140,10 @@ function Get-PowerSchoolStudent {
                     
                     if ($Expansions.Count -gt 0) {
                         $queryParams += "expansions=$($Expansions -join ',')"
+                    }
+                    
+                    if ($Extensions.Count -gt 0) {
+                        $queryParams += "extensions=$($Extensions -join ',')"
                     }
                     
                     $endpoint += "?" + ($queryParams -join '&')
@@ -140,6 +167,10 @@ function Get-PowerSchoolStudent {
                         
                         if ($Expansions.Count -gt 0) {
                             $queryParams += "expansions=$($Expansions -join ',')"
+                        }
+                        
+                        if ($Extensions.Count -gt 0) {
+                            $queryParams += "extensions=$($Extensions -join ',')"
                         }
                         
                         $endpoint += "?" + ($queryParams -join '&')
