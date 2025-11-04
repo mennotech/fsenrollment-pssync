@@ -8,7 +8,8 @@
     Performs field-by-field comparison between a CSV student (PSStudent) and a PowerSchool
     API student object. Returns a list of fields that have changed with old and new values.
     
-    Currently only compares name fields: FirstName, MiddleName, and LastName.
+    Uses template metadata to determine which fields to check and how to map them to
+    PowerSchool API fields.
 
 .PARAMETER CsvStudent
     PSStudent object from CSV data.
@@ -16,14 +17,20 @@
 .PARAMETER PowerSchoolStudent
     Student object from PowerSchool API.
 
+.PARAMETER CheckForChanges
+    Array of field names to check for changes. Only these fields will be compared.
+
+.PARAMETER ColumnMappings
+    Array of column mapping objects from the template containing PowerSchool field mappings.
+
 .OUTPUTS
     Array of PSCustomObjects with properties: Field, OldValue, NewValue
     
-    Only includes changes to name fields (FirstName, MiddleName, LastName).
+    Only includes changes to fields specified in CheckForChanges array.
 
 .NOTES
     This is a private function used internally by Compare-PSStudent.
-    Maps PSStudent properties to PowerSchool API field names.
+    Maps PSStudent properties to PowerSchool API field names using template metadata.
     Name fields are accessed from the nested 'name' object in PowerSchool API response.
 #>
 function Compare-StudentFields {
@@ -33,29 +40,49 @@ function Compare-StudentFields {
         [PSStudent]$CsvStudent,
 
         [Parameter(Mandatory = $true)]
-        [PSCustomObject]$PowerSchoolStudent
+        [PSCustomObject]$PowerSchoolStudent,
+
+        [Parameter(Mandatory = $false)]
+        [string[]]$CheckForChanges = @('FirstName', 'MiddleName', 'LastName'),
+
+        [Parameter(Mandatory = $false)]
+        [array]$ColumnMappings = @()
     )
 
     $changes = [System.Collections.Generic.List[PSCustomObject]]::new()
 
-    # Only compare name fields as requested
-    # Handle name fields separately as they are nested in PowerSchool API
-    $nameFieldMappings = @{
-        'FirstName' = 'first_name'
-        'MiddleName' = 'middle_name'
-        'LastName' = 'last_name'
-    }
-
-    # Compare name fields (nested in PowerSchool response)
-    foreach ($csvField in $nameFieldMappings.Keys) {
-        $psField = $nameFieldMappings[$csvField]
-        $csvValue = $CsvStudent.$csvField
+    # Only compare fields specified in CheckForChanges array
+    # Use column mappings to determine PowerSchool field paths
+    foreach ($fieldName in $CheckForChanges) {
+        $csvValue = $CsvStudent.$fieldName
         
-        # Access nested name object in PowerSchool student
-        $psValue = if ($PowerSchoolStudent.name) {
-            $PowerSchoolStudent.name.$psField
+        # Find the PowerSchool field mapping for this field
+        $mapping = $ColumnMappings | Where-Object { $_.EntityProperty -eq $fieldName } | Select-Object -First 1
+        
+        if ($mapping -and $mapping.PowerSchoolField) {
+            $psFieldPath = $mapping.PowerSchoolField
+            
+            # Handle nested fields (e.g., 'name.first_name')
+            $psValue = $PowerSchoolStudent
+            $fieldParts = $psFieldPath -split '\.'
+            foreach ($part in $fieldParts) {
+                if ($null -ne $psValue) {
+                    $psValue = $psValue.$part
+                } else {
+                    break
+                }
+            }
         } else {
-            $null
+            # Fallback: Try direct field access or nested name object
+            # This maintains backward compatibility
+            if ($PowerSchoolStudent.name -and $PowerSchoolStudent.name.PSObject.Properties[$fieldName.ToLower() -replace 'name$', '_name']) {
+                $psFieldName = $fieldName.ToLower() -replace 'firstname', 'first_name' -replace 'middlename', 'middle_name' -replace 'lastname', 'last_name'
+                $psValue = $PowerSchoolStudent.name.$psFieldName
+                $psFieldPath = "name.$psFieldName"
+            } else {
+                $psValue = $null
+                $psFieldPath = $fieldName
+            }
         }
 
         # Normalize values for comparison
@@ -65,8 +92,8 @@ function Compare-StudentFields {
         # Compare normalized values
         if ($csvValueNormalized -ne $psValueNormalized) {
             $changes.Add([PSCustomObject]@{
-                Field = $csvField
-                PowerSchoolField = "name.$psField"
+                Field = $fieldName
+                PowerSchoolField = $psFieldPath
                 OldValue = $psValueNormalized
                 NewValue = $csvValueNormalized
             })

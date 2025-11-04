@@ -2,16 +2,24 @@
     TemplateName = 'fs_powerschool_nonapi_report_students'
     Description = 'Final Site Enrollment PowerSchool Non-API Report - Students Export'
     EntityType = 'PSStudent'
+    # Key field for matching records between CSV and PowerSchool
+    KeyField = 'StudentNumber'
+    # PowerSchool API field that corresponds to the key field
+    PowerSchoolKeyField = 'local_id'
+    # PowerSchool API key field data type (for proper type conversion during matching)
+    PowerSchoolKeyDataType = 'int'
+    # Fields to check for changes during comparison
+    CheckForChanges = @('FirstName', 'MiddleName', 'LastName')
     # Optional: Custom parser function for complex CSV formats
     # If not provided, the default ConvertFrom-CsvRow function is used with ColumnMappings
     CustomParser = $null
     # Column mappings - EntityType is inherited from template-level EntityType
     ColumnMappings = @(
-        @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; DataType = 'string' }
+        @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; DataType = 'string'; PowerSchoolField = 'local_id'; PowerSchoolDataType = 'int' }
         @{ CSVColumn = 'SchoolID'; EntityProperty = 'SchoolID'; DataType = 'string' }
-        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string' }
-        @{ CSVColumn = 'Middle_Name'; EntityProperty = 'MiddleName'; DataType = 'string' }
-        @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; DataType = 'string' }
+        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolField = 'name.first_name' }
+        @{ CSVColumn = 'Middle_Name'; EntityProperty = 'MiddleName'; DataType = 'string'; PowerSchoolField = 'name.middle_name' }
+        @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; DataType = 'string'; PowerSchoolField = 'name.last_name' }
         @{ CSVColumn = 'Grade_Level'; EntityProperty = 'GradeLevel'; DataType = 'int' }
         @{ CSVColumn = 'Home_Phone'; EntityProperty = 'HomePhone'; DataType = 'string' }
         @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string' }

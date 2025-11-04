@@ -125,6 +125,7 @@ class PSNormalizedData {
     [System.Collections.Generic.List[PSPhoneNumber]]$PhoneNumbers
     [System.Collections.Generic.List[PSAddress]]$Addresses
     [System.Collections.Generic.List[PSStudentContactRelationship]]$Relationships
+    [hashtable]$TemplateMetadata
 
     PSNormalizedData() {
         $this.Students = [System.Collections.Generic.List[PSStudent]]::new()
@@ -133,5 +134,6 @@ class PSNormalizedData {
         $this.PhoneNumbers = [System.Collections.Generic.List[PSPhoneNumber]]::new()
         $this.Addresses = [System.Collections.Generic.List[PSAddress]]::new()
         $this.Relationships = [System.Collections.Generic.List[PSStudentContactRelationship]]::new()
+        $this.TemplateMetadata = @{}
     }
 }
