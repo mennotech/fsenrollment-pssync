@@ -58,6 +58,9 @@ function Compare-ContactAddressFields {
     $unchanged = [System.Collections.Generic.List[PSCustomObject]]::new()
 
     # Helper function to create address matching key
+    # Note: This uses exact matching on street/city/postal after normalization.
+    # Minor variations like 'Main St' vs 'Main Street' or 'Apt 5' vs 'Unit 5' will not match.
+    # This is intentional to avoid false positives from similar but different addresses.
     function Get-AddressMatchKey {
         param(
             [string]$Street,
@@ -89,6 +92,9 @@ function Compare-ContactAddressFields {
                                        -PostalCode $psAddress.address_postalcode
         if ($matchKey) {
             # If duplicate match keys exist, last one wins
+            if ($psLookup.ContainsKey($matchKey)) {
+                Write-Warning "Duplicate address found in PowerSchool data: $($psAddress.address_street), $($psAddress.address_city) $($psAddress.address_postalcode). Using most recent entry."
+            }
             $psLookup[$matchKey] = $psAddress
         }
     }
@@ -100,6 +106,9 @@ function Compare-ContactAddressFields {
                                        -City $csvAddress.City `
                                        -PostalCode $csvAddress.PostalCode
         if ($matchKey) {
+            if ($csvLookup.ContainsKey($matchKey)) {
+                Write-Warning "Duplicate address found in CSV data: $($csvAddress.Street), $($csvAddress.City) $($csvAddress.PostalCode). Using most recent entry."
+            }
             $csvLookup[$matchKey] = $csvAddress
         }
     }

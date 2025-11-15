@@ -65,7 +65,7 @@ function Compare-ContactPhoneFields {
             return $null
         }
         
-        # Remove all formatting characters, keep only digits and extension marker
+        # Remove all formatting characters, keep only digits
         $normalized = $PhoneNumber -replace '[^\d]', ''
         return $normalized
     }
@@ -76,6 +76,9 @@ function Compare-ContactPhoneFields {
         $normalizedPhone = Normalize-PhoneNumber -PhoneNumber $psPhone.phonenumber_phonenumber
         if (-not [string]::IsNullOrWhiteSpace($normalizedPhone)) {
             # Store in lookup - if duplicate phones exist, last one wins
+            if ($psLookup.ContainsKey($normalizedPhone)) {
+                Write-Warning "Duplicate phone number found in PowerSchool data: $($psPhone.phonenumber_phonenumber) (normalized: $normalizedPhone). Using most recent entry."
+            }
             $psLookup[$normalizedPhone] = $psPhone
         }
     }
@@ -85,6 +88,9 @@ function Compare-ContactPhoneFields {
     foreach ($csvPhone in $CsvPhones) {
         $normalizedPhone = Normalize-PhoneNumber -PhoneNumber $csvPhone.PhoneNumber
         if (-not [string]::IsNullOrWhiteSpace($normalizedPhone)) {
+            if ($csvLookup.ContainsKey($normalizedPhone)) {
+                Write-Warning "Duplicate phone number found in CSV data: $($csvPhone.PhoneNumber) (normalized: $normalizedPhone). Using most recent entry."
+            }
             $csvLookup[$normalizedPhone] = $csvPhone
         }
     }

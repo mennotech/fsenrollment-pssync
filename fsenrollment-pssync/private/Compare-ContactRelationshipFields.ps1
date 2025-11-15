@@ -73,6 +73,9 @@ function Compare-ContactRelationshipFields {
         $matchKey = Get-RelationshipMatchKey -StudentNumber $psRel.student_student_number
         if ($matchKey) {
             # Store in lookup - if duplicate student relationships exist, last one wins
+            if ($psLookup.ContainsKey($matchKey)) {
+                Write-Warning "Duplicate relationship found in PowerSchool data for student: $($psRel.student_student_number). Using most recent entry."
+            }
             $psLookup[$matchKey] = $psRel
         }
     }
@@ -82,6 +85,9 @@ function Compare-ContactRelationshipFields {
     foreach ($csvRel in $CsvRelationships) {
         $matchKey = Get-RelationshipMatchKey -StudentNumber $csvRel.StudentNumber
         if ($matchKey) {
+            if ($csvLookup.ContainsKey($matchKey)) {
+                Write-Warning "Duplicate relationship found in CSV data for student: $($csvRel.StudentNumber). Using most recent entry."
+            }
             $csvLookup[$matchKey] = $csvRel
         }
     }

@@ -23,7 +23,7 @@
         @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; DataType = 'string'; PowerSchoolAPIField = 'local_id'; PowerSchoolDataType = 'int' }
         @{ CSVColumn = 'SchoolID'; EntityProperty = 'SchoolID'; DataType = 'string' }
         @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolAPIField = 'name.first_name' }
-        # Alternative: Use this mapping instead of the line above if you want to map FirstName to the extension field
+        # Alternative example: Use this mapping instead if you want to map FirstName to an extension field
         #@{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolAPIField = 'extension.u_students_extension.legal_first_name' }
         @{ CSVColumn = 'Middle_Name'; EntityProperty = 'MiddleName'; DataType = 'string'; PowerSchoolAPIField = 'name.middle_name' }
         @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; DataType = 'string'; PowerSchoolAPIField = 'name.last_name' }

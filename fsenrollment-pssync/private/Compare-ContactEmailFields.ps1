@@ -62,6 +62,9 @@ function Compare-ContactEmailFields {
         $normalizedEmail = (Normalize-ComparisonValue -Value $psEmail.emailaddress_emailaddress).ToLower()
         if (-not [string]::IsNullOrWhiteSpace($normalizedEmail)) {
             # Store in lookup - if duplicate emails exist, last one wins
+            if ($psLookup.ContainsKey($normalizedEmail)) {
+                Write-Warning "Duplicate email address found in PowerSchool data: $($psEmail.emailaddress_emailaddress) (normalized: $normalizedEmail). Using most recent entry."
+            }
             $psLookup[$normalizedEmail] = $psEmail
         }
     }
@@ -71,6 +74,9 @@ function Compare-ContactEmailFields {
     foreach ($csvEmail in $CsvEmails) {
         $normalizedEmail = (Normalize-ComparisonValue -Value $csvEmail.EmailAddress).ToLower()
         if (-not [string]::IsNullOrWhiteSpace($normalizedEmail)) {
+            if ($csvLookup.ContainsKey($normalizedEmail)) {
+                Write-Warning "Duplicate email address found in CSV data: $($csvEmail.EmailAddress) (normalized: $normalizedEmail). Using most recent entry."
+            }
             $csvLookup[$normalizedEmail] = $csvEmail
         }
     }
