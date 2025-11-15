@@ -142,7 +142,6 @@ try {
     Write-Host "New: $($changes.Summary.NewCount)" -ForegroundColor Green
     Write-Host "Updated: $($changes.Summary.UpdatedCount)" -ForegroundColor Cyan
     Write-Host "Unchanged: $($changes.Summary.UnchangedCount)" -ForegroundColor Gray
-    Write-Host "Removed: $($changes.Summary.RemovedCount)" -ForegroundColor Red
     
     # Export changes to JSON for review/approval
     $changesJson = $changes | ConvertTo-Json -Depth 10

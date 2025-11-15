@@ -121,9 +121,6 @@ function Compare-PSStudent {
 
     process {
         try {
-            # Track which PowerSchool students were matched
-            $matchedPsStudents = @{}
-            
             # Compare each CSV student with PowerSchool
             foreach ($csvStudent in $CsvData.Students) {
                 # Get the match key value from CSV student using template metadata
@@ -137,7 +134,6 @@ function Compare-PSStudent {
                 if ($psLookup.ContainsKey($matchKey)) {
                     # Student exists in PowerSchool - check for changes
                     $psStudent = $psLookup[$matchKey]
-                    $matchedPsStudents[$matchKey] = $true
                     
                     # Pass checkForChanges array and column mappings to Compare-StudentFields
                     $changes = Compare-StudentFields -CsvStudent $csvStudent -PowerSchoolStudent $psStudent -CheckForChanges $checkForChanges -ColumnMappings $CsvData.TemplateMetadata.ColumnMappings

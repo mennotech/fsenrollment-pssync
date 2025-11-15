@@ -28,7 +28,7 @@
         @{ CSVColumn = 'Grade_Level'; EntityProperty = 'GradeLevel'; DataType = 'int' }
         @{ CSVColumn = 'Home_Phone'; EntityProperty = 'HomePhone'; DataType = 'string' }
         @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string' }
-        @{ CSVColumn = 'DOB'; EntityProperty = 'DOB'; DataType = 'datetime' }
+        @{ CSVColumn = 'DOB'; EntityProperty = 'DOB'; DataType = 'datetime'; PowerSchoolAPIField = '@demographics.birth_date' }
         @{ CSVColumn = 'FTEID'; EntityProperty = 'FTEID'; DataType = 'string' }
         @{ CSVColumn = 'Enroll_Status'; EntityProperty = 'EnrollStatus'; DataType = 'int' }
         @{ CSVColumn = 'EntryDate'; EntityProperty = 'EntryDate'; DataType = 'datetime' }
