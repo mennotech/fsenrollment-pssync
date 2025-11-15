@@ -1,0 +1,47 @@
+<queries>
+    <query name="com.fsenrollment.dats.person"
+            flattened="true"
+            coreTable="Person" >
+        <summary>List of person records that are related to enrolled students.</summary>
+        <description></description>
+        <columns>
+            <column column="person.dcid">person_dcid</column>
+            <column column="person.id">person_id</column>
+            <column column="person.statecontactid">person_statecontactid</column>
+            <column column="person.firstname">person_firstname</column>
+            <column column="person.middlename">person_middlename</column>
+            <column column="person.lastname">person_lastname</column>
+            <column column="person.employer">person_employer</column>
+            <column column="person.whencreated">person_whencreated</column>
+            <column column="person.whenmodified">person_whenmodified</column>
+            <column column="codeset.code">person_gender_code</column>
+        </columns>
+        <sql>
+            <![CDATA[
+SELECT DISTINCT
+    person.dcid AS person_dcid,
+    person.id AS person_id,
+    person.statecontactid AS person_statecontactid,
+    person.firstname AS person_firstname,
+    person.middlename AS person_middlename,
+    person.lastname AS person_lastname,
+    person.employer AS person_employer,
+    person.whencreated AS person_whencreated,
+    person.whenmodified AS person_whenmodified,
+    codeset.code AS person_gender_code
+
+FROM person
+    INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
+    INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
+    INNER JOIN codeset ON codeset.codesetid = person.gendercodesetid
+
+WHERE students.enroll_status = 0
+    AND person.id IS NOT NULL
+    AND studentcontactassoc.personid IS NOT NULL
+
+ORDER BY person.dcid
+            ]]>
+        </sql>
+    </query>
+</queries>
+
