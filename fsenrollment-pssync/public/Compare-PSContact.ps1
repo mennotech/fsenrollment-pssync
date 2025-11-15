@@ -75,10 +75,16 @@ function Compare-PSContact {
         Write-Verbose "Starting contact comparison"
         
         # Determine matching configuration from template or defaults
+        $columnMappings = @()
         if ($TemplateConfig) {
             $keyField = $TemplateConfig.KeyField ?? 'ContactID'
             $psKeyField = $TemplateConfig.PowerSchoolKeyField ?? 'person_id'
             $checkForChanges = $TemplateConfig.CheckForChanges ?? @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
+            
+            # Get Contact entity column mappings from template
+            if ($TemplateConfig.ColumnMappings -and $TemplateConfig.ColumnMappings.Contact) {
+                $columnMappings = $TemplateConfig.ColumnMappings.Contact
+            }
         } else {
             $keyField = 'ContactID'
             $psKeyField = 'person_id'
@@ -141,8 +147,8 @@ function Compare-PSContact {
                     # Contact exists in PowerSchool - check for changes
                     $psPerson = $psLookup[$matchKey]
                     
-                    # Pass checkForChanges array to Compare-ContactFields
-                    $changes = Compare-ContactFields -CsvContact $csvContact -PowerSchoolPerson $psPerson -CheckForChanges $checkForChanges
+                    # Pass checkForChanges array and columnMappings to Compare-ContactFields
+                    $changes = Compare-ContactFields -CsvContact $csvContact -PowerSchoolPerson $psPerson -CheckForChanges $checkForChanges -ColumnMappings $columnMappings
                     
                     if ($changes.Count -gt 0) {
                         # Contact has changes
