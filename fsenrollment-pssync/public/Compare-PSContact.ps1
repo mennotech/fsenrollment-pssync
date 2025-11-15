@@ -40,7 +40,7 @@
 .EXAMPLE
     $csvData = Import-FSCsv -Path './contacts.csv' -TemplateName 'fs_powerschool_nonapi_report_parents'
     $psData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords
-    $templateConfig = Import-PowerSchoolDataFile './config/templates/fs_powerschool_nonapi_report_parents.psd1'
+    $templateConfig = Import-PowerShellDataFile './config/templates/fs_powerschool_nonapi_report_parents.psd1'
     
     $changes = Compare-PSContact -CsvData $csvData -PowerSchoolData $psData.Records -TemplateConfig $templateConfig
     
