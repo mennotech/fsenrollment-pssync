@@ -20,7 +20,7 @@
     Path to the CSV file containing contact data.
 
 .PARAMETER TemplateName
-    Template name for parsing the CSV. Default: 'fs_powerschool_contacts'
+    Template name for parsing the CSV. Default: 'fs_powerschool_nonapi_report_parents'
 
 .PARAMETER OutputPath
     Path where the contact change report JSON file will be saved. 
@@ -49,7 +49,7 @@ param(
     [string]$CsvPath,
     
     [Parameter(Mandatory = $false)]
-    [string]$TemplateName = 'fs_powerschool_contacts',
+    [string]$TemplateName = 'fs_powerschool_nonapi_report_parents',
     
     [Parameter(Mandatory = $false)]
     [string]$OutputPath = './data/pending_contact_changes.json'
@@ -73,6 +73,16 @@ try {
     Write-Host "  CSV Path: $CsvPath" -ForegroundColor Gray
     Write-Host "  Template: $TemplateName" -ForegroundColor Gray
     
+    # Load template configuration for comparison settings
+    $configRoot = Join-Path $PSScriptRoot 'config'
+    $templatePath = Join-Path $configRoot "templates/$TemplateName.psd1"
+    
+    if (-not (Test-Path $templatePath)) {
+        throw "Template configuration not found: $templatePath"
+    }
+    
+    $templateConfig = Import-PowerShellDataFile -Path $templatePath
+    
     $csvData = Import-FSCsv -Path $CsvPath -TemplateName $TemplateName -Verbose:$VerbosePreference
     
     Write-Host "  ✓ Imported $($csvData.Contacts.Count) contacts from CSV" -ForegroundColor Green
@@ -89,10 +99,13 @@ try {
     
     # Step 4: Compare and detect changes
     Write-Host "[4/4] Comparing contact data..." -ForegroundColor Yellow
-    Write-Host "  Comparing: FirstName, MiddleName, LastName, Gender, Employer" -ForegroundColor Gray
+    $fieldsToCheck = $templateConfig.CheckForChanges -join ', '
+    Write-Host "  Comparing: $fieldsToCheck" -ForegroundColor Gray
+    Write-Host "  Key Field: $($templateConfig.KeyField) -> $($templateConfig.PowerSchoolKeyField)" -ForegroundColor Gray
     
     $changes = Compare-PSContact -CsvData $csvData `
         -PowerSchoolData $personData.Records `
+        -TemplateConfig $templateConfig `
         -Verbose:$VerbosePreference
     
     Write-Host "  ✓ Comparison complete" -ForegroundColor Green

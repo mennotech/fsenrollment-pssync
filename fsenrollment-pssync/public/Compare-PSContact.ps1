@@ -23,9 +23,14 @@
     Array of person objects from PowerSchool PowerQuery (from Invoke-PowerQuery 
     -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords).
 
+.PARAMETER TemplateConfig
+    Template configuration object loaded from the template file. Used to determine
+    key fields and fields to check for changes.
+
 .PARAMETER MatchOn
-    Property to use for matching contacts between CSV and PowerSchool. Default is 'ContactID'.
-    Currently only 'ContactID' is supported (matches against 'person_id' in PowerQuery results).
+    Property to use for matching contacts between CSV and PowerSchool. Default is determined
+    by TemplateConfig.KeyField. If TemplateConfig is not provided, defaults to 'ContactID'.
+    Currently supports 'ContactID' and 'ContactIdentifier'.
 
 .OUTPUTS
     PSCustomObject with properties: New, Updated, Unchanged, Summary
@@ -33,14 +38,15 @@
     Note: The Removed collection is not included as this function does not detect removed contacts.
 
 .EXAMPLE
-    $csvData = Import-FSCsv -Path './contacts.csv' -TemplateName 'fs_powerschool_contacts'
+    $csvData = Import-FSCsv -Path './contacts.csv' -TemplateName 'fs_powerschool_nonapi_report_parents'
     $psData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords
+    $templateConfig = Import-PowerShoolDataFile './config/templates/fs_powerschool_nonapi_report_parents.psd1'
     
-    $changes = Compare-PSContact -CsvData $csvData -PowerSchoolData $psData.Records
+    $changes = Compare-PSContact -CsvData $csvData -PowerSchoolData $psData.Records -TemplateConfig $templateConfig
     
     Write-Host "New: $($changes.New.Count), Updated: $($changes.Updated.Count)"
     
-    Compares contacts using the person PowerQuery data from PowerSchool.
+    Compares contacts using the template configuration to determine key fields and comparison settings.
 
 .NOTES
     This function performs field-by-field comparison to detect what changed.
@@ -58,17 +64,37 @@ function Compare-PSContact {
         [array]$PowerSchoolData,
 
         [Parameter(Mandatory = $false)]
-        [ValidateSet('ContactID')]
-        [string]$MatchOn = 'ContactID'
+        [hashtable]$TemplateConfig,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('ContactID', 'ContactIdentifier')]
+        [string]$MatchOn
     )
 
     begin {
         Write-Verbose "Starting contact comparison"
         
-        # Default matching configuration
-        $keyField = 'ContactID'  # CSV field
-        $psKeyField = 'person_id'  # PowerSchool PowerQuery field
-        $checkForChanges = @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
+        # Determine matching configuration from template or defaults
+        if ($TemplateConfig) {
+            $keyField = $TemplateConfig.KeyField ?? 'ContactID'
+            $psKeyField = $TemplateConfig.PowerSchoolKeyField ?? 'person_id'
+            $checkForChanges = $TemplateConfig.CheckForChanges ?? @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
+        } else {
+            $keyField = 'ContactID'
+            $psKeyField = 'person_id'
+            $checkForChanges = @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
+        }
+        
+        # Override with MatchOn parameter if provided
+        if ($MatchOn) {
+            $keyField = $MatchOn
+            # Set corresponding PowerSchool field based on match field
+            switch ($MatchOn) {
+                'ContactID' { $psKeyField = 'person_id' }
+                'ContactIdentifier' { $psKeyField = $TemplateConfig.PowerSchoolKeyField ?? 'person_statecontactid' }
+                default { $psKeyField = 'person_id' }
+            }
+        }
         
         Write-Verbose "Using CSV key field: $keyField"
         Write-Verbose "Using PowerSchool key field: $psKeyField"

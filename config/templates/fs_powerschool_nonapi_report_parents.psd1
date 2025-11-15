@@ -4,6 +4,14 @@
     EntityType = 'PSNormalizedData'
     # Custom parser for complex multi-row format (contact rows, phone rows, relationship rows)
     CustomParser = 'Import-FSParentsCustomParser'
+    # Key field for matching records between CSV and PowerSchool
+    KeyField = 'ContactIdentifier'
+    # PowerSchool API field that corresponds to the key field
+    PowerSchoolKeyField = 'person_statecontactid'
+    # PowerSchool API key field data type (for proper type conversion during matching)
+    PowerSchoolKeyDataType = 'string'
+    # Fields to check for changes during comparison
+    CheckForChanges = @('FirstName', 'MiddleName', 'LastName')
     # Entity type mappings for hashtable keys (used by custom parser to infer EntityType)
     EntityTypeMap = @{
         Contact = 'PSContact'
