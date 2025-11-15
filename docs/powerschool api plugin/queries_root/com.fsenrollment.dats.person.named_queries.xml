@@ -186,5 +186,60 @@ ORDER BY person.dcid, personaddress.personaddressid
             ]]>
         </sql>
     </query>
+    
+    <query name="com.fsenrollment.dats.person.relationship"
+            flattened="true"
+            coreTable="Person" >
+        <summary>List of student-contact relationships for persons related to enrolled students.</summary>
+        <description>Returns all relationship data including priority order, relationship type, and relationship flags for persons associated with active students.</description>
+        <columns>
+            <column column="person.dcid">person_dcid</column>
+            <column column="person.id">person_id</column>
+            <column column="students.student_number">student_student_number</column>
+            <column column="students.dcid">student_dcid</column>
+            <column column="studentcontactassoc.contactpriorityorder">relationship_priority_order</column>
+            <column column="studentcontactdetail.isactive">relationship_isactive</column>
+            <column column="studentcontactdetail.iscustodial">relationship_iscustodial</column>
+            <column column="studentcontactdetail.isemergency">relationship_isemergency</column>
+            <column column="studentcontactdetail.liveswithflg">relationship_liveswith</column>
+            <column column="studentcontactdetail.receivesmailflg">relationship_receivesmail</column>
+            <column column="studentcontactdetail.schoolpickupflg">relationship_schoolpickup</column>
+            <column column="codeset.code">relationship_relationship_code</column>
+            <column column="studentcontactdetail.relationshipnote">relationship_relationship_note</column>
+        </columns>
+        <sql>
+            <![CDATA[
+SELECT DISTINCT
+    person.dcid AS person_dcid,
+    person.id AS person_id,
+    students.student_number AS student_student_number,
+    students.dcid AS student_dcid,
+    studentcontactassoc.contactpriorityorder AS relationship_priority_order,
+    studentcontactdetail.isactive AS relationship_isactive,
+    studentcontactdetail.iscustodial AS relationship_iscustodial,
+    studentcontactdetail.isemergency AS relationship_isemergency,
+    studentcontactdetail.liveswithflg AS relationship_liveswith,
+    studentcontactdetail.receivesmailflg AS relationship_receivesmail,
+    studentcontactdetail.schoolpickupflg AS relationship_schoolpickup,
+    codeset.code AS relationship_relationship_code,
+    studentcontactdetail.relationshipnote AS relationship_relationship_note
+    
+    
+    
+FROM person
+    INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
+    INNER JOIN studentcontactdetail ON studentcontactdetail.studentcontactassocid = studentcontactassoc.studentcontactassocid
+    INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
+    INNER JOIN codeset ON codeset.codesetid = studentcontactdetail.relationshiptypecodesetid
+    
+
+WHERE students.enroll_status = 0
+    AND person.id IS NOT NULL
+    AND studentcontactassoc.personid IS NOT NULL
+
+ORDER BY person.dcid, students.dcid
+            ]]>
+        </sql>
+    </query>
 </queries>
 
