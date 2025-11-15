@@ -22,13 +22,13 @@
     ColumnMappings = @(
         @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; DataType = 'string'; PowerSchoolAPIField = 'local_id'; PowerSchoolDataType = 'int' }
         @{ CSVColumn = 'SchoolID'; EntityProperty = 'SchoolID'; DataType = 'string' }
-        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolAPIField = 'name.first_name' }
+        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolAPIField = 'extension.u_students_extension.legal_first_name' }
         @{ CSVColumn = 'Middle_Name'; EntityProperty = 'MiddleName'; DataType = 'string'; PowerSchoolAPIField = 'name.middle_name' }
         @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; DataType = 'string'; PowerSchoolAPIField = 'name.last_name' }
         @{ CSVColumn = 'Grade_Level'; EntityProperty = 'GradeLevel'; DataType = 'int' }
         @{ CSVColumn = 'Home_Phone'; EntityProperty = 'HomePhone'; DataType = 'string' }
         @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string' }
-        @{ CSVColumn = 'DOB'; EntityProperty = 'DOB'; DataType = 'datetime' }
+        @{ CSVColumn = 'DOB'; EntityProperty = 'DOB'; DataType = 'datetime'; PowerSchoolAPIField = '@demographics.birth_date' }
         @{ CSVColumn = 'FTEID'; EntityProperty = 'FTEID'; DataType = 'string' }
         @{ CSVColumn = 'Enroll_Status'; EntityProperty = 'EnrollStatus'; DataType = 'int' }
         @{ CSVColumn = 'EntryDate'; EntityProperty = 'EntryDate'; DataType = 'datetime' }
