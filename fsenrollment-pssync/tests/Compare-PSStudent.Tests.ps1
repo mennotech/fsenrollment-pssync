@@ -50,7 +50,6 @@ Describe 'Compare-PSStudent' {
                 $result.New[0].MatchKey | Should -Be '123456'
                 $result.Updated.Count | Should -Be 0
                 $result.Unchanged.Count | Should -Be 0
-                $result.Removed.Count | Should -Be 0
             }
         }
 
@@ -184,7 +183,7 @@ Describe 'Compare-PSStudent' {
     }
 
     Context 'Removed Students Detection' {
-        It 'Should identify students in PowerSchool but not in CSV' {
+        It 'Should NOT detect removed students (students in PowerSchool but not in CSV)' {
             # CSV has no students
             $script:CsvData = [PSNormalizedData]::new()
             
@@ -199,11 +198,13 @@ Describe 'Compare-PSStudent' {
             
             $result = Compare-PSStudent -CsvData $script:CsvData -PowerSchoolData $script:PowerSchoolData
             
-            $result.Removed.Count | Should -Be 1
-            $result.Removed[0].MatchKey | Should -Be '123456'
+            # Should not have a Removed property
+            $result.PSObject.Properties.Name -contains 'Removed' | Should -Be $false
+            # Summary should not have RemovedCount
+            $result.Summary.PSObject.Properties.Name -contains 'RemovedCount' | Should -Be $false
         }
 
-        It 'Should identify multiple removed students' {
+        It 'Should not track removed students when CSV has fewer students than PowerSchool' {
             # CSV has no students
             $script:CsvData = [PSNormalizedData]::new()
             
@@ -216,8 +217,10 @@ Describe 'Compare-PSStudent' {
             
             $result = Compare-PSStudent -CsvData $script:CsvData -PowerSchoolData $script:PowerSchoolData
             
-            $result.Removed.Count | Should -Be 3
-            $result.Summary.RemovedCount | Should -Be 3
+            # Should not have a Removed property
+            $result.PSObject.Properties.Name -contains 'Removed' | Should -Be $false
+            # Summary should not have RemovedCount
+            $result.Summary.PSObject.Properties.Name -contains 'RemovedCount' | Should -Be $false
         }
     }
 
@@ -299,7 +302,6 @@ Describe 'Compare-PSStudent' {
             $result.Summary.NewCount | Should -Be 2
             $result.Summary.UpdatedCount | Should -Be 1
             $result.Summary.UnchangedCount | Should -Be 1
-            $result.Summary.RemovedCount | Should -Be 1
             $result.Summary.TotalInCsv | Should -Be 4
             $result.Summary.TotalInPowerSchool | Should -Be 3
         }
@@ -323,7 +325,6 @@ Describe 'Compare-PSStudent' {
             $result.New.Count | Should -Be 0
             $result.Updated.Count | Should -Be 0
             $result.Unchanged.Count | Should -Be 0
-            $result.Removed.Count | Should -Be 0
         }
 
         It 'Should handle empty PowerSchool data' {
@@ -335,7 +336,6 @@ Describe 'Compare-PSStudent' {
             $result = Compare-PSStudent -CsvData $script:CsvData -PowerSchoolData $script:PowerSchoolData
             
             $result.New.Count | Should -Be 1
-            $result.Removed.Count | Should -Be 0
         }
 
         It 'Should skip CSV students with missing match field' {
