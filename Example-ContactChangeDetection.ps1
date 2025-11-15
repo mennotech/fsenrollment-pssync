@@ -38,9 +38,9 @@
     .\Example-ContactChangeDetection.ps1 -CsvPath './data/contacts.csv' -Verbose
 
 .NOTES
-    This example script only compares PSContact fields (FirstName, MiddleName, LastName, 
-    Gender, Employer). Email addresses, phone numbers, and addresses are not compared
-    at this stage.
+    This example script compares PSContact fields (FirstName, MiddleName, LastName, 
+    Gender, Employer) as well as email addresses, phone numbers, and addresses when
+    available in the CSV data.
 #>
 
 param(
@@ -86,10 +86,19 @@ try {
     $csvData = Import-FSCsv -Path $CsvPath -TemplateName $TemplateName -Verbose:$VerbosePreference
     
     Write-Host "  ✓ Imported $($csvData.Contacts.Count) contacts from CSV" -ForegroundColor Green
+    if ($csvData.EmailAddresses.Count -gt 0) {
+        Write-Host "  ✓ Found $($csvData.EmailAddresses.Count) email addresses" -ForegroundColor Green
+    }
+    if ($csvData.PhoneNumbers.Count -gt 0) {
+        Write-Host "  ✓ Found $($csvData.PhoneNumbers.Count) phone numbers" -ForegroundColor Green
+    }
+    if ($csvData.Addresses.Count -gt 0) {
+        Write-Host "  ✓ Found $($csvData.Addresses.Count) addresses" -ForegroundColor Green
+    }
     Write-Host ""
     
-    # Step 3: Fetch PowerSchool person data using PowerQuery
-    Write-Host "[3/4] Fetching person data from PowerSchool..." -ForegroundColor Yellow
+    # Step 3: Fetch PowerSchool person data using PowerQueries
+    Write-Host "[3/6] Fetching person data from PowerSchool..." -ForegroundColor Yellow
     Write-Host "  PowerQuery: com.fsenrollment.dats.person" -ForegroundColor Gray
     
     $personData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords -Verbose:$VerbosePreference
@@ -97,16 +106,80 @@ try {
     Write-Host "  ✓ Retrieved $($personData.RecordCount) person records from PowerSchool" -ForegroundColor Green
     Write-Host ""
     
-    # Step 4: Compare and detect changes
-    Write-Host "[4/4] Comparing contact data..." -ForegroundColor Yellow
+    # Step 4: Fetch email data if CSV has emails
+    $emailData = $null
+    if ($csvData.EmailAddresses.Count -gt 0) {
+        Write-Host "[4/6] Fetching email data from PowerSchool..." -ForegroundColor Yellow
+        Write-Host "  PowerQuery: com.fsenrollment.dats.person.email" -ForegroundColor Gray
+        
+        $emailData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.email' -AllRecords -Verbose:$VerbosePreference
+        
+        Write-Host "  ✓ Retrieved $($emailData.RecordCount) email records from PowerSchool" -ForegroundColor Green
+        Write-Host ""
+    } else {
+        Write-Host "[4/6] Skipping email data (no emails in CSV)" -ForegroundColor Gray
+        Write-Host ""
+    }
+    
+    # Step 5: Fetch phone data if CSV has phones
+    $phoneData = $null
+    if ($csvData.PhoneNumbers.Count -gt 0) {
+        Write-Host "[5/6] Fetching phone data from PowerSchool..." -ForegroundColor Yellow
+        Write-Host "  PowerQuery: com.fsenrollment.dats.person.phone" -ForegroundColor Gray
+        
+        $phoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.phone' -AllRecords -Verbose:$VerbosePreference
+        
+        Write-Host "  ✓ Retrieved $($phoneData.RecordCount) phone records from PowerSchool" -ForegroundColor Green
+        Write-Host ""
+    } else {
+        Write-Host "[5/6] Skipping phone data (no phones in CSV)" -ForegroundColor Gray
+        Write-Host ""
+    }
+    
+    # Step 6: Fetch address data if CSV has addresses
+    $addressData = $null
+    if ($csvData.Addresses.Count -gt 0) {
+        Write-Host "[6/6] Fetching address data from PowerSchool..." -ForegroundColor Yellow
+        Write-Host "  PowerQuery: com.fsenrollment.dats.person.address" -ForegroundColor Gray
+        
+        $addressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords -Verbose:$VerbosePreference
+        
+        Write-Host "  ✓ Retrieved $($addressData.RecordCount) address records from PowerSchool" -ForegroundColor Green
+        Write-Host ""
+    } else {
+        Write-Host "[6/6] Skipping address data (no addresses in CSV)" -ForegroundColor Gray
+        Write-Host ""
+    }
+    
+    # Step 7: Compare and detect changes
+    Write-Host "[7/7] Comparing contact data..." -ForegroundColor Yellow
     $fieldsToCheck = $templateConfig.EntityTypeMap.Contact.CheckForChanges -join ', '
     Write-Host "  Comparing: $fieldsToCheck" -ForegroundColor Gray
     Write-Host "  Key Field: $($templateConfig.KeyField) -> $($templateConfig.PowerSchoolKeyField)" -ForegroundColor Gray
     
-    $changes = Compare-PSContact -CsvData $csvData `
-        -PowerSchoolData $personData.Records `
-        -TemplateConfig $templateConfig `
-        -Verbose:$VerbosePreference
+    # Build comparison parameters
+    $compareParams = @{
+        CsvData = $csvData
+        PowerSchoolData = $personData.Records
+        TemplateConfig = $templateConfig
+        Verbose = $VerbosePreference
+    }
+    
+    # Add optional PowerQuery data if available
+    if ($emailData) {
+        $compareParams['PowerSchoolEmailData'] = $emailData.Records
+        Write-Host "  Including email address comparison" -ForegroundColor Gray
+    }
+    if ($phoneData) {
+        $compareParams['PowerSchoolPhoneData'] = $phoneData.Records
+        Write-Host "  Including phone number comparison" -ForegroundColor Gray
+    }
+    if ($addressData) {
+        $compareParams['PowerSchoolAddressData'] = $addressData.Records
+        Write-Host "  Including address comparison" -ForegroundColor Gray
+    }
+    
+    $changes = Compare-PSContact @compareParams
     
     Write-Host "  ✓ Comparison complete" -ForegroundColor Green
     Write-Host ""
@@ -140,10 +213,62 @@ try {
         Write-Host "Updated Contacts:" -ForegroundColor Cyan
         foreach ($updated in $changes.Updated | Select-Object -First 10) {
             Write-Host "  Contact ID: $($updated.MatchKey)"
-            foreach ($change in $updated.Changes) {
-                $oldVal = if ($change.OldValue) { "'$($change.OldValue)'" } else { "(empty)" }
-                $newVal = if ($change.NewValue) { "'$($change.NewValue)'" } else { "(empty)" }
-                Write-Host "    $($change.Field): $oldVal -> $newVal"
+            
+            # Display field changes
+            if ($updated.Changes -and $updated.Changes.Count -gt 0) {
+                foreach ($change in $updated.Changes) {
+                    $oldVal = if ($change.OldValue) { "'$($change.OldValue)'" } else { "(empty)" }
+                    $newVal = if ($change.NewValue) { "'$($change.NewValue)'" } else { "(empty)" }
+                    Write-Host "    $($change.Field): $oldVal -> $newVal"
+                }
+            }
+            
+            # Display email changes
+            if ($updated.EmailChanges) {
+                if ($updated.EmailChanges.Added.Count -gt 0) {
+                    Write-Host "    Emails Added: $($updated.EmailChanges.Added.Count)" -ForegroundColor Green
+                    foreach ($email in $updated.EmailChanges.Added | Select-Object -First 3) {
+                        Write-Host "      + $($email.EmailAddress)"
+                    }
+                }
+                if ($updated.EmailChanges.Modified.Count -gt 0) {
+                    Write-Host "    Emails Modified: $($updated.EmailChanges.Modified.Count)" -ForegroundColor Yellow
+                }
+                if ($updated.EmailChanges.Removed.Count -gt 0) {
+                    Write-Host "    Emails Removed: $($updated.EmailChanges.Removed.Count)" -ForegroundColor Red
+                }
+            }
+            
+            # Display phone changes
+            if ($updated.PhoneChanges) {
+                if ($updated.PhoneChanges.Added.Count -gt 0) {
+                    Write-Host "    Phones Added: $($updated.PhoneChanges.Added.Count)" -ForegroundColor Green
+                    foreach ($phone in $updated.PhoneChanges.Added | Select-Object -First 3) {
+                        Write-Host "      + $($phone.DisplayNumber)"
+                    }
+                }
+                if ($updated.PhoneChanges.Modified.Count -gt 0) {
+                    Write-Host "    Phones Modified: $($updated.PhoneChanges.Modified.Count)" -ForegroundColor Yellow
+                }
+                if ($updated.PhoneChanges.Removed.Count -gt 0) {
+                    Write-Host "    Phones Removed: $($updated.PhoneChanges.Removed.Count)" -ForegroundColor Red
+                }
+            }
+            
+            # Display address changes
+            if ($updated.AddressChanges) {
+                if ($updated.AddressChanges.Added.Count -gt 0) {
+                    Write-Host "    Addresses Added: $($updated.AddressChanges.Added.Count)" -ForegroundColor Green
+                    foreach ($addr in $updated.AddressChanges.Added | Select-Object -First 2) {
+                        Write-Host "      + $($addr.DisplayAddress)"
+                    }
+                }
+                if ($updated.AddressChanges.Modified.Count -gt 0) {
+                    Write-Host "    Addresses Modified: $($updated.AddressChanges.Modified.Count)" -ForegroundColor Yellow
+                }
+                if ($updated.AddressChanges.Removed.Count -gt 0) {
+                    Write-Host "    Addresses Removed: $($updated.AddressChanges.Removed.Count)" -ForegroundColor Red
+                }
             }
         }
         if ($changes.Updated.Count -gt 10) {
