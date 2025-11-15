@@ -127,7 +127,7 @@ try {
         Write-Host "New Contacts:" -ForegroundColor Green
         foreach ($new in $changes.New | Select-Object -First 10) {
             $contact = $new.Contact
-            Write-Host "  ID $($contact.ContactID): $($contact.FirstName) $($contact.LastName)"
+            Write-Host "  ID $($new.MatchKey): $($contact.FirstName) $($contact.LastName)"
         }
         if ($changes.New.Count -gt 10) {
             Write-Host "  ... and $($changes.New.Count - 10) more" -ForegroundColor Gray
