@@ -39,8 +39,8 @@
 
 .NOTES
     This example script compares PSContact fields (FirstName, MiddleName, LastName, 
-    Gender, Employer) as well as email addresses, phone numbers, and addresses when
-    available in the CSV data.
+    Gender, Employer) as well as email addresses, phone numbers, addresses, and 
+    student-contact relationships when available in the CSV data.
 #>
 
 param(
@@ -63,13 +63,13 @@ try {
     Write-Host ""
     
     # Step 1: Connect to PowerSchool
-    Write-Host "[1/4] Connecting to PowerSchool..." -ForegroundColor Yellow
+    Write-Host "[1/8] Connecting to PowerSchool..." -ForegroundColor Yellow
     Connect-PowerSchool
     Write-Host "  ✓ Connected successfully" -ForegroundColor Green
     Write-Host ""
     
     # Step 2: Import CSV data
-    Write-Host "[2/4] Importing contact data from CSV..." -ForegroundColor Yellow
+    Write-Host "[2/8] Importing contact data from CSV..." -ForegroundColor Yellow
     Write-Host "  CSV Path: $CsvPath" -ForegroundColor Gray
     Write-Host "  Template: $TemplateName" -ForegroundColor Gray
     
@@ -95,10 +95,13 @@ try {
     if ($csvData.Addresses.Count -gt 0) {
         Write-Host "  ✓ Found $($csvData.Addresses.Count) addresses" -ForegroundColor Green
     }
+    if ($csvData.Relationships.Count -gt 0) {
+        Write-Host "  ✓ Found $($csvData.Relationships.Count) relationships" -ForegroundColor Green
+    }
     Write-Host ""
     
     # Step 3: Fetch PowerSchool person data using PowerQueries
-    Write-Host "[3/6] Fetching person data from PowerSchool..." -ForegroundColor Yellow
+    Write-Host "[3/8] Fetching person data from PowerSchool..." -ForegroundColor Yellow
     Write-Host "  PowerQuery: com.fsenrollment.dats.person" -ForegroundColor Gray
     
     $personData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords -Verbose:$VerbosePreference
@@ -109,7 +112,7 @@ try {
     # Step 4: Fetch email data if CSV has emails
     $emailData = $null
     if ($csvData.EmailAddresses.Count -gt 0) {
-        Write-Host "[4/6] Fetching email data from PowerSchool..." -ForegroundColor Yellow
+        Write-Host "[4/8] Fetching email data from PowerSchool..." -ForegroundColor Yellow
         Write-Host "  PowerQuery: com.fsenrollment.dats.person.email" -ForegroundColor Gray
         
         $emailData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.email' -AllRecords -Verbose:$VerbosePreference
@@ -117,14 +120,14 @@ try {
         Write-Host "  ✓ Retrieved $($emailData.RecordCount) email records from PowerSchool" -ForegroundColor Green
         Write-Host ""
     } else {
-        Write-Host "[4/6] Skipping email data (no emails in CSV)" -ForegroundColor Gray
+        Write-Host "[4/8] Skipping email data (no emails in CSV)" -ForegroundColor Gray
         Write-Host ""
     }
     
     # Step 5: Fetch phone data if CSV has phones
     $phoneData = $null
     if ($csvData.PhoneNumbers.Count -gt 0) {
-        Write-Host "[5/6] Fetching phone data from PowerSchool..." -ForegroundColor Yellow
+        Write-Host "[5/8] Fetching phone data from PowerSchool..." -ForegroundColor Yellow
         Write-Host "  PowerQuery: com.fsenrollment.dats.person.phone" -ForegroundColor Gray
         
         $phoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.phone' -AllRecords -Verbose:$VerbosePreference
@@ -132,14 +135,14 @@ try {
         Write-Host "  ✓ Retrieved $($phoneData.RecordCount) phone records from PowerSchool" -ForegroundColor Green
         Write-Host ""
     } else {
-        Write-Host "[5/6] Skipping phone data (no phones in CSV)" -ForegroundColor Gray
+        Write-Host "[5/8] Skipping phone data (no phones in CSV)" -ForegroundColor Gray
         Write-Host ""
     }
     
     # Step 6: Fetch address data if CSV has addresses
     $addressData = $null
     if ($csvData.Addresses.Count -gt 0) {
-        Write-Host "[6/6] Fetching address data from PowerSchool..." -ForegroundColor Yellow
+        Write-Host "[6/8] Fetching address data from PowerSchool..." -ForegroundColor Yellow
         Write-Host "  PowerQuery: com.fsenrollment.dats.person.address" -ForegroundColor Gray
         
         $addressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords -Verbose:$VerbosePreference
@@ -147,12 +150,27 @@ try {
         Write-Host "  ✓ Retrieved $($addressData.RecordCount) address records from PowerSchool" -ForegroundColor Green
         Write-Host ""
     } else {
-        Write-Host "[6/6] Skipping address data (no addresses in CSV)" -ForegroundColor Gray
+        Write-Host "[6/8] Skipping address data (no addresses in CSV)" -ForegroundColor Gray
         Write-Host ""
     }
     
-    # Step 7: Compare and detect changes
-    Write-Host "[7/7] Comparing contact data..." -ForegroundColor Yellow
+    # Step 7: Fetch relationship data if CSV has relationships
+    $relationshipData = $null
+    if ($csvData.Relationships.Count -gt 0) {
+        Write-Host "[7/8] Fetching relationship data from PowerSchool..." -ForegroundColor Yellow
+        Write-Host "  PowerQuery: com.fsenrollment.dats.person.relationship" -ForegroundColor Gray
+        
+        $relationshipData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords -Verbose:$VerbosePreference
+        
+        Write-Host "  ✓ Retrieved $($relationshipData.RecordCount) relationship records from PowerSchool" -ForegroundColor Green
+        Write-Host ""
+    } else {
+        Write-Host "[7/8] Skipping relationship data (no relationships in CSV)" -ForegroundColor Gray
+        Write-Host ""
+    }
+    
+    # Step 8: Compare and detect changes
+    Write-Host "[8/8] Comparing contact data..." -ForegroundColor Yellow
     $fieldsToCheck = $templateConfig.EntityTypeMap.Contact.CheckForChanges -join ', '
     Write-Host "  Comparing: $fieldsToCheck" -ForegroundColor Gray
     Write-Host "  Key Field: $($templateConfig.KeyField) -> $($templateConfig.PowerSchoolKeyField)" -ForegroundColor Gray
@@ -177,6 +195,10 @@ try {
     if ($addressData) {
         $compareParams['PowerSchoolAddressData'] = $addressData.Records
         Write-Host "  Including address comparison" -ForegroundColor Gray
+    }
+    if ($relationshipData) {
+        $compareParams['PowerSchoolRelationshipData'] = $relationshipData.Records
+        Write-Host "  Including relationship comparison" -ForegroundColor Gray
     }
     
     $changes = Compare-PSContact @compareParams
@@ -268,6 +290,26 @@ try {
                 }
                 if ($updated.AddressChanges.Removed.Count -gt 0) {
                     Write-Host "    Addresses Removed: $($updated.AddressChanges.Removed.Count)" -ForegroundColor Red
+                }
+            }
+            
+            # Display relationship changes
+            if ($updated.RelationshipChanges) {
+                if ($updated.RelationshipChanges.Added.Count -gt 0) {
+                    Write-Host "    Relationships Added: $($updated.RelationshipChanges.Added.Count)" -ForegroundColor Green
+                    foreach ($rel in $updated.RelationshipChanges.Added | Select-Object -First 3) {
+                        $relInfo = $rel.Relationship
+                        Write-Host "      + Student $($rel.StudentNumber): $($relInfo.RelationshipType)"
+                    }
+                }
+                if ($updated.RelationshipChanges.Modified.Count -gt 0) {
+                    Write-Host "    Relationships Modified: $($updated.RelationshipChanges.Modified.Count)" -ForegroundColor Yellow
+                    foreach ($rel in $updated.RelationshipChanges.Modified | Select-Object -First 2) {
+                        Write-Host "      ~ Student $($rel.StudentNumber): $($rel.Changes.Count) changes"
+                    }
+                }
+                if ($updated.RelationshipChanges.Removed.Count -gt 0) {
+                    Write-Host "    Relationships Removed: $($updated.RelationshipChanges.Removed.Count)" -ForegroundColor Red
                 }
             }
         }
