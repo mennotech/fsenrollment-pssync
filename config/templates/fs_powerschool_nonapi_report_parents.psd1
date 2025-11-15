@@ -51,30 +51,30 @@
         )
         EmailAddress = @(
             @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
-            @{ CSVColumn = 'Email Address'; EntityProperty = 'EmailAddress'; DataType = 'string' }
-            @{ CSVColumn = 'Contact Email Address ID'; EntityProperty = 'EmailAddressID'; DataType = 'string' }
-            @{ CSVColumn = 'Is Primary Email Address'; EntityProperty = 'IsPrimary'; DataType = 'bool' }
+            @{ CSVColumn = 'Email Address'; EntityProperty = 'EmailAddress'; DataType = 'string'; PowerSchoolAPIField = 'emailaddress_emailaddress' }
+            @{ CSVColumn = 'Contact Email Address ID'; EntityProperty = 'EmailAddressID'; DataType = 'string'; PowerSchoolAPIField = 'emailaddress_id' }
+            @{ CSVColumn = 'Is Primary Email Address'; EntityProperty = 'IsPrimary'; DataType = 'bool'; PowerSchoolAPIField = 'emailaddress_isprimary' }
         )
         PhoneNumber = @(
             @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
-            @{ CSVColumn = 'Phone Number Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int' }
-            @{ CSVColumn = 'Phone Type'; EntityProperty = 'PhoneType'; DataType = 'string' }
-            @{ CSVColumn = 'phoneNumberAsEntered'; EntityProperty = 'PhoneNumber'; DataType = 'string' }
-            @{ CSVColumn = 'Is Preferred'; EntityProperty = 'IsPreferred'; DataType = 'bool' }
-            @{ CSVColumn = 'Is SMS'; EntityProperty = 'IsSMS'; DataType = 'bool' }
-            @{ CSVColumn = 'Contact Phone Number ID'; EntityProperty = 'PhoneNumberID'; DataType = 'string' }
+            @{ CSVColumn = 'Phone Number Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int'; PowerSchoolAPIField = 'phonenumber_order' }
+            @{ CSVColumn = 'Phone Type'; EntityProperty = 'PhoneType'; DataType = 'string'; PowerSchoolAPIField = 'phonenumber_type' }
+            @{ CSVColumn = 'phoneNumberAsEntered'; EntityProperty = 'PhoneNumber'; DataType = 'string'; PowerSchoolAPIField = 'phonenumber_phonenumber' }
+            @{ CSVColumn = 'Is Preferred'; EntityProperty = 'IsPreferred'; DataType = 'bool'; PowerSchoolAPIField = 'phonenumber_ispreferred' }
+            @{ CSVColumn = 'Is SMS'; EntityProperty = 'IsSMS'; DataType = 'bool'; PowerSchoolAPIField = 'phonenumber_issms' }
+            @{ CSVColumn = 'Contact Phone Number ID'; EntityProperty = 'PhoneNumberID'; DataType = 'string'; PowerSchoolAPIField = 'phonenumber_id' }
         )
         Address = @(
             @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
-            @{ CSVColumn = 'Address Type'; EntityProperty = 'AddressType'; DataType = 'string' }
-            @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string' }
-            @{ CSVColumn = 'Line Two'; EntityProperty = 'LineTwo'; DataType = 'string' }
-            @{ CSVColumn = 'Unit'; EntityProperty = 'Unit'; DataType = 'string' }
-            @{ CSVColumn = 'City'; EntityProperty = 'City'; DataType = 'string' }
-            @{ CSVColumn = 'State'; EntityProperty = 'State'; DataType = 'string' }
-            @{ CSVColumn = 'Postal Code'; EntityProperty = 'PostalCode'; DataType = 'string' }
-            @{ CSVColumn = 'Contact Address ID'; EntityProperty = 'AddressID'; DataType = 'string' }
-            @{ CSVColumn = 'Address Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int' }
+            @{ CSVColumn = 'Address Type'; EntityProperty = 'AddressType'; DataType = 'string'; PowerSchoolAPIField = 'address_type' }
+            @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string'; PowerSchoolAPIField = 'address_street' }
+            @{ CSVColumn = 'Line Two'; EntityProperty = 'LineTwo'; DataType = 'string'; PowerSchoolAPIField = 'address_linetwo' }
+            @{ CSVColumn = 'Unit'; EntityProperty = 'Unit'; DataType = 'string'; PowerSchoolAPIField = 'address_unit' }
+            @{ CSVColumn = 'City'; EntityProperty = 'City'; DataType = 'string'; PowerSchoolAPIField = 'address_city' }
+            @{ CSVColumn = 'State'; EntityProperty = 'State'; DataType = 'string'; PowerSchoolAPIField = 'address_state' }
+            @{ CSVColumn = 'Postal Code'; EntityProperty = 'PostalCode'; DataType = 'string'; PowerSchoolAPIField = 'address_postalcode' }
+            @{ CSVColumn = 'Contact Address ID'; EntityProperty = 'AddressID'; DataType = 'string'; PowerSchoolAPIField = 'address_id' }
+            @{ CSVColumn = 'Address Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int'; PowerSchoolAPIField = 'address_order' }
         )
         Relationship = @(
             @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
