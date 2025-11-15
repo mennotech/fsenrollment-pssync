@@ -19,7 +19,7 @@ When you use `-AllRecords`:
 ### Retrieve All Records
 ```powershell
 # Get all student records using pagination
-$allStudents = Invoke-PowerQuery -PowerQueryName "com.scs.dats.students.contacts.email" -AllRecords
+$allStudents = Invoke-PowerQuery -PowerQueryName "com.abc.dats.students.contacts.email" -AllRecords
 
 Write-Output "Retrieved $($allStudents.RecordCount) total records"
 Write-Output "Pagination was used: $($allStudents.PaginationUsed)"
@@ -29,12 +29,12 @@ Write-Output "Total records available: $($allStudents.TotalRecords)"
 ### Compare Standard vs All Records
 ```powershell
 # Standard call (first 100 records only)
-$firstPage = Invoke-PowerQuery -PowerQueryName "com.scs.dats.students.contacts.email"
+$firstPage = Invoke-PowerQuery -PowerQueryName "com.abc.dats.students.contacts.email"
 Write-Output "First page: $($firstPage.RecordCount) records"
 Write-Output "Pagination used: $($firstPage.PaginationUsed)"
 
 # All records using pagination
-$allRecords = Invoke-PowerQuery -PowerQueryName "com.scs.dats.students.contacts.email" -AllRecords
+$allRecords = Invoke-PowerQuery -PowerQueryName "com.abc.dats.students.contacts.email" -AllRecords
 Write-Output "All records: $($allRecords.RecordCount) records"
 Write-Output "Pagination used: $($allRecords.PaginationUsed)"
 Write-Output "Total available: $($allRecords.TotalRecords)"
@@ -44,7 +44,7 @@ Write-Output "Total available: $($allRecords.TotalRecords)"
 ```powershell
 # Get all Grade 12 students using pagination
 $grade12Students = Invoke-PowerQuery `
-    -PowerQueryName "com.scs.dats.students.bygrade" `
+    -PowerQueryName "com.abc.dats.students.bygrade" `
     -Arguments @{ gradeLevel = "12" } `
     -AllRecords
 
@@ -147,7 +147,7 @@ Example of filtering first:
 ```powershell
 # Good: Filter to specific school and date range first
 $recentStudents = Invoke-PowerQuery `
-    -PowerQueryName "com.scs.dats.students.detailed" `
+    -PowerQueryName "com.abc.dats.students.detailed" `
     -Arguments @{ 
         schoolId = "123"
         startDate = "2024-01-01"
@@ -157,6 +157,6 @@ $recentStudents = Invoke-PowerQuery `
 
 # Less optimal: Getting all students from all schools and all time
 $allStudentsEver = Invoke-PowerQuery `
-    -PowerQueryName "com.scs.dats.students.detailed" `
+    -PowerQueryName "com.abc.dats.students.detailed" `
     -AllRecords  # Could be millions of records!
 ```
