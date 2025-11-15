@@ -17,6 +17,8 @@
 		<field table="courses" field="course_number" access="ViewOnly" />
 		<field table="emailaddress" field="emailaddress" access="FullAccess" />
 		<field table="emailaddress" field="emailaddressid" access="FullAccess" />
+		<field table="emailaddress" field="whencreated" access="FullAccess" />
+		<field table="emailaddress" field="whenmodified" access="FullAccess" />
 		<field table="originalcontactmap" field="originalcontacttype" access="FullAccess" />
 		<field table="pcas_account" field="isenabled" access="FullAccess" />
 		<field table="pcas_account" field="username" access="FullAccess" />
