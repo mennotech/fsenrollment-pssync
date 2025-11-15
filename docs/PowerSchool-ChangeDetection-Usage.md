@@ -247,7 +247,7 @@ The `Compare-PSContact` function currently checks only the following PSContact f
 
 ### Contact Comparison Notes
 
-- The comparison matches contacts using ContactID (which maps to `person_id` in PowerSchool)
+- The comparison matches contacts using ContactID by default (which maps to `person_id` in PowerSchool), but can be configured to use ContactIdentifier through the TemplateConfig or MatchOn parameter.
 - Only contacts related to enrolled students are returned by the PowerQuery
 - The function identifies new contacts, updated contacts, and unchanged contacts
 - Removed contacts (in PowerSchool but not in CSV) are NOT detected by this function
