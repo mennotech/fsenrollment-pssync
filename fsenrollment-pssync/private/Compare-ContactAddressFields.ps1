@@ -65,9 +65,14 @@ function Compare-ContactAddressFields {
             [string]$PostalCode
         )
         
-        $normalizedStreet = (Normalize-ComparisonValue -Value $Street).ToLower()
-        $normalizedCity = (Normalize-ComparisonValue -Value $City).ToLower()
-        $normalizedPostal = (Normalize-ComparisonValue -Value $PostalCode).ToLower() -replace '[^a-z0-9]', ''
+        $normalizedStreet = Normalize-ComparisonValue -Value $Street
+        $normalizedCity = Normalize-ComparisonValue -Value $City
+        $normalizedPostal = Normalize-ComparisonValue -Value $PostalCode
+        
+        # Convert to lowercase only if not null
+        $normalizedStreet = if ($null -ne $normalizedStreet) { $normalizedStreet.ToLower() } else { '' }
+        $normalizedCity = if ($null -ne $normalizedCity) { $normalizedCity.ToLower() } else { '' }
+        $normalizedPostal = if ($null -ne $normalizedPostal) { $normalizedPostal.ToLower() -replace '[^a-z0-9]', '' } else { '' }
         
         if ([string]::IsNullOrWhiteSpace($normalizedStreet) -and [string]::IsNullOrWhiteSpace($normalizedCity)) {
             return $null
