@@ -147,11 +147,11 @@ ORDER BY person.dcid, phonenumber.phonenumberid
             <column column="personaddress.linetwo">address_linetwo</column>
             <column column="personaddress.unit">address_unit</column>
             <column column="personaddress.city">address_city</column>
-            <column column="statecode.code">address_state</column>
-            <column column="countrycode.code">address_country</column>
+            <column column="codeset.code">address_state</column>
+            <column column="codeset.code">address_country</column>
             <column column="personaddress.postalcode">address_postalcode</column>
             <column column="personaddressassoc.addresspriorityorder">address_order</column>
-            <column column="typecode.code">address_type</column>
+            <column column="codeset.code">address_type</column>
         </columns>
         <sql>
             <![CDATA[
