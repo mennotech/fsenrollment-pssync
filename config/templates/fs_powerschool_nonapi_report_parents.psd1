@@ -4,26 +4,49 @@
     EntityType = 'PSNormalizedData'
     # Custom parser for complex multi-row format (contact rows, phone rows, relationship rows)
     CustomParser = 'Import-FSParentsCustomParser'
+    # Key field for matching records between CSV and PowerSchool
+    KeyField = 'ContactIdentifier'
+    # PowerSchool API field that corresponds to the key field
+    PowerSchoolKeyField = 'person_statecontactid'
+    # PowerSchool API key field data type (for proper type conversion during matching)
+    PowerSchoolKeyDataType = 'string'
     # Entity type mappings for hashtable keys (used by custom parser to infer EntityType)
+    # Each entity maps to its PowerSchool class, PowerQuery for data retrieval, and fields to check for changes
     EntityTypeMap = @{
-        Contact = 'PSContact'
-        EmailAddress = 'PSEmailAddress'
-        PhoneNumber = 'PSPhoneNumber'
-        Address = 'PSAddress'
-        Relationship = 'PSStudentContactRelationship'
+        Contact = @{ 
+            EntityType = 'PSContact'
+            PowerQuery = 'com.fsenrollment.dats.person'
+            CheckForChanges = @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
+        }
+        EmailAddress = @{ 
+            EntityType = 'PSEmailAddress'
+            PowerQuery = 'com.fsenrollment.dats.person.email'
+        }
+        PhoneNumber = @{ 
+            EntityType = 'PSPhoneNumber'
+            PowerQuery = 'com.fsenrollment.dats.person.phone'
+        }
+        Address = @{ 
+            EntityType = 'PSAddress'
+            PowerQuery = 'com.fsenrollment.dats.person.address'
+        }
+        Relationship = @{ 
+            EntityType = 'PSStudentContactRelationship'
+            PowerQuery = 'com.fsenrollment.dats.person.relationship'
+        }
     }
     # Column mappings for each entity type (EntityType is inferred from hashtable key via EntityTypeMap)
     ColumnMappings = @{
         Contact = @(
-            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
-            @{ CSVColumn = 'Contact ID'; EntityProperty = 'ContactID'; DataType = 'string' }
+            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string'; PowerSchoolAPIField = 'person_statecontactid' }
+            @{ CSVColumn = 'Contact ID'; EntityProperty = 'ContactID'; DataType = 'string'; PowerSchoolAPIField = 'person_id' }
             @{ CSVColumn = 'Prefix'; EntityProperty = 'Prefix'; DataType = 'string' }
-            @{ CSVColumn = 'First Name'; EntityProperty = 'FirstName'; DataType = 'string' }
-            @{ CSVColumn = 'Middle Name'; EntityProperty = 'MiddleName'; DataType = 'string' }
-            @{ CSVColumn = 'Last Name'; EntityProperty = 'LastName'; DataType = 'string' }
+            @{ CSVColumn = 'First Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolAPIField = 'person_firstname' }
+            @{ CSVColumn = 'Middle Name'; EntityProperty = 'MiddleName'; DataType = 'string'; PowerSchoolAPIField = 'person_middlename' }
+            @{ CSVColumn = 'Last Name'; EntityProperty = 'LastName'; DataType = 'string'; PowerSchoolAPIField = 'person_lastname' }
             @{ CSVColumn = 'Suffix'; EntityProperty = 'Suffix'; DataType = 'string' }
-            @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string' }
-            @{ CSVColumn = 'Employer'; EntityProperty = 'Employer'; DataType = 'string' }
+            @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string'; PowerSchoolAPIField = 'person_gender_code' }
+            @{ CSVColumn = 'Employer'; EntityProperty = 'Employer'; DataType = 'string'; PowerSchoolAPIField = 'person_employer' }
             @{ CSVColumn = 'Is Active'; EntityProperty = 'IsActive'; DataType = 'bool' }
         )
         EmailAddress = @(

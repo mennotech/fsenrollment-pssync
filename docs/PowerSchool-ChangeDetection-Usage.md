@@ -193,6 +193,65 @@ The functions include built-in retry logic with exponential backoff:
 4. **Limit Permissions**: Use PowerSchool API plugins with minimum required permissions
 5. **Audit Logs**: Review PowerSchool API access logs regularly
 
+## Contact Comparison (First Step)
+
+The module now supports comparing contact data from CSV against PowerSchool person records using the `com.fsenrollment.dats.person` PowerQuery.
+
+### Basic Contact Comparison Workflow
+
+```powershell
+# Step 1: Import contact data from CSV
+$csvData = Import-FSCsv -Path './data/contacts.csv' `
+    -TemplateName 'fs_powerschool_nonapi_report_parents'
+
+Write-Host "Imported $($csvData.Contacts.Count) contacts from CSV"
+
+# Step 2: Fetch person data from PowerSchool using PowerQuery
+$personData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords
+
+Write-Host "Retrieved $($personData.RecordCount) person records from PowerSchool"
+
+# Step 3: Compare CSV contacts with PowerSchool person data
+$contactChanges = Compare-PSContact -CsvData $csvData `
+    -PowerSchoolData $personData.Records `
+    -Verbose
+
+# Step 4: Display summary
+Write-Host "`nContact Change Summary:" -ForegroundColor Yellow
+Write-Host "  New contacts: $($contactChanges.Summary.NewCount)" -ForegroundColor Green
+Write-Host "  Updated contacts: $($contactChanges.Summary.UpdatedCount)" -ForegroundColor Cyan
+Write-Host "  Unchanged contacts: $($contactChanges.Summary.UnchangedCount)" -ForegroundColor Gray
+
+# Review updated contacts
+if ($contactChanges.Updated.Count -gt 0) {
+    Write-Host "`nUpdated Contacts:" -ForegroundColor Cyan
+    foreach ($updated in $contactChanges.Updated) {
+        Write-Host "  Contact ID: $($updated.MatchKey)"
+        foreach ($change in $updated.Changes) {
+            Write-Host "    $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
+        }
+    }
+}
+```
+
+### What Compare-PSContact Checks
+
+The `Compare-PSContact` function currently checks only the following PSContact fields:
+- **FirstName** (maps to `person_firstname`)
+- **MiddleName** (maps to `person_middlename`)
+- **LastName** (maps to `person_lastname`)
+- **Gender** (maps to `person_gender_code`)
+- **Employer** (maps to `person_employer`)
+
+**Note**: Email addresses, phone numbers, and addresses are NOT compared at this stage. These will be added in future updates.
+
+### Contact Comparison Notes
+
+- The comparison matches contacts using ContactID by default (which maps to `person_id` in PowerSchool), but can be configured to use ContactIdentifier through the TemplateConfig or MatchOn parameter.
+- Only contacts related to enrolled students are returned by the PowerQuery
+- The function identifies new contacts, updated contacts, and unchanged contacts
+- Removed contacts (in PowerSchool but not in CSV) are NOT detected by this function
+
 ## Next Steps
 
 After detecting changes:

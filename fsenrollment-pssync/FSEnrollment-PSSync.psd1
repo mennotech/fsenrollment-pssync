@@ -51,6 +51,7 @@
         'Connect-PowerSchool'
         'Get-PowerSchoolStudent'
         'Compare-PSStudent'
+        'Compare-PSContact'
         'Get-RequiredPowerSchoolFields'
         'Invoke-PowerQuery'
     )
