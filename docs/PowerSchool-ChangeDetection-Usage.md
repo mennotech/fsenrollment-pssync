@@ -202,7 +202,7 @@ The module now supports comparing contact data from CSV against PowerSchool pers
 ```powershell
 # Step 1: Import contact data from CSV
 $csvData = Import-FSCsv -Path './data/contacts.csv' `
-    -TemplateName 'fs_powerschool_contacts'
+    -TemplateName 'fs_powerschool_nonapi_report_parents'
 
 Write-Host "Imported $($csvData.Contacts.Count) contacts from CSV"
 
