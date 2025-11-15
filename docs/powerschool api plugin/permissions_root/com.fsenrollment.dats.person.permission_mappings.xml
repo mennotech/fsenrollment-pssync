@@ -1,5 +1,8 @@
 <permission_mappings>
     <permission name="/admin/students/contacts.html">
       <implies allow="get">/ws/schema/query/com.fsenrollment.dats.person</implies>
+      <implies allow="get">/ws/schema/query/com.fsenrollment.dats.person.email</implies>
+      <implies allow="get">/ws/schema/query/com.fsenrollment.dats.person.phone</implies>
+      <implies allow="get">/ws/schema/query/com.fsenrollment.dats.person.address</implies>
     </permission>
 </permission_mappings>
