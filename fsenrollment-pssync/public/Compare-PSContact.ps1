@@ -79,7 +79,16 @@ function Compare-PSContact {
         if ($TemplateConfig) {
             $keyField = $TemplateConfig.KeyField ?? 'ContactID'
             $psKeyField = $TemplateConfig.PowerSchoolKeyField ?? 'person_id'
-            $checkForChanges = $TemplateConfig.CheckForChanges ?? @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
+            
+            # Get CheckForChanges from EntityTypeMap.Contact or fall back to top-level or default
+            if ($TemplateConfig.EntityTypeMap -and $TemplateConfig.EntityTypeMap.Contact -and $TemplateConfig.EntityTypeMap.Contact.CheckForChanges) {
+                $checkForChanges = $TemplateConfig.EntityTypeMap.Contact.CheckForChanges
+            } elseif ($TemplateConfig.CheckForChanges) {
+                # Fallback to top-level for backward compatibility
+                $checkForChanges = $TemplateConfig.CheckForChanges
+            } else {
+                $checkForChanges = @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
+            }
             
             # Get Contact entity column mappings from template
             if ($TemplateConfig.ColumnMappings -and $TemplateConfig.ColumnMappings.Contact) {

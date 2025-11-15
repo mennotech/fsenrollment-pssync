@@ -10,16 +10,30 @@
     PowerSchoolKeyField = 'person_statecontactid'
     # PowerSchool API key field data type (for proper type conversion during matching)
     PowerSchoolKeyDataType = 'string'
-    # Fields to check for changes during comparison
-    CheckForChanges = @('FirstName', 'MiddleName', 'LastName')
     # Entity type mappings for hashtable keys (used by custom parser to infer EntityType)
-    # Each entity maps to its PowerSchool class and PowerQuery for data retrieval
+    # Each entity maps to its PowerSchool class, PowerQuery for data retrieval, and fields to check for changes
     EntityTypeMap = @{
-        Contact = @{ EntityType = 'PSContact'; PowerQuery = 'com.fsenrollment.dats.person' }
-        EmailAddress = @{ EntityType = 'PSEmailAddress'; PowerQuery = 'com.fsenrollment.dats.person.email' }
-        PhoneNumber = @{ EntityType = 'PSPhoneNumber'; PowerQuery = 'com.fsenrollment.dats.person.phone' }
-        Address = @{ EntityType = 'PSAddress'; PowerQuery = 'com.fsenrollment.dats.person.address' }
-        Relationship = @{ EntityType = 'PSStudentContactRelationship'; PowerQuery = 'com.fsenrollment.dats.person.relationship' }
+        Contact = @{ 
+            EntityType = 'PSContact'
+            PowerQuery = 'com.fsenrollment.dats.person'
+            CheckForChanges = @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
+        }
+        EmailAddress = @{ 
+            EntityType = 'PSEmailAddress'
+            PowerQuery = 'com.fsenrollment.dats.person.email'
+        }
+        PhoneNumber = @{ 
+            EntityType = 'PSPhoneNumber'
+            PowerQuery = 'com.fsenrollment.dats.person.phone'
+        }
+        Address = @{ 
+            EntityType = 'PSAddress'
+            PowerQuery = 'com.fsenrollment.dats.person.address'
+        }
+        Relationship = @{ 
+            EntityType = 'PSStudentContactRelationship'
+            PowerQuery = 'com.fsenrollment.dats.person.relationship'
+        }
     }
     # Column mappings for each entity type (EntityType is inferred from hashtable key via EntityTypeMap)
     ColumnMappings = @{
