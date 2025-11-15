@@ -21,6 +21,8 @@ $relationshipData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.per
 
 The query returns records with the following structure:
 
+**Note**: The PowerSchool API omits fields when they are null or empty rather than returning them with null values. Optional fields like `relationship_relationship_note` will only be present in the response when they contain data.
+
 ### Response Object Properties
 
 | Property | Type | Description |
@@ -52,7 +54,7 @@ Each record in the `Records` array contains the following fields:
 |------------|------|-------------|---------|
 | `relationship_priority_order` | integer | Priority order of this contact for the student | `1` |
 | `relationship_relationship_code` | string | Type of relationship (e.g., Mother, Father, Guardian) | `"Mother"` |
-| `relationship_relationship_note` | string | Additional notes about the relationship | `"Primary contact"` |
+| `relationship_relationship_note` | string | Additional notes about the relationship (omitted if null) | `"Primary contact"` |
 
 #### Relationship Flags
 | Field Name | Type | Description | Example |
@@ -72,23 +74,22 @@ Each record in the `Records` array contains the following fields:
   "RecordCount": 100,
   "Records": [
     {
-      "person_id": 12345,
-      "person_dcid": 12400,
       "student_student_number": "123456",
-      "student_dcid": 54321,
-      "relationship_priority_order": 1,
-      "relationship_isactive": 1,
-      "relationship_iscustodial": 1,
-      "relationship_isemergency": 1,
-      "relationship_liveswith": 1,
+      "_name": "StudentContactAssoc",
+      "student_dcid": 1051,
+      "relationship_relationship_code": "Father",
       "relationship_receivesmail": 1,
       "relationship_schoolpickup": 1,
-      "relationship_relationship_code": "Mother",
-      "relationship_relationship_note": "Primary contact"
+      "relationship_priority_order": 1,
+      "relationship_iscustodial": 1,
+      "relationship_liveswith": 1,
+      "relationship_isactive": 1,
+      "_id": 1151,
+      "relationship_isemergency": 1,
+      "person_dcid": 1201,
+      "person_id": 1151
     },
     {
-      "person_id": 12345,
-      "person_dcid": 12400,
       "student_student_number": "789012",
       "student_dcid": 54322,
       "relationship_priority_order": 1,
@@ -99,7 +100,11 @@ Each record in the `Records` array contains the following fields:
       "relationship_receivesmail": 1,
       "relationship_schoolpickup": 1,
       "relationship_relationship_code": "Mother",
-      "relationship_relationship_note": null
+      "relationship_relationship_note": "Primary contact",
+      "_name": "StudentContactAssoc",
+      "_id": 12345,
+      "person_dcid": 12400,
+      "person_id": 12345
     }
   ],
   "PaginationUsed": false

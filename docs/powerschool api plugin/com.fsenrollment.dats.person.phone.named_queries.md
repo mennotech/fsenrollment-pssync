@@ -21,6 +21,8 @@ $phoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.pho
 
 The query returns records with the following structure:
 
+**Note**: The PowerSchool API omits fields when they are null or empty rather than returning them with null values. Optional fields like `phonenumber_extension` will only be present in the response when they contain data.
+
 ### Response Object Properties
 
 | Property | Type | Description |
@@ -46,7 +48,7 @@ Each record in the `Records` array contains the following fields:
 |------------|------|-------------|---------|
 | `phonenumber_id` | integer | Unique phone number ID | `54321` |
 | `phonenumber_phonenumber` | string | The formatted phone number | `"(555) 123-4567"` |
-| `phonenumber_extension` | string | Phone extension (optional) | `"123"` |
+| `phonenumber_extension` | string | Phone extension (optional, omitted if null) | `"123"` |
 | `phonenumber_type` | string | Type of phone number | `"Home"`, `"Mobile"`, `"Work"` |
 | `phonenumber_order` | integer | Priority order (1 = highest priority) | `1` |
 | `phonenumber_ispreferred` | integer | Whether this is the preferred phone (1=yes, 0=no) | `1` |
@@ -60,26 +62,29 @@ Each record in the `Records` array contains the following fields:
   "RecordCount": 100,
   "Records": [
     {
-      "person_id": 12345,
-      "person_dcid": 12400,
-      "phonenumber_id": 54321,
       "phonenumber_phonenumber": "(555) 123-4567",
-      "phonenumber_extension": null,
-      "phonenumber_type": "Mobile",
+      "_name": "PhoneNumber",
       "phonenumber_order": 1,
       "phonenumber_ispreferred": 1,
-      "phonenumber_issms": 1
+      "phonenumber_issms": 1,
+      "_id": 1151,
+      "phonenumber_id": 51,
+      "person_dcid": 1201,
+      "phonenumber_type": "Mobile",
+      "person_id": 1151
     },
     {
-      "person_id": 12345,
-      "person_dcid": 12400,
-      "phonenumber_id": 54322,
       "phonenumber_phonenumber": "(555) 987-6543",
       "phonenumber_extension": "123",
-      "phonenumber_type": "Work",
+      "_name": "PhoneNumber",
       "phonenumber_order": 2,
       "phonenumber_ispreferred": 0,
-      "phonenumber_issms": 0
+      "phonenumber_issms": 0,
+      "_id": 12345,
+      "phonenumber_id": 54322,
+      "person_dcid": 12400,
+      "phonenumber_type": "Work",
+      "person_id": 12345
     }
   ],
   "PaginationUsed": false

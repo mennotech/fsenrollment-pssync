@@ -46,7 +46,7 @@ ORDER BY person.dcid
     
     <query name="com.fsenrollment.dats.person.email"
             flattened="true"
-            coreTable="Person" >
+            coreTable="EmailAddress" >
         <summary>List of email addresses for persons related to enrolled students.</summary>
         <description>Returns all email addresses with type, priority order, and primary indicator for persons associated with active students.</description>
         <columns>
@@ -91,7 +91,7 @@ ORDER BY person.dcid, emailaddress.emailaddressid
     
     <query name="com.fsenrollment.dats.person.phone"
             flattened="true"
-            coreTable="Person" >
+            coreTable="PhoneNumber" >
         <summary>List of phone numbers for persons related to enrolled students.</summary>
         <description>Returns all phone numbers with type, priority order, SMS capability, and preferred indicator for persons associated with active students.</description>
         <columns>
@@ -136,7 +136,7 @@ ORDER BY person.dcid, phonenumber.phonenumberid
     
     <query name="com.fsenrollment.dats.person.address"
             flattened="true"
-            coreTable="Person" >
+            coreTable="PersonAddress" >
         <summary>List of addresses for persons related to enrolled students.</summary>
         <description>Returns all addresses with type, priority order, and address components for persons associated with active students.</description>
         <columns>
@@ -189,7 +189,7 @@ ORDER BY person.dcid, personaddress.personaddressid
     
     <query name="com.fsenrollment.dats.person.relationship"
             flattened="true"
-            coreTable="Person" >
+            coreTable="StudentContactAssoc" >
         <summary>List of student-contact relationships for persons related to enrolled students.</summary>
         <description>Returns all relationship data including priority order, relationship type, and relationship flags for persons associated with active students.</description>
         <columns>

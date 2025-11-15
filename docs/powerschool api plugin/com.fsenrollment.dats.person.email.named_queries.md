@@ -64,6 +64,7 @@ Each record in the `Records` array contains the following fields:
   "RecordCount": 100,
   "Records": [
     {
+      "_name": "EmailAddress",
       "person_id": 12345,
       "person_dcid": 12400,
       "emailaddress_id": 98765,
@@ -72,9 +73,11 @@ Each record in the `Records` array contains the following fields:
       "emailaddress_order": 1,
       "emailaddress_isprimary": 1,
       "emailaddress_whencreated": "2025-04-25 10:17:37.24",
-      "emailaddress_whenmodified": "2025-04-25 14:17:37.0"
+      "emailaddress_whenmodified": "2025-04-25 14:17:37.0",
+      "_id": 98765
     },
     {
+      "_name": "EmailAddress",
       "person_id": 12345,
       "person_dcid": 12400,
       "emailaddress_id": 98766,
@@ -83,7 +86,8 @@ Each record in the `Records` array contains the following fields:
       "emailaddress_order": 2,
       "emailaddress_isprimary": 0,
       "emailaddress_whencreated": "2025-05-10 12:30:15.0",
-      "emailaddress_whenmodified": "2025-05-10 12:30:15.0"
+      "emailaddress_whenmodified": "2025-05-10 12:30:15.0",
+      "_id": 98766
     }
   ],
   "PaginationUsed": false

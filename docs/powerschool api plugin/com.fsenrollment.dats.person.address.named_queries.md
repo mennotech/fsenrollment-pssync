@@ -21,6 +21,8 @@ $addressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.a
 
 The query returns records with the following structure:
 
+**Note**: The PowerSchool API omits fields when they are null or empty rather than returning them with null values. Optional fields like `address_linetwo` and `address_unit` will only be present in the response when they contain data.
+
 ### Response Object Properties
 
 | Property | Type | Description |
@@ -46,8 +48,8 @@ Each record in the `Records` array contains the following fields:
 |------------|------|-------------|---------|
 | `address_id` | integer | Unique address ID | `67890` |
 | `address_street` | string | Street address line 1 | `"123 Main Street"` |
-| `address_linetwo` | string | Street address line 2 (optional) | `"Apt 4B"` |
-| `address_unit` | string | Unit/suite number (optional) | `"Suite 100"` |
+| `address_linetwo` | string | Street address line 2 (optional, omitted if null) | `"Apt 4B"` |
+| `address_unit` | string | Unit/suite number (optional, omitted if null) | `"Suite 100"` |
 | `address_city` | string | City name | `"Springfield"` |
 | `address_state` | string | State/province code | `"CA"`, `"ON"` |
 | `address_country` | string | Country code (optional) | `"US"`, `"CA"` |
@@ -63,32 +65,33 @@ Each record in the `Records` array contains the following fields:
   "RecordCount": 100,
   "Records": [
     {
-      "person_id": 12345,
-      "person_dcid": 12400,
-      "address_id": 67890,
-      "address_street": "123 Main Street",
-      "address_linetwo": null,
-      "address_unit": null,
-      "address_city": "Springfield",
-      "address_state": "CA",
-      "address_country": "US",
+      "_name": "PersonAddress",
       "address_postalcode": "12345",
       "address_type": "Home",
-      "address_order": 1
+      "address_country": "US",
+      "address_id": 53,
+      "address_state": "CA",
+      "address_city": "Springfield",
+      "address_street": "123 Main Street",
+      "address_order": 1,
+      "_id": 1151,
+      "person_dcid": 1201,
+      "person_id": 1151
     },
     {
-      "person_id": 12345,
-      "person_dcid": 12400,
+      "_name": "PersonAddress", 
       "address_id": 67891,
       "address_street": "456 Oak Avenue",
       "address_linetwo": "Suite 200",
-      "address_unit": null,
       "address_city": "Los Angeles",
       "address_state": "CA",
       "address_country": "US",
       "address_postalcode": "90001",
       "address_type": "Work",
-      "address_order": 2
+      "address_order": 2,
+      "_id": 12345,
+      "person_dcid": 12400,
+      "person_id": 12345
     }
   ],
   "PaginationUsed": false
