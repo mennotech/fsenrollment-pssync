@@ -443,4 +443,382 @@ Describe 'Compare-PSContact' {
             }
         }
     }
+
+    Context 'Email Address Change Detection' {
+        It 'Should detect new email addresses' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with email
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvEmail = [PSEmailAddress]::new()
+                $csvEmail.ContactIdentifier = '12345'
+                $csvEmail.EmailAddress = 'john.doe@example.com'
+                $csvEmail.IsPrimary = $true
+                $script:CsvData.EmailAddresses.Add($csvEmail)
+                
+                # PowerSchool person without email
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool email data (empty)
+                $psEmailData = @()
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolEmailData $psEmailData
+                
+                $result.Updated.Count | Should -Be 1
+                $result.Updated[0].EmailChanges | Should -Not -BeNullOrEmpty
+                $result.Updated[0].EmailChanges.Added.Count | Should -Be 1
+                $result.Updated[0].EmailChanges.Added[0].EmailAddress | Should -Be 'john.doe@example.com'
+            }
+        }
+
+        It 'Should detect modified email properties' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with email marked as not primary
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvEmail = [PSEmailAddress]::new()
+                $csvEmail.ContactIdentifier = '12345'
+                $csvEmail.EmailAddress = 'john.doe@example.com'
+                $csvEmail.IsPrimary = $false
+                $script:CsvData.EmailAddresses.Add($csvEmail)
+                
+                # PowerSchool person
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool email data with email marked as primary
+                $psEmailData = @(
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        emailaddress_emailaddress = 'john.doe@example.com'
+                        emailaddress_isprimary = 1
+                    }
+                )
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolEmailData $psEmailData
+                
+                $result.Updated.Count | Should -Be 1
+                $result.Updated[0].EmailChanges | Should -Not -BeNullOrEmpty
+                $result.Updated[0].EmailChanges.Modified.Count | Should -Be 1
+            }
+        }
+
+        It 'Should detect removed email addresses' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact without email
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                # PowerSchool person
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool email data with email
+                $psEmailData = @(
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        emailaddress_emailaddress = 'john.doe@example.com'
+                        emailaddress_isprimary = 1
+                    }
+                )
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolEmailData $psEmailData
+                
+                $result.Updated.Count | Should -Be 1
+                $result.Updated[0].EmailChanges | Should -Not -BeNullOrEmpty
+                $result.Updated[0].EmailChanges.Removed.Count | Should -Be 1
+            }
+        }
+    }
+
+    Context 'Phone Number Change Detection' {
+        It 'Should detect new phone numbers' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with phone
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvPhone = [PSPhoneNumber]::new()
+                $csvPhone.ContactIdentifier = '12345'
+                $csvPhone.PhoneNumber = '555-123-4567'
+                $csvPhone.IsPreferred = $true
+                $csvPhone.IsSMS = $true
+                $script:CsvData.PhoneNumbers.Add($csvPhone)
+                
+                # PowerSchool person without phone
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool phone data (empty)
+                $psPhoneData = @()
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolPhoneData $psPhoneData
+                
+                $result.Updated.Count | Should -Be 1
+                $result.Updated[0].PhoneChanges | Should -Not -BeNullOrEmpty
+                $result.Updated[0].PhoneChanges.Added.Count | Should -Be 1
+            }
+        }
+
+        It 'Should detect modified phone properties' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with phone marked as not SMS
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvPhone = [PSPhoneNumber]::new()
+                $csvPhone.ContactIdentifier = '12345'
+                $csvPhone.PhoneNumber = '(555) 123-4567'
+                $csvPhone.IsPreferred = $true
+                $csvPhone.IsSMS = $false
+                $script:CsvData.PhoneNumbers.Add($csvPhone)
+                
+                # PowerSchool person
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool phone data with phone marked as SMS
+                $psPhoneData = @(
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        phonenumber_phonenumber = '(555) 123-4567'
+                        phonenumber_ispreferred = 1
+                        phonenumber_issms = 1
+                    }
+                )
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolPhoneData $psPhoneData
+                
+                $result.Updated.Count | Should -Be 1
+                $result.Updated[0].PhoneChanges | Should -Not -BeNullOrEmpty
+                $result.Updated[0].PhoneChanges.Modified.Count | Should -Be 1
+            }
+        }
+
+        It 'Should normalize phone numbers for comparison' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with phone in one format
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvPhone = [PSPhoneNumber]::new()
+                $csvPhone.ContactIdentifier = '12345'
+                $csvPhone.PhoneNumber = '555-123-4567'
+                $csvPhone.IsPreferred = $true
+                $script:CsvData.PhoneNumbers.Add($csvPhone)
+                
+                # PowerSchool person
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool phone data with same number in different format
+                $psPhoneData = @(
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        phonenumber_phonenumber = '(555) 123-4567'
+                        phonenumber_ispreferred = 1
+                    }
+                )
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolPhoneData $psPhoneData
+                
+                # Should be unchanged - numbers are the same despite formatting
+                # Contact should be in Unchanged collection since no changes detected
+                $result.Unchanged.Count | Should -Be 1
+                $result.Updated.Count | Should -Be 0
+            }
+        }
+    }
+
+    Context 'Address Change Detection' {
+        It 'Should detect new addresses' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with address
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvAddress = [PSAddress]::new()
+                $csvAddress.ContactIdentifier = '12345'
+                $csvAddress.Street = '123 Main St'
+                $csvAddress.City = 'Springfield'
+                $csvAddress.State = 'CA'
+                $csvAddress.PostalCode = '12345'
+                $script:CsvData.Addresses.Add($csvAddress)
+                
+                # PowerSchool person without address
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool address data (empty)
+                $psAddressData = @()
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolAddressData $psAddressData
+                
+                $result.Updated.Count | Should -Be 1
+                $result.Updated[0].AddressChanges | Should -Not -BeNullOrEmpty
+                $result.Updated[0].AddressChanges.Added.Count | Should -Be 1
+            }
+        }
+
+        It 'Should detect modified address fields' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with address including unit
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvAddress = [PSAddress]::new()
+                $csvAddress.ContactIdentifier = '12345'
+                $csvAddress.Street = '123 Main St'
+                $csvAddress.LineTwo = 'Apt 4B'
+                $csvAddress.City = 'Springfield'
+                $csvAddress.State = 'CA'
+                $csvAddress.PostalCode = '12345'
+                $script:CsvData.Addresses.Add($csvAddress)
+                
+                # PowerSchool person
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool address data without line two
+                $psAddressData = @(
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        address_street = '123 Main St'
+                        address_linetwo = $null
+                        address_city = 'Springfield'
+                        address_state = 'CA'
+                        address_postalcode = '12345'
+                    }
+                )
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolAddressData $psAddressData
+                
+                $result.Updated.Count | Should -Be 1
+                $result.Updated[0].AddressChanges | Should -Not -BeNullOrEmpty
+                $result.Updated[0].AddressChanges.Modified.Count | Should -Be 1
+            }
+        }
+
+        It 'Should match addresses by street, city, and postal code' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with address
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvAddress = [PSAddress]::new()
+                $csvAddress.ContactIdentifier = '12345'
+                $csvAddress.Street = '123 Main Street'
+                $csvAddress.City = 'Springfield'
+                $csvAddress.State = 'CA'
+                $csvAddress.PostalCode = '12345'
+                $script:CsvData.Addresses.Add($csvAddress)
+                
+                # PowerSchool person
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool address data with matching address
+                $psAddressData = @(
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        address_street = '123 Main Street'
+                        address_city = 'Springfield'
+                        address_state = 'CA'
+                        address_postalcode = '12345'
+                    }
+                )
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolAddressData $psAddressData
+                
+                # Should be unchanged - address matches
+                # Contact should be in Unchanged collection since no changes detected
+                $result.Unchanged.Count | Should -Be 1
+                $result.Updated.Count | Should -Be 0
+            }
+        }
+    }
 }

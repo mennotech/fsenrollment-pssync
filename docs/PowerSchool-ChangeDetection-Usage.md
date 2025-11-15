@@ -236,14 +236,120 @@ if ($contactChanges.Updated.Count -gt 0) {
 
 ### What Compare-PSContact Checks
 
-The `Compare-PSContact` function currently checks only the following PSContact fields:
+The `Compare-PSContact` function checks the following data:
+
+**PSContact Fields** (always checked):
 - **FirstName** (maps to `person_firstname`)
 - **MiddleName** (maps to `person_middlename`)
 - **LastName** (maps to `person_lastname`)
 - **Gender** (maps to `person_gender_code`)
 - **Employer** (maps to `person_employer`)
 
-**Note**: Email addresses, phone numbers, and addresses are NOT compared at this stage. These will be added in future updates.
+**Email Addresses** (optional - checked if PowerSchoolEmailData is provided):
+- Email address
+- Email type
+- Priority order
+- Primary status
+
+**Phone Numbers** (optional - checked if PowerSchoolPhoneData is provided):
+- Phone number (with normalization for different formats)
+- Phone type
+- Priority order
+- Preferred status
+- SMS capability
+
+**Addresses** (optional - checked if PowerSchoolAddressData is provided):
+- Street address
+- Line two
+- Unit
+- City
+- State
+- Postal code
+- Address type
+- Priority order
+
+**Relationships** (optional - checked if PowerSchoolRelationshipData is provided):
+- Contact priority order
+- Relationship type
+- Relationship note
+- Custody status
+- Lives with flag
+- School pickup permission
+- Emergency contact flag
+- Receives mail flag
+
+### Extended Contact Comparison with All Data
+
+For comprehensive change detection including emails, phones, addresses, and relationships:
+
+```powershell
+# Step 1: Import contact data from CSV
+$csvData = Import-FSCsv -Path './data/contacts.csv' `
+    -TemplateName 'fs_powerschool_nonapi_report_parents'
+
+# Step 2: Fetch all PowerSchool data
+$personData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords
+$emailData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.email' -AllRecords
+$phoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.phone' -AllRecords
+$addressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords
+$relationshipData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords
+
+# Step 3: Load template configuration
+$templateConfig = Import-PowerShellDataFile './config/templates/fs_powerschool_nonapi_report_parents.psd1'
+
+# Step 4: Compare with all data types
+$contactChanges = Compare-PSContact -CsvData $csvData `
+    -PowerSchoolData $personData.Records `
+    -PowerSchoolEmailData $emailData.Records `
+    -PowerSchoolPhoneData $phoneData.Records `
+    -PowerSchoolAddressData $addressData.Records `
+    -PowerSchoolRelationshipData $relationshipData.Records `
+    -TemplateConfig $templateConfig `
+    -Verbose
+
+# Step 5: Display comprehensive results
+Write-Host "`nContact Change Summary:" -ForegroundColor Yellow
+Write-Host "  Total in CSV: $($contactChanges.Summary.TotalInCsv)"
+Write-Host "  Total in PowerSchool: $($contactChanges.Summary.TotalInPowerSchool)"
+Write-Host "  New contacts: $($contactChanges.Summary.NewCount)" -ForegroundColor Green
+Write-Host "  Updated contacts: $($contactChanges.Summary.UpdatedCount)" -ForegroundColor Cyan
+Write-Host "  Unchanged contacts: $($contactChanges.Summary.UnchangedCount)" -ForegroundColor Gray
+
+# Review updated contacts with all change types
+if ($contactChanges.Updated.Count -gt 0) {
+    Write-Host "`nUpdated Contacts:" -ForegroundColor Cyan
+    foreach ($updated in $contactChanges.Updated) {
+        Write-Host "  Contact ID: $($updated.MatchKey)"
+        
+        # Basic field changes
+        if ($updated.Changes -and $updated.Changes.Count -gt 0) {
+            foreach ($change in $updated.Changes) {
+                Write-Host "    $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
+            }
+        }
+        
+        # Email changes
+        if ($updated.EmailChanges) {
+            Write-Host "    Emails: +$($updated.EmailChanges.Added.Count) ~$($updated.EmailChanges.Modified.Count) -$($updated.EmailChanges.Removed.Count)"
+        }
+        
+        # Phone changes
+        if ($updated.PhoneChanges) {
+            Write-Host "    Phones: +$($updated.PhoneChanges.Added.Count) ~$($updated.PhoneChanges.Modified.Count) -$($updated.PhoneChanges.Removed.Count)"
+        }
+        
+        # Address changes
+        if ($updated.AddressChanges) {
+            Write-Host "    Addresses: +$($updated.AddressChanges.Added.Count) ~$($updated.AddressChanges.Modified.Count) -$($updated.AddressChanges.Removed.Count)"
+        }
+        
+        # Relationship changes
+        if ($updated.RelationshipChanges) {
+            Write-Host "    Relationships: +$($updated.RelationshipChanges.Added.Count) ~$($updated.RelationshipChanges.Modified.Count) -$($updated.RelationshipChanges.Removed.Count)"
+        }
+    }
+}
+```
 
 ### Contact Comparison Notes
 
@@ -251,6 +357,21 @@ The `Compare-PSContact` function currently checks only the following PSContact f
 - Only contacts related to enrolled students are returned by the PowerQuery
 - The function identifies new contacts, updated contacts, and unchanged contacts
 - Removed contacts (in PowerSchool but not in CSV) are NOT detected by this function
+- Email addresses are matched by normalized email address (case-insensitive)
+- Phone numbers are normalized for comparison (different formats of the same number are matched)
+- Addresses are matched by composite key (street + city + postal code)
+- Relationships are matched by person + student combination (ContactIdentifier + StudentNumber)
+- All entity comparisons (email, phone, address, relationship) detect additions, modifications, and removals
+
+### Available PowerQueries for Contact Data
+
+The following PowerQueries are available for comprehensive contact data retrieval:
+
+- **com.fsenrollment.dats.person** - Basic person information
+- **com.fsenrollment.dats.person.email** - Email addresses with type, priority, and primary status
+- **com.fsenrollment.dats.person.phone** - Phone numbers with type, priority, SMS capability
+- **com.fsenrollment.dats.person.address** - Addresses with full components
+- **com.fsenrollment.dats.person.relationship** - Student-contact relationships with flags
 
 ## Next Steps
 
