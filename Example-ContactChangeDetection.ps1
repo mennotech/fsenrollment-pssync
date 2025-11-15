@@ -99,7 +99,7 @@ try {
     
     # Step 4: Compare and detect changes
     Write-Host "[4/4] Comparing contact data..." -ForegroundColor Yellow
-    $fieldsToCheck = $templateConfig.CheckForChanges -join ', '
+    $fieldsToCheck = $templateConfig.EntityTypeMap.Contact.CheckForChanges -join ', '
     Write-Host "  Comparing: $fieldsToCheck" -ForegroundColor Gray
     Write-Host "  Key Field: $($templateConfig.KeyField) -> $($templateConfig.PowerSchoolKeyField)" -ForegroundColor Gray
     
