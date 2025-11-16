@@ -102,17 +102,52 @@ try {
     
     # Generate HTML report
     Write-Host "[5/5] Generating HTML report..." -ForegroundColor Yellow
-    & (Join-Path $PSScriptRoot "Generate-ChangeDetectionHtmlReport.ps1") -StudentChangesPath $studentChangesPath -ContactChangesPath $contactChangesPath -OutputPath $htmlReportPath
-    Write-Host "  ✓ HTML report generated: $htmlReportPath" -ForegroundColor Green
+    
+    # Check if both change files exist before generating the report
+    $studentChangesExist = Test-Path $studentChangesPath
+    $contactChangesExist = Test-Path $contactChangesPath
+    
+    if ($studentChangesExist -and $contactChangesExist) {
+        & (Join-Path $PSScriptRoot "Generate-ChangeDetectionHtmlReport.ps1") -StudentChangesPath $studentChangesPath -ContactChangesPath $contactChangesPath -OutputPath $htmlReportPath
+        Write-Host "  ✓ HTML report generated: $htmlReportPath" -ForegroundColor Green
+    } elseif ($contactChangesExist -and -not $studentChangesExist) {
+        Write-Host "  ⚠ Student changes file missing - cannot generate complete HTML report" -ForegroundColor Yellow
+        Write-Host "  ℹ Contact changes are available at: $contactChangesPath" -ForegroundColor Cyan
+        Write-Host "  ℹ Rerun student change detection to generate complete report" -ForegroundColor Cyan
+        $htmlReportPath = $null  # Indicate no HTML report was generated
+    } elseif ($studentChangesExist -and -not $contactChangesExist) {
+        Write-Host "  ⚠ Contact changes file missing - cannot generate complete HTML report" -ForegroundColor Yellow
+        Write-Host "  ℹ Student changes are available at: $studentChangesPath" -ForegroundColor Cyan
+        Write-Host "  ℹ Rerun contact change detection to generate complete report" -ForegroundColor Cyan
+        $htmlReportPath = $null  # Indicate no HTML report was generated
+    } else {
+        Write-Host "  ✗ Both change files missing - cannot generate HTML report" -ForegroundColor Red
+        $htmlReportPath = $null  # Indicate no HTML report was generated
+    }
     Write-Host ""
     
     # Summary
     Write-Host "=== Workflow Complete ===" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "Output files generated:" -ForegroundColor White
-    Write-Host "  • Student changes (JSON): $studentChangesPath" -ForegroundColor Gray
-    Write-Host "  • Contact changes (JSON): $contactChangesPath" -ForegroundColor Gray
-    Write-Host "  • Combined HTML report:   $htmlReportPath" -ForegroundColor Gray
+    Write-Host "Output files:" -ForegroundColor White
+    
+    if ($studentChangesExist) {
+        Write-Host "  • Student changes (JSON): $studentChangesPath" -ForegroundColor Gray
+    } else {
+        Write-Host "  • Student changes (JSON): $studentChangesPath [MISSING]" -ForegroundColor Red
+    }
+    
+    if ($contactChangesExist) {
+        Write-Host "  • Contact changes (JSON): $contactChangesPath" -ForegroundColor Gray
+    } else {
+        Write-Host "  • Contact changes (JSON): $contactChangesPath [MISSING]" -ForegroundColor Red
+    }
+    
+    if ($htmlReportPath) {
+        Write-Host "  • Combined HTML report:   $htmlReportPath" -ForegroundColor Gray
+    } else {
+        Write-Host "  • Combined HTML report:   [NOT GENERATED - missing input files]" -ForegroundColor Yellow
+    }
     Write-Host ""
     Write-Host "Organized in data directory structure:" -ForegroundColor White
     Write-Host "  • data/pending/   - Change detection JSON files" -ForegroundColor Gray
@@ -122,26 +157,47 @@ try {
     Write-Host ""
     
     # Load change summaries for final report
-    $studentData = Get-Content -Path $studentChangesPath -Raw | ConvertFrom-Json
-    $contactData = Get-Content -Path $contactChangesPath -Raw | ConvertFrom-Json
-    
     Write-Host "Change Summary:" -ForegroundColor White
-    Write-Host "  Students - New: $($studentData.Summary.NewCount), Updated: $($studentData.Summary.UpdatedCount), Unchanged: $($studentData.Summary.UnchangedCount)" -ForegroundColor Gray
-    Write-Host "  Contacts - New: $($contactData.New.Count), Updated: $($contactData.Updated.Count), Unchanged: $($contactData.Unchanged.Count)" -ForegroundColor Gray
-    Write-Host ""
     
-    $totalChanges = $studentData.Summary.NewCount + $studentData.Summary.UpdatedCount + $contactData.New.Count + $contactData.Updated.Count
-    if ($totalChanges -eq 0) {
-        Write-Host "No changes detected. All data appears to be synchronized." -ForegroundColor Green
+    $totalChanges = 0
+    
+    if ($studentChangesExist) {
+        $studentData = Get-Content -Path $studentChangesPath -Raw | ConvertFrom-Json
+        Write-Host "  Students - New: $($studentData.Summary.NewCount), Updated: $($studentData.Summary.UpdatedCount), Unchanged: $($studentData.Summary.UnchangedCount)" -ForegroundColor Gray
+        $totalChanges += $studentData.Summary.NewCount + $studentData.Summary.UpdatedCount
     } else {
-        Write-Host "Total changes detected: $totalChanges" -ForegroundColor Yellow
-        Write-Host "Please review the HTML report for detailed analysis." -ForegroundColor White
+        Write-Host "  Students - [DATA NOT AVAILABLE]" -ForegroundColor Red
     }
     
-    if ($OpenReport) {
+    if ($contactChangesExist) {
+        $contactData = Get-Content -Path $contactChangesPath -Raw | ConvertFrom-Json
+        Write-Host "  Contacts - New: $($contactData.New.Count), Updated: $($contactData.Updated.Count), Unchanged: $($contactData.Unchanged.Count)" -ForegroundColor Gray
+        $totalChanges += $contactData.New.Count + $contactData.Updated.Count
+    } else {
+        Write-Host "  Contacts - [DATA NOT AVAILABLE]" -ForegroundColor Red
+    }
+    Write-Host ""
+    
+    if ($totalChanges -eq 0 -and ($studentChangesExist -or $contactChangesExist)) {
+        Write-Host "No changes detected. All data appears to be synchronized." -ForegroundColor Green
+    } elseif ($totalChanges -gt 0) {
+        Write-Host "Total changes detected: $totalChanges" -ForegroundColor Yellow
+        if ($htmlReportPath) {
+            Write-Host "Please review the HTML report for detailed analysis." -ForegroundColor White
+        } else {
+            Write-Host "Please review the JSON files for detailed analysis." -ForegroundColor White
+        }
+    } else {
+        Write-Host "Cannot determine change status - change detection files are missing." -ForegroundColor Yellow
+    }
+    
+    if ($OpenReport -and $htmlReportPath) {
         Write-Host ""
         Write-Host "Opening HTML report..." -ForegroundColor Cyan
         Start-Process $htmlReportPath
+    } elseif ($OpenReport -and -not $htmlReportPath) {
+        Write-Host ""
+        Write-Host "Cannot open HTML report - report was not generated due to missing input files." -ForegroundColor Yellow
     }
     
     exit 0
