@@ -1,6 +1,32 @@
-# scripts
+# Scripts
 
 This directory contains utility scripts and standalone PowerShell scripts that support the FSEnrollment-PSSync module.
+
+## Main Scripts
+
+### Change Detection Scripts
+- **`Example-ChangeDetection.ps1`** - Detects changes in student data between CSV and PowerSchool
+- **`Example-ContactChangeDetection.ps1`** - Detects changes in contact/parent data
+- **`Generate-ChangeDetectionHtmlReport.ps1`** - Creates comprehensive HTML reports from change detection results
+
+### Data Processing Scripts
+- **`Test-PowerQuery.ps1`** - Tests PowerQuery functionality
+- **`Anonymize-ParentsExampleFile.ps1`** - Anonymizes parent data for examples
+- **`Filter-ParentsByStudentExampleFile.ps1`** - Filters parent data by student criteria
+
+## Output File Naming Convention
+
+All output files use date-first naming for better sorting:
+- JSON files: `yyyy-MM-dd-HHmm-description.json` (e.g., `2025-11-15-1430-student-changes.json`)
+- HTML reports: `yyyy-MM-dd-HHmm-description.html` (e.g., `2025-11-15-1430-change-detection-report.html`)
+
+## Directory Structure
+
+Scripts output to organized data directories:
+- `../data/pending/` - Change detection JSON files
+- `../data/reports/` - HTML reports  
+- `../data/processed/` - Processed files
+- `../data/archive/` - Archived files
 
 ## Purpose
 

@@ -23,9 +23,7 @@ config/*.p12
 *.env
 
 # CSV data files (may contain sensitive data)
-data/*.csv
-data/**/processed/
-data/**/archive/
+data/*
 
 # Keep example files
 !data/examples/

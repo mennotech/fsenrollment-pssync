@@ -22,7 +22,7 @@
     Template name for parsing the CSV. Default: 'fs_powerschool_nonapi_report_students'
 
 .PARAMETER OutputPath
-    Path where the change report JSON file will be saved. Default: './data/pending_changes.json'
+    Path where the change report JSON file will be saved. Default: './data/pending/[date]-student-changes.json'
 
 .EXAMPLE
     .\Example-ChangeDetection.ps1 -CsvPath './data/students.csv'
@@ -45,11 +45,11 @@ param(
     [string]$TemplateName = 'fs_powerschool_nonapi_report_students',
     
     [Parameter(Mandatory = $false)]
-    [string]$OutputPath = './data/pending_changes.json'
+    [string]$OutputPath = "./data/pending/$(Get-Date -Format 'yyyy-MM-dd-HHmm')-student-changes.json"
 )
 
 # Import the module
-$ModulePath = Join-Path $PSScriptRoot 'fsenrollment-pssync/FSEnrollment-PSSync.psd1'
+$ModulePath = Join-Path $PSScriptRoot '../fsenrollment-pssync/FSEnrollment-PSSync.psd1'
 Import-Module $ModulePath -Force
 
 Write-Host "=== PowerSchool Change Detection Example ===" -ForegroundColor Cyan

@@ -24,7 +24,7 @@
 
 .PARAMETER OutputPath
     Path where the contact change report JSON file will be saved. 
-    Default: './data/pending_contact_changes.json'
+    Default: './data/pending/[date]-contact-changes.json'
 
 .EXAMPLE
     .\Example-ContactChangeDetection.ps1 -CsvPath './data/contacts.csv'
@@ -52,11 +52,11 @@ param(
     [string]$TemplateName = 'fs_powerschool_nonapi_report_parents',
     
     [Parameter(Mandatory = $false)]
-    [string]$OutputPath = './data/pending_contact_changes.json'
+    [string]$OutputPath = "./data/pending/$(Get-Date -Format 'yyyy-MM-dd-HHmm')-contact-changes.json"
 )
 
 # Import the module
-Import-Module (Join-Path $PSScriptRoot 'fsenrollment-pssync/FSEnrollment-PSSync.psd1') -Force
+Import-Module (Join-Path $PSScriptRoot '../fsenrollment-pssync/FSEnrollment-PSSync.psd1') -Force
 
 try {
     Write-Host "=== PowerSchool Contact Change Detection ===" -ForegroundColor Cyan
@@ -74,7 +74,7 @@ try {
     Write-Host "  Template: $TemplateName" -ForegroundColor Gray
     
     # Load template configuration for comparison settings
-    $configRoot = Join-Path $PSScriptRoot 'config'
+    $configRoot = Join-Path $PSScriptRoot '../config'
     $templatePath = Join-Path $configRoot "templates/$TemplateName.psd1"
     
     if (-not (Test-Path $templatePath)) {
