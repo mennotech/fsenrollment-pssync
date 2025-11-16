@@ -33,6 +33,7 @@
         Relationship = @{ 
             EntityType = 'PSStudentContactRelationship'
             PowerQuery = 'com.fsenrollment.dats.person.relationship'
+            CheckForChanges = @('ContactPriorityOrder', 'RelationshipType', 'RelationshipNote', 'HasCustody', 'LivesWith', 'AllowSchoolPickup', 'IsEmergencyContact', 'ReceivesMail')
         }
     }
     # Column mappings for each entity type (EntityType is inferred from hashtable key via EntityTypeMap)
