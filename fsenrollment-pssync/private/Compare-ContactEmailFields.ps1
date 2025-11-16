@@ -97,7 +97,7 @@ function Compare-ContactEmailFields {
 
             # Compare IsPrimary (CSV bool vs PS integer 0/1)
             $csvPrimary = if ($csvEmail.IsPrimary) { 1 } else { 0 }
-            $psPrimary = [int]$psEmail.emailaddress_isprimary
+            $psPrimary = if ($null -eq $psEmail.emailaddress_isprimary) { 0 } else { [int]$psEmail.emailaddress_isprimary }
             if ($csvPrimary -ne $psPrimary) {
                 $changes.Add([PSCustomObject]@{
                     Field = 'IsPrimary'
