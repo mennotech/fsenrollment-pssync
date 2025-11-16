@@ -20,13 +20,13 @@
     Directory where output files will be saved. Default: './data'
 
 .PARAMETER OpenReport
-    Whether to automatically open the HTML report when complete. Default: true
+    Switch to automatically open the HTML report when complete.
 
 .EXAMPLE
     .\Run-CompleteChangeDetection.ps1
     
 .EXAMPLE
-    .\Run-CompleteChangeDetection.ps1 -StudentsCSV ".\data\incoming\students.csv" -ParentsCSV ".\data\incoming\parents.csv" -OutputDirectory ".\data" -OpenReport:$false
+    .\Run-CompleteChangeDetection.ps1 -StudentsCSV ".\data\incoming\students.csv" -ParentsCSV ".\data\incoming\parents.csv" -OutputDirectory ".\data" -OpenReport
 #>
 
 param(
@@ -40,7 +40,7 @@ param(
     [string]$OutputDirectory = "./data",
     
     [Parameter(Mandatory = $false)]
-    [bool]$OpenReport = $true
+    [switch]$OpenReport
 )
 
 $ErrorActionPreference = "Stop"

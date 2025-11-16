@@ -112,7 +112,7 @@ function Compare-ContactPhoneFields {
             # Compare IsPreferred (CSV bool vs PS integer 0/1)
             if ($null -ne $csvPhone.IsPreferred) {
                 $csvPreferred = if ($csvPhone.IsPreferred) { 1 } else { 0 }
-                $psPreferred = [int]$psPhone.phonenumber_ispreferred
+                $psPreferred = if ($null -eq $psPhone.phonenumber_ispreferred) { 0 } else { [int]$psPhone.phonenumber_ispreferred }
                 if ($csvPreferred -ne $psPreferred) {
                     $changes.Add([PSCustomObject]@{
                         Field = 'IsPreferred'
@@ -125,7 +125,7 @@ function Compare-ContactPhoneFields {
             # Compare IsSMS (CSV bool vs PS integer 0/1)
             if ($null -ne $csvPhone.IsSMS) {
                 $csvSMS = if ($csvPhone.IsSMS) { 1 } else { 0 }
-                $psSMS = [int]$psPhone.phonenumber_issms
+                $psSMS = if ($null -eq $psPhone.phonenumber_issms) { 0 } else { [int]$psPhone.phonenumber_issms }
                 if ($csvSMS -ne $psSMS) {
                     $changes.Add([PSCustomObject]@{
                         Field = 'IsSMS'

@@ -109,7 +109,7 @@ function Compare-ContactRelationshipFields {
             # Compare ContactPriorityOrder
             if ($null -ne $csvRel.ContactPriorityOrder) {
                 $csvPriority = [int]$csvRel.ContactPriorityOrder
-                $psPriority = [int]$psRel.relationship_priority_order
+                $psPriority = if ($null -eq $psRel.relationship_priority_order) { 0 } else { [int]$psRel.relationship_priority_order }
                 if ($csvPriority -ne $psPriority) {
                     $changes.Add([PSCustomObject]@{
                         Field = 'ContactPriorityOrder'
@@ -146,7 +146,7 @@ function Compare-ContactRelationshipFields {
             # Compare HasCustody (CSV bool vs PS integer 0/1)
             if ($null -ne $csvRel.HasCustody) {
                 $csvCustody = if ($csvRel.HasCustody) { 1 } else { 0 }
-                $psCustody = [int]$psRel.relationship_iscustodial
+                $psCustody = if ($null -eq $psRel.relationship_iscustodial) { 0 } else { [int]$psRel.relationship_iscustodial }
                 if ($csvCustody -ne $psCustody) {
                     $changes.Add([PSCustomObject]@{
                         Field = 'HasCustody'
@@ -159,7 +159,7 @@ function Compare-ContactRelationshipFields {
             # Compare LivesWith (CSV bool vs PS integer 0/1)
             if ($null -ne $csvRel.LivesWith) {
                 $csvLivesWith = if ($csvRel.LivesWith) { 1 } else { 0 }
-                $psLivesWith = [int]$psRel.relationship_liveswith
+                $psLivesWith = if ($null -eq $psRel.relationship_liveswith) { 0 } else { [int]$psRel.relationship_liveswith }
                 if ($csvLivesWith -ne $psLivesWith) {
                     $changes.Add([PSCustomObject]@{
                         Field = 'LivesWith'
@@ -172,7 +172,7 @@ function Compare-ContactRelationshipFields {
             # Compare AllowSchoolPickup (CSV bool vs PS integer 0/1)
             if ($null -ne $csvRel.AllowSchoolPickup) {
                 $csvPickup = if ($csvRel.AllowSchoolPickup) { 1 } else { 0 }
-                $psPickup = [int]$psRel.relationship_schoolpickup
+                $psPickup = if ($null -eq $psRel.relationship_schoolpickup) { 0 } else { [int]$psRel.relationship_schoolpickup }
                 if ($csvPickup -ne $psPickup) {
                     $changes.Add([PSCustomObject]@{
                         Field = 'AllowSchoolPickup'
@@ -185,7 +185,7 @@ function Compare-ContactRelationshipFields {
             # Compare IsEmergencyContact (CSV bool vs PS integer 0/1)
             if ($null -ne $csvRel.IsEmergencyContact) {
                 $csvEmergency = if ($csvRel.IsEmergencyContact) { 1 } else { 0 }
-                $psEmergency = [int]$psRel.relationship_isemergency
+                $psEmergency = if ($null -eq $psRel.relationship_isemergency) { 0 } else { [int]$psRel.relationship_isemergency }
                 if ($csvEmergency -ne $psEmergency) {
                     $changes.Add([PSCustomObject]@{
                         Field = 'IsEmergencyContact'
@@ -198,7 +198,7 @@ function Compare-ContactRelationshipFields {
             # Compare ReceivesMail (CSV bool vs PS integer 0/1)
             if ($null -ne $csvRel.ReceivesMail) {
                 $csvMail = if ($csvRel.ReceivesMail) { 1 } else { 0 }
-                $psMail = [int]$psRel.relationship_receivesmail
+                $psMail = if ($null -eq $psRel.relationship_receivesmail) { 0 } else { [int]$psRel.relationship_receivesmail }
                 if ($csvMail -ne $psMail) {
                     $changes.Add([PSCustomObject]@{
                         Field = 'ReceivesMail'
