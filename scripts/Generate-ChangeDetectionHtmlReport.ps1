@@ -544,7 +544,8 @@ try {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Contact ID</th>
+                        <th>Final Site Contact ID</th>
+                        <th>PowerSchool Contact ID</th>
                         <th>Name</th>
                         <th>Employer</th>
                     </tr>
@@ -557,7 +558,8 @@ try {
             $html += @"
                     <tr>
                         <td style="font-family: monospace; font-size: 0.85rem;">$($contact.ContactIdentifier)</td>
-                        <td>$name</td>
+                        <td style="font-family: monospace; font-size: 0.85rem; color: var(--gray-600); font-style: italic;">Not yet assigned</td>
+                        <td><strong>$name</strong></td>
                         <td>$($contact.Employer)</td>
                     </tr>
 "@
@@ -565,7 +567,7 @@ try {
         if ($contactChanges.New.Count -gt 50) {
             $html += @"
                     <tr>
-                        <td colspan="3" style="text-align: center; font-style: italic; color: var(--gray-600);">
+                        <td colspan="4" style="text-align: center; font-style: italic; color: var(--gray-600);">
                             ... and $($contactChanges.New.Count - 50) more contacts
                         </td>
                     </tr>
@@ -653,12 +655,51 @@ try {
         }
 
         function RenderPhoneDetails($item) {
+            $phoneDisplay = ""
+            $phoneType = ""
+            
+            # Get the phone number display
             if ($item.PSObject.Properties.Name -contains 'DisplayNumber') {
-                return $item.DisplayNumber
+                $phoneDisplay = $item.DisplayNumber
             } elseif ($item.PSObject.Properties.Name -contains 'PhoneNumber') {
-                return $item.PhoneNumber
+                $phoneDisplay = $item.PhoneNumber
+            } else {
+                $phoneDisplay = "$item"
             }
-            return "$item"
+            
+            # Get the phone type based on the structure
+            if ($item.PSObject.Properties.Name -contains 'Phone' -and $item.Phone) {
+                # For Added phones
+                if ($item.Phone.PSObject.Properties.Name -contains 'PhoneType') {
+                    $phoneType = $item.Phone.PhoneType
+                }
+                # For Removed phones (PowerSchool format)
+                elseif ($item.Phone.PSObject.Properties.Name -contains 'phonenumber_type') {
+                    $phoneType = $item.Phone.phonenumber_type
+                }
+            }
+            # For Modified phones, show the change details
+            elseif ($item.PSObject.Properties.Name -contains 'Changes' -and $item.Changes) {
+                foreach ($change in $item.Changes) {
+                    if ($change.Field -eq 'PhoneType') {
+                        return "$phoneDisplay ($($change.OldValue) → $($change.NewValue))"
+                    }
+                }
+                # If no phone type change, get from OldPhone or NewPhone
+                if ($item.PSObject.Properties.Name -contains 'OldPhone' -and $item.OldPhone.PSObject.Properties.Name -contains 'phonenumber_type') {
+                    $phoneType = $item.OldPhone.phonenumber_type
+                }
+                elseif ($item.PSObject.Properties.Name -contains 'NewPhone' -and $item.NewPhone.PSObject.Properties.Name -contains 'PhoneType') {
+                    $phoneType = $item.NewPhone.PhoneType
+                }
+            }
+            
+            # Return phone number with type if available
+            if ($phoneType) {
+                return "$phoneDisplay ($phoneType)"
+            } else {
+                return $phoneDisplay
+            }
         }
 
         function RenderAddressDetails($item) {
@@ -681,8 +722,32 @@ try {
                 $summary = RenderChangeSummary $contact.$prop 
             }
             
-            $rowHtml = "<tr class='collapsible'><td style='font-family:monospace'>$($contact.MatchKey)</td><td>$((Encode-Html $summary))</td></tr>"
-            $rowHtml += "<tr class='collapsible-content'><td colspan='2' style='background:#f9fafb;padding:.75rem;'>"
+            # Extract contact information
+            $finalSiteId = $contact.MatchKey
+            $powerSchoolId = 'N/A'
+            $contactName = 'Unknown'
+            
+            # Get PowerSchool Contact ID and name if available
+            if ($contact.PSObject.Properties.Name -contains 'PowerSchoolPerson' -and $contact.PowerSchoolPerson) {
+                $powerSchoolId = $contact.PowerSchoolPerson.person_id
+                $firstName = $contact.PowerSchoolPerson.person_firstname
+                $lastName = $contact.PowerSchoolPerson.person_lastname
+                if ($firstName -or $lastName) {
+                    $contactName = @($firstName, $lastName) | Where-Object { $_ } | Join-String -Separator ' '
+                }
+            }
+            # Fallback to CSV contact name if PowerSchool person not available
+            elseif ($contact.PSObject.Properties.Name -contains 'CsvContact' -and $contact.CsvContact) {
+                $firstName = $contact.CsvContact.FirstName
+                $lastName = $contact.CsvContact.LastName
+                $middleName = $contact.CsvContact.MiddleName
+                if ($firstName -or $lastName) {
+                    $contactName = @($firstName, $middleName, $lastName) | Where-Object { $_ } | Join-String -Separator ' '
+                }
+            }
+            
+            $rowHtml = "<tr class='collapsible'><td style='font-family:monospace; font-size: 0.85rem;'>$finalSiteId</td><td style='font-family:monospace; font-size: 0.85rem;'>$powerSchoolId</td><td><strong>$contactName</strong></td><td>$((Encode-Html $summary))</td></tr>"
+            $rowHtml += "<tr class='collapsible-content'><td colspan='4' style='background:#f9fafb;padding:.75rem;'>"
             
             if ($contact.PSObject.Properties.Name -contains $prop) {
                 $changes = $contact.$prop
@@ -710,7 +775,7 @@ try {
         function RenderGroup($contacts, $title, $prop, $keySuffix) {
             if ($contacts.Count -eq 0) { return '' }
             
-            $s = "<div class='contact-group' style='margin-bottom:1.5rem;'><h3 class='group-header'>$title ($($contacts.Count))</h3><table class='data-table'><thead><tr><th>Contact ID</th><th>Summary</th></tr></thead><tbody>"
+            $s = "<div class='contact-group' style='margin-bottom:1.5rem;'><h3 class='group-header'>$title ($($contacts.Count))</h3><table class='data-table'><thead><tr><th>Final Site Contact ID</th><th>PowerSchool Contact ID</th><th>Name</th><th>Summary</th></tr></thead><tbody>"
             
             # Render first 10 contacts
             $first = $contacts | Select-Object -First 10
@@ -719,7 +784,7 @@ try {
             }
             
             if ($contacts.Count -gt 10) {
-                $s += "<tr class='show-all-row'><td colspan='2' style='text-align:center;padding:1rem;'><button onclick=`"showAllContactsInGroup(this,'$keySuffix')`">Show All $($contacts.Count) Contacts</button></td></tr>"
+                $s += "<tr class='show-all-row'><td colspan='4' style='text-align:center;padding:1rem;'><button onclick=`"showAllContactsInGroup(this,'$keySuffix')`">Show All $($contacts.Count) Contacts</button></td></tr>"
                 $s += "</tbody><tbody class='hidden-contacts-$keySuffix' style='display:none;'>"
                 
                 # Render remaining contacts
