@@ -3,7 +3,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://plugin.powerschool.pearson.com plugin.xsd"
         name="SchoolAdmin Sync API Access Plugin"
-        version="1.0.4"
+        version="1.1.3"
         description="API Access for data sync from SchoolAdmin">
 	<oauth accessLevelV1Api="FULL"/>
 	<publisher name="Mennotech">
@@ -17,6 +17,8 @@
 		<field table="courses" field="course_number" access="ViewOnly" />
 		<field table="emailaddress" field="emailaddress" access="FullAccess" />
 		<field table="emailaddress" field="emailaddressid" access="FullAccess" />
+		<field table="emailaddress" field="whencreated" access="FullAccess" />
+		<field table="emailaddress" field="whenmodified" access="FullAccess" />
 		<field table="originalcontactmap" field="originalcontacttype" access="FullAccess" />
 		<field table="pcas_account" field="isenabled" access="FullAccess" />
 		<field table="pcas_account" field="username" access="FullAccess" />

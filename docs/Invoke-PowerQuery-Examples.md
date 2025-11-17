@@ -158,3 +158,95 @@ $comparison = Compare-PSStudent -PowerSchoolData $studentDetails -CsvData $csvDa
 5. **Process results efficiently**: Use PowerShell pipeline features for data processing
 6. **Cache when appropriate**: Store frequently accessed data in variables
 7. **Document custom PowerQueries**: When using `-SkipExistenceCheck`, ensure the PowerQuery exists and is properly documented
+
+## Contact Data PowerQueries
+
+The FSEnrollment PowerSchool plugin provides PowerQueries for retrieving contact (person) data:
+
+### Person Basic Information
+
+```powershell
+# Get all person records related to enrolled students
+$personData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords
+
+Write-Host "Retrieved $($personData.RecordCount) person records"
+$personData.Records | Select-Object person_id, person_firstname, person_lastname, person_employer | Format-Table
+```
+
+### Email Addresses
+
+```powershell
+# Get all email addresses for persons related to enrolled students
+$emailData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.email' -AllRecords
+
+Write-Host "Retrieved $($emailData.RecordCount) email records"
+$emailData.Records | Select-Object person_id, emailaddress_emailaddress, emailaddress_type, emailaddress_isprimary | Format-Table
+```
+
+### Phone Numbers
+
+```powershell
+# Get all phone numbers for persons related to enrolled students
+$phoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.phone' -AllRecords
+
+Write-Host "Retrieved $($phoneData.RecordCount) phone records"
+$phoneData.Records | Select-Object person_id, phonenumber_phonenumber, phonenumber_type, phonenumber_issms | Format-Table
+```
+
+### Addresses
+
+```powershell
+# Get all addresses for persons related to enrolled students
+$addressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords
+
+Write-Host "Retrieved $($addressData.RecordCount) address records"
+$addressData.Records | Select-Object person_id, address_street, address_city, address_state, address_postalcode | Format-Table
+```
+
+### Student-Contact Relationships
+
+```powershell
+# Get all student-contact relationships for enrolled students
+$relationshipData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords
+
+Write-Host "Retrieved $($relationshipData.RecordCount) relationship records"
+$relationshipData.Records | Select-Object person_id, student_student_number, relationship_relationship_code, relationship_iscustodial | Format-Table
+```
+
+### Comprehensive Contact Data Retrieval
+
+```powershell
+# Get all contact-related data in one workflow
+Connect-PowerSchool
+
+Write-Host "Fetching contact data from PowerSchool..." -ForegroundColor Yellow
+
+$personData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords
+$emailData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.email' -AllRecords
+$phoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.phone' -AllRecords
+$addressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords
+$relationshipData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords
+
+Write-Host "Person records: $($personData.RecordCount)" -ForegroundColor Green
+Write-Host "Email records: $($emailData.RecordCount)" -ForegroundColor Green
+Write-Host "Phone records: $($phoneData.RecordCount)" -ForegroundColor Green
+Write-Host "Address records: $($addressData.RecordCount)" -ForegroundColor Green
+Write-Host "Relationship records: $($relationshipData.RecordCount)" -ForegroundColor Green
+
+# Use with Compare-PSContact for change detection
+$csvData = Import-FSCsv -Path './contacts.csv' -TemplateName 'fs_powerschool_nonapi_report_parents'
+$templateConfig = Import-PowerShellDataFile './config/templates/fs_powerschool_nonapi_report_parents.psd1'
+
+$changes = Compare-PSContact -CsvData $csvData `
+    -PowerSchoolData $personData.Records `
+    -PowerSchoolEmailData $emailData.Records `
+    -PowerSchoolPhoneData $phoneData.Records `
+    -PowerSchoolAddressData $addressData.Records `
+    -PowerSchoolRelationshipData $relationshipData.Records `
+    -TemplateConfig $templateConfig
+
+Write-Host "`nContact changes detected:"
+Write-Host "  New: $($changes.Summary.NewCount)"
+Write-Host "  Updated: $($changes.Summary.UpdatedCount)"
+Write-Host "  Unchanged: $($changes.Summary.UnchangedCount)"
+```

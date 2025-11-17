@@ -10,8 +10,8 @@
     and updated contacts.
     Returns a structured change report.
     
-    Only checks PSContact fields (FirstName, MiddleName, LastName, Gender, Employer) for changes.
-    Email addresses, phone numbers, and addresses are not compared at this stage.
+    Checks PSContact fields (FirstName, MiddleName, LastName, Gender, Employer) for changes.
+    Optionally compares email addresses, phone numbers, addresses, and relationships if PowerQuery data is provided.
     
     Note: This function does NOT detect removed contacts (contacts in PowerSchool but not in CSV).
     It only identifies new contacts and updates to existing contacts.
@@ -22,6 +22,26 @@
 .PARAMETER PowerSchoolData
     Array of person objects from PowerSchool PowerQuery (from Invoke-PowerQuery 
     -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords).
+
+.PARAMETER PowerSchoolEmailData
+    Optional. Array of email objects from PowerSchool PowerQuery (from Invoke-PowerQuery 
+    -PowerQueryName 'com.fsenrollment.dats.person.email' -AllRecords).
+    If provided, email addresses will be compared for changes.
+
+.PARAMETER PowerSchoolPhoneData
+    Optional. Array of phone objects from PowerSchool PowerQuery (from Invoke-PowerQuery 
+    -PowerQueryName 'com.fsenrollment.dats.person.phone' -AllRecords).
+    If provided, phone numbers will be compared for changes.
+
+.PARAMETER PowerSchoolAddressData
+    Optional. Array of address objects from PowerSchool PowerQuery (from Invoke-PowerQuery 
+    -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords).
+    If provided, addresses will be compared for changes.
+
+.PARAMETER PowerSchoolRelationshipData
+    Optional. Array of relationship objects from PowerSchool PowerQuery (from Invoke-PowerQuery 
+    -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords).
+    If provided, student-contact relationships will be compared for changes.
 
 .PARAMETER TemplateConfig
     Template configuration object loaded from the template file. Used to determine
@@ -48,10 +68,31 @@
     
     Compares contacts using the template configuration to determine key fields and comparison settings.
 
+.EXAMPLE
+    # Compare with email, phone, address, and relationship data
+    $csvData = Import-FSCsv -Path './contacts.csv' -TemplateName 'fs_powerschool_nonapi_report_parents'
+    $psPersonData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords
+    $psEmailData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.email' -AllRecords
+    $psPhoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.phone' -AllRecords
+    $psAddressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords
+    $psRelationshipData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords
+    $templateConfig = Import-PowerShellDataFile './config/templates/fs_powerschool_nonapi_report_parents.psd1'
+    
+    $changes = Compare-PSContact -CsvData $csvData `
+        -PowerSchoolData $psPersonData.Records `
+        -PowerSchoolEmailData $psEmailData.Records `
+        -PowerSchoolPhoneData $psPhoneData.Records `
+        -PowerSchoolAddressData $psAddressData.Records `
+        -PowerSchoolRelationshipData $psRelationshipData.Records `
+        -TemplateConfig $templateConfig
+    
+    Compares contacts including email addresses, phone numbers, addresses, and relationships.
+
 .NOTES
     This function performs field-by-field comparison to detect what changed.
     The Updated collection contains objects with OldValue and NewValue properties.
-    Only PSContact entity fields are compared - email, phone, and address data are excluded.
+    PSContact entity fields are always compared. Email, phone, address, and relationship data are compared
+    only if the corresponding PowerQuery data is provided via parameters.
 #>
 function Compare-PSContact {
     [CmdletBinding()]
@@ -62,6 +103,22 @@ function Compare-PSContact {
         [Parameter(Mandatory = $true)]
         [AllowEmptyCollection()]
         [array]$PowerSchoolData,
+
+        [Parameter(Mandatory = $false)]
+        [AllowEmptyCollection()]
+        [array]$PowerSchoolEmailData = @(),
+
+        [Parameter(Mandatory = $false)]
+        [AllowEmptyCollection()]
+        [array]$PowerSchoolPhoneData = @(),
+
+        [Parameter(Mandatory = $false)]
+        [AllowEmptyCollection()]
+        [array]$PowerSchoolAddressData = @(),
+
+        [Parameter(Mandatory = $false)]
+        [AllowEmptyCollection()]
+        [array]$PowerSchoolRelationshipData = @(),
 
         [Parameter(Mandatory = $false)]
         [hashtable]$TemplateConfig,
@@ -94,10 +151,19 @@ function Compare-PSContact {
             if ($TemplateConfig.ColumnMappings -and $TemplateConfig.ColumnMappings.Contact) {
                 $columnMappings = $TemplateConfig.ColumnMappings.Contact
             }
+            
+            # Get CheckForChanges for Relationship entity from EntityTypeMap
+            if ($TemplateConfig.EntityTypeMap -and $TemplateConfig.EntityTypeMap.Relationship -and $TemplateConfig.EntityTypeMap.Relationship.CheckForChanges) {
+                $relationshipCheckForChanges = $TemplateConfig.EntityTypeMap.Relationship.CheckForChanges
+            } else {
+                # Default relationship fields to check
+                $relationshipCheckForChanges = @('ContactPriorityOrder', 'RelationshipType', 'RelationshipNote', 'HasCustody', 'LivesWith', 'AllowSchoolPickup', 'IsEmergencyContact', 'ReceivesMail')
+            }
         } else {
             $keyField = 'ContactID'
             $psKeyField = 'person_id'
             $checkForChanges = @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
+            $relationshipCheckForChanges = @('ContactPriorityOrder', 'RelationshipType', 'RelationshipNote', 'HasCustody', 'LivesWith', 'AllowSchoolPickup', 'IsEmergencyContact', 'ReceivesMail')
         }
         
         # Override with MatchOn parameter if provided
@@ -113,7 +179,8 @@ function Compare-PSContact {
         
         Write-Verbose "Using CSV key field: $keyField"
         Write-Verbose "Using PowerSchool key field: $psKeyField"
-        Write-Verbose "Fields to check for changes: $($checkForChanges -join ', ')"
+        Write-Verbose "Contact fields to check for changes: $($checkForChanges -join ', ')"
+        Write-Verbose "Relationship fields to check for changes: $($relationshipCheckForChanges -join ', ')"
         
         # Initialize result collections
         $newContacts = [System.Collections.Generic.List[PSCustomObject]]::new()
@@ -138,6 +205,60 @@ function Compare-PSContact {
         
         Write-Verbose "PowerSchool has $($psLookup.Count) persons indexed by $psKeyField"
         Write-Verbose "CSV has $($CsvData.Contacts.Count) contacts"
+        
+        # Create lookup dictionaries for email, phone, address, and relationship data by person_id
+        $psEmailLookup = @{}
+        $psPhoneLookup = @{}
+        $psAddressLookup = @{}
+        $psRelationshipLookup = @{}
+        
+        if ($PowerSchoolEmailData.Count -gt 0) {
+            Write-Verbose "Creating email lookup dictionary from $($PowerSchoolEmailData.Count) email records"
+            foreach ($email in $PowerSchoolEmailData) {
+                $personKey = $email.person_id.ToString()
+                if (-not $psEmailLookup.ContainsKey($personKey)) {
+                    $psEmailLookup[$personKey] = [System.Collections.Generic.List[PSCustomObject]]::new()
+                }
+                $psEmailLookup[$personKey].Add($email)
+            }
+            Write-Verbose "Indexed emails for $($psEmailLookup.Count) persons"
+        }
+        
+        if ($PowerSchoolPhoneData.Count -gt 0) {
+            Write-Verbose "Creating phone lookup dictionary from $($PowerSchoolPhoneData.Count) phone records"
+            foreach ($phone in $PowerSchoolPhoneData) {
+                $personKey = $phone.person_id.ToString()
+                if (-not $psPhoneLookup.ContainsKey($personKey)) {
+                    $psPhoneLookup[$personKey] = [System.Collections.Generic.List[PSCustomObject]]::new()
+                }
+                $psPhoneLookup[$personKey].Add($phone)
+            }
+            Write-Verbose "Indexed phones for $($psPhoneLookup.Count) persons"
+        }
+        
+        if ($PowerSchoolAddressData.Count -gt 0) {
+            Write-Verbose "Creating address lookup dictionary from $($PowerSchoolAddressData.Count) address records"
+            foreach ($address in $PowerSchoolAddressData) {
+                $personKey = $address.person_id.ToString()
+                if (-not $psAddressLookup.ContainsKey($personKey)) {
+                    $psAddressLookup[$personKey] = [System.Collections.Generic.List[PSCustomObject]]::new()
+                }
+                $psAddressLookup[$personKey].Add($address)
+            }
+            Write-Verbose "Indexed addresses for $($psAddressLookup.Count) persons"
+        }
+        
+        if ($PowerSchoolRelationshipData.Count -gt 0) {
+            Write-Verbose "Creating relationship lookup dictionary from $($PowerSchoolRelationshipData.Count) relationship records"
+            foreach ($relationship in $PowerSchoolRelationshipData) {
+                $personKey = $relationship.person_id.ToString()
+                if (-not $psRelationshipLookup.ContainsKey($personKey)) {
+                    $psRelationshipLookup[$personKey] = [System.Collections.Generic.List[PSCustomObject]]::new()
+                }
+                $psRelationshipLookup[$personKey].Add($relationship)
+            }
+            Write-Verbose "Indexed relationships for $($psRelationshipLookup.Count) persons"
+        }
     }
 
     process {
@@ -155,20 +276,96 @@ function Compare-PSContact {
                 if ($psLookup.ContainsKey($matchKey)) {
                     # Contact exists in PowerSchool - check for changes
                     $psPerson = $psLookup[$matchKey]
+                    $personId = $psPerson.person_id.ToString()
                     
                     # Pass checkForChanges array and columnMappings to Compare-ContactFields
                     $changes = Compare-ContactFields -CsvContact $csvContact -PowerSchoolPerson $psPerson -CheckForChanges $checkForChanges -ColumnMappings $columnMappings
                     
-                    if ($changes.Count -gt 0) {
+                    # Compare emails if data is available
+                    $emailChanges = $null
+                    if ($PowerSchoolEmailData.Count -gt 0 -or $CsvData.EmailAddresses.Count -gt 0) {
+                        # Get CSV emails for this contact
+                        $csvEmails = $CsvData.EmailAddresses | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                        
+                        # Get PowerSchool emails for this person
+                        $psEmails = if ($psEmailLookup.ContainsKey($personId)) { $psEmailLookup[$personId] } else { @() }
+                        
+                        $emailChanges = Compare-ContactEmailFields -CsvEmails $csvEmails -PowerSchoolEmails $psEmails -ContactIdentifier $matchKey
+                        Write-Verbose "Contact ${matchKey}: Email changes - Added: $($emailChanges.Added.Count), Modified: $($emailChanges.Modified.Count), Removed: $($emailChanges.Removed.Count)"
+                    }
+                    
+                    # Compare phones if data is available
+                    $phoneChanges = $null
+                    if ($PowerSchoolPhoneData.Count -gt 0 -or $CsvData.PhoneNumbers.Count -gt 0) {
+                        # Get CSV phones for this contact
+                        $csvPhones = $CsvData.PhoneNumbers | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                        
+                        # Get PowerSchool phones for this person
+                        $psPhones = if ($psPhoneLookup.ContainsKey($personId)) { $psPhoneLookup[$personId] } else { @() }
+                        
+                        $phoneChanges = Compare-ContactPhoneFields -CsvPhones $csvPhones -PowerSchoolPhones $psPhones -ContactIdentifier $matchKey
+                        Write-Verbose "Contact ${matchKey}: Phone changes - Added: $($phoneChanges.Added.Count), Modified: $($phoneChanges.Modified.Count), Removed: $($phoneChanges.Removed.Count)"
+                    }
+                    
+                    # Compare addresses if data is available
+                    $addressChanges = $null
+                    if ($PowerSchoolAddressData.Count -gt 0 -or $CsvData.Addresses.Count -gt 0) {
+                        # Get CSV addresses for this contact
+                        $csvAddresses = $CsvData.Addresses | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                        
+                        # Get PowerSchool addresses for this person
+                        $psAddresses = if ($psAddressLookup.ContainsKey($personId)) { $psAddressLookup[$personId] } else { @() }
+                        
+                        $addressChanges = Compare-ContactAddressFields -CsvAddresses $csvAddresses -PowerSchoolAddresses $psAddresses -ContactIdentifier $matchKey
+                        Write-Verbose "Contact ${matchKey}: Address changes - Added: $($addressChanges.Added.Count), Modified: $($addressChanges.Modified.Count), Removed: $($addressChanges.Removed.Count)"
+                    }
+                    
+                    # Compare relationships if data is available
+                    $relationshipChanges = $null
+                    if ($PowerSchoolRelationshipData.Count -gt 0 -or $CsvData.Relationships.Count -gt 0) {
+                        # Get CSV relationships for this contact
+                        $csvRelationships = $CsvData.Relationships | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                        
+                        # Get PowerSchool relationships for this person
+                        $psRelationships = if ($psRelationshipLookup.ContainsKey($personId)) { $psRelationshipLookup[$personId] } else { @() }
+                        
+                        $relationshipChanges = Compare-ContactRelationshipFields -CsvRelationships $csvRelationships -PowerSchoolRelationships $psRelationships -ContactIdentifier $matchKey -CheckForChanges $relationshipCheckForChanges
+                        Write-Verbose "Contact ${matchKey}: Relationship changes - Added: $($relationshipChanges.Added.Count), Modified: $($relationshipChanges.Modified.Count), Removed: $($relationshipChanges.Removed.Count)"
+                    }
+                    
+                    # Determine if contact has any changes
+                    $hasChanges = $changes.Count -gt 0 -or 
+                                  ($emailChanges -and ($emailChanges.Added.Count -gt 0 -or $emailChanges.Modified.Count -gt 0 -or $emailChanges.Removed.Count -gt 0)) -or
+                                  ($phoneChanges -and ($phoneChanges.Added.Count -gt 0 -or $phoneChanges.Modified.Count -gt 0 -or $phoneChanges.Removed.Count -gt 0)) -or
+                                  ($addressChanges -and ($addressChanges.Added.Count -gt 0 -or $addressChanges.Modified.Count -gt 0 -or $addressChanges.Removed.Count -gt 0)) -or
+                                  ($relationshipChanges -and ($relationshipChanges.Added.Count -gt 0 -or $relationshipChanges.Modified.Count -gt 0 -or $relationshipChanges.Removed.Count -gt 0))
+                    
+                    if ($hasChanges) {
                         # Contact has changes
-                        $updatedContacts.Add([PSCustomObject]@{
+                        $updateRecord = [PSCustomObject]@{
                             MatchKey = $matchKey
                             MatchField = $keyField
                             CsvContact = $csvContact
                             PowerSchoolPerson = $psPerson
                             Changes = $changes
-                        })
-                        Write-Verbose "Contact $matchKey has $($changes.Count) field changes"
+                        }
+                        
+                        # Add email, phone, address, relationship changes if they exist
+                        if ($emailChanges) {
+                            $updateRecord | Add-Member -NotePropertyName 'EmailChanges' -NotePropertyValue $emailChanges
+                        }
+                        if ($phoneChanges) {
+                            $updateRecord | Add-Member -NotePropertyName 'PhoneChanges' -NotePropertyValue $phoneChanges
+                        }
+                        if ($addressChanges) {
+                            $updateRecord | Add-Member -NotePropertyName 'AddressChanges' -NotePropertyValue $addressChanges
+                        }
+                        if ($relationshipChanges) {
+                            $updateRecord | Add-Member -NotePropertyName 'RelationshipChanges' -NotePropertyValue $relationshipChanges
+                        }
+                        
+                        $updatedContacts.Add($updateRecord)
+                        Write-Verbose "Contact $matchKey has changes"
                     } else {
                         # Contact unchanged
                         $unchangedContacts.Add([PSCustomObject]@{

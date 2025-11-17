@@ -136,7 +136,7 @@ function Get-PowerSchoolStudent {
                     # First, get all students and filter (PowerSchool API doesn't have direct student number lookup)
                     # Alternatively, we could use the query endpoint
                     $endpoint = "$script:PowerSchoolBaseUrl/ws/v1/district/student"
-                    $queryParams = @("q=student_number==$StudentNumber")
+                    $queryParams = @("q=local_id==$StudentNumber")
                     
                     if ($Expansions.Count -gt 0) {
                         $queryParams += "expansions=$($Expansions -join ',')"

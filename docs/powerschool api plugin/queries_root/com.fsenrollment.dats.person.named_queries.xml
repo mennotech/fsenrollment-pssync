@@ -43,5 +43,203 @@ ORDER BY person.dcid
             ]]>
         </sql>
     </query>
+    
+    <query name="com.fsenrollment.dats.person.email"
+            flattened="true"
+            coreTable="EmailAddress" >
+        <summary>List of email addresses for persons related to enrolled students.</summary>
+        <description>Returns all email addresses with type, priority order, and primary indicator for persons associated with active students.</description>
+        <columns>
+            <column column="person.dcid">person_dcid</column>
+            <column column="person.id">person_id</column>
+            <column column="emailaddress.emailaddressid">emailaddress_id</column>
+            <column column="emailaddress.emailaddress">emailaddress_emailaddress</column>
+            <column column="emailaddress.whencreated">emailaddress_whencreated</column>
+            <column column="emailaddress.whenmodified">emailaddress_whenmodified</column>
+            <column column="personemailaddressassoc.emailaddresspriorityorder">emailaddress_order</column>
+            <column column="personemailaddressassoc.isprimaryemailaddress">emailaddress_isprimary</column>
+            <column column="codeset.code">emailaddress_type</column>
+        </columns>
+        <sql>
+            <![CDATA[
+SELECT DISTINCT
+    person.dcid AS person_dcid,
+    person.id AS person_id,
+    emailaddress.emailaddressid AS emailaddress_id,
+    emailaddress.emailaddress AS emailaddress_emailaddress,
+    emailaddress.whencreated AS emailaddress_whencreated,
+    emailaddress.whenmodified AS emailaddress_whenmodified,
+    personemailaddressassoc.emailaddresspriorityorder AS emailaddress_order,
+    personemailaddressassoc.isprimaryemailaddress AS emailaddress_isprimary,
+    codeset.code AS emailaddress_type
+    
+FROM person
+    INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
+    INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
+    INNER JOIN personemailaddressassoc ON personemailaddressassoc.personid = person.id
+    INNER JOIN emailaddress ON emailaddress.emailaddressid = personemailaddressassoc.emailaddressid
+    INNER JOIN codeset ON personemailaddressassoc.emailtypecodesetid = codeset.codesetid
+
+WHERE students.enroll_status = 0
+    AND person.id IS NOT NULL
+    AND studentcontactassoc.personid IS NOT NULL
+
+ORDER BY person.dcid, emailaddress.emailaddressid
+            ]]>
+        </sql>
+    </query>
+    
+    <query name="com.fsenrollment.dats.person.phone"
+            flattened="true"
+            coreTable="PhoneNumber" >
+        <summary>List of phone numbers for persons related to enrolled students.</summary>
+        <description>Returns all phone numbers with type, priority order, SMS capability, and preferred indicator for persons associated with active students.</description>
+        <columns>
+            <column column="person.dcid">person_dcid</column>
+            <column column="person.id">person_id</column>
+            <column column="phonenumber.phonenumberid">phonenumber_id</column>
+            <column column="phonenumber.phonenumber">phonenumber_phonenumber</column>
+            <column column="phonenumber.phonenumberext">phonenumber_extension</column>
+            <column column="phonenumber.issms">phonenumber_issms</column>
+            <column column="personphonenumberassoc.phonenumberpriorityorder">phonenumber_order</column>
+            <column column="personphonenumberassoc.ispreferred">phonenumber_ispreferred</column>
+            <column column="codeset.code">phonenumber_type</column>
+        </columns>
+        <sql>
+            <![CDATA[
+SELECT DISTINCT
+    person.dcid AS person_dcid,
+    person.id AS person_id,
+    phonenumber.phonenumberid AS phonenumber_id,
+    phonenumber.phonenumber AS phonenumber_phonenumber,
+    phonenumber.phonenumberext AS phonenumber_extension,
+    phonenumber.issms AS phonenumber_issms,
+    personphonenumberassoc.phonenumberpriorityorder AS phonenumber_order,
+    personphonenumberassoc.ispreferred AS phonenumber_ispreferred,
+    codeset.code AS phonenumber_type
+    
+FROM person
+    INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
+    INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
+    INNER JOIN personphonenumberassoc ON personphonenumberassoc.personid = person.id
+    INNER JOIN phonenumber ON phonenumber.phonenumberid = personphonenumberassoc.phonenumberid
+    INNER JOIN codeset ON personphonenumberassoc.phonetypecodesetid = codeset.codesetid
+
+WHERE students.enroll_status = 0
+    AND person.id IS NOT NULL
+    AND studentcontactassoc.personid IS NOT NULL
+
+ORDER BY person.dcid, phonenumber.phonenumberid
+            ]]>
+        </sql>
+    </query>
+    
+    <query name="com.fsenrollment.dats.person.address"
+            flattened="true"
+            coreTable="PersonAddress" >
+        <summary>List of addresses for persons related to enrolled students.</summary>
+        <description>Returns all addresses with type, priority order, and address components for persons associated with active students.</description>
+        <columns>
+            <column column="person.dcid">person_dcid</column>
+            <column column="person.id">person_id</column>
+            <column column="personaddress.personaddressid">address_id</column>
+            <column column="personaddress.street">address_street</column>
+            <column column="personaddress.linetwo">address_linetwo</column>
+            <column column="personaddress.unit">address_unit</column>
+            <column column="personaddress.city">address_city</column>
+            <column column="codeset.code">address_state</column>
+            <column column="codeset.code">address_country</column>
+            <column column="personaddress.postalcode">address_postalcode</column>
+            <column column="personaddressassoc.addresspriorityorder">address_order</column>
+            <column column="codeset.code">address_type</column>
+        </columns>
+        <sql>
+            <![CDATA[
+SELECT DISTINCT
+    person.dcid AS person_dcid,
+    person.id AS person_id,
+    personaddress.personaddressid AS address_id,
+    personaddress.street AS address_street,
+    personaddress.linetwo AS address_linetwo,
+    personaddress.unit AS address_unit,
+    personaddress.city AS address_city,
+    statecode.code AS address_state,
+    countrycode.code AS address_country,
+    personaddress.postalcode AS address_postalcode,
+    personaddressassoc.addresspriorityorder AS address_order,
+    typecode.code AS address_type
+    
+FROM person
+    INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
+    INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
+    INNER JOIN personaddressassoc ON personaddressassoc.personid = person.id
+    INNER JOIN personaddress ON personaddress.personaddressid = personaddressassoc.personaddressid
+    LEFT OUTER JOIN codeset statecode ON personaddress.statescodesetid = statecode.codesetid
+    LEFT OUTER JOIN codeset countrycode ON personaddress.countrycodesetid = countrycode.codesetid
+    INNER JOIN codeset typecode ON personaddressassoc.addresstypecodesetid = typecode.codesetid
+
+WHERE students.enroll_status = 0
+    AND person.id IS NOT NULL
+    AND studentcontactassoc.personid IS NOT NULL
+
+ORDER BY person.dcid, personaddress.personaddressid
+            ]]>
+        </sql>
+    </query>
+    
+    <query name="com.fsenrollment.dats.person.relationship"
+            flattened="true"
+            coreTable="StudentContactAssoc" >
+        <summary>List of student-contact relationships for persons related to enrolled students.</summary>
+        <description>Returns all relationship data including priority order, relationship type, and relationship flags for persons associated with active students.</description>
+        <columns>
+            <column column="person.dcid">person_dcid</column>
+            <column column="person.id">person_id</column>
+            <column column="students.student_number">student_student_number</column>
+            <column column="students.dcid">student_dcid</column>
+            <column column="studentcontactassoc.contactpriorityorder">relationship_priority_order</column>
+            <column column="studentcontactdetail.isactive">relationship_isactive</column>
+            <column column="studentcontactdetail.iscustodial">relationship_iscustodial</column>
+            <column column="studentcontactdetail.isemergency">relationship_isemergency</column>
+            <column column="studentcontactdetail.liveswithflg">relationship_liveswith</column>
+            <column column="studentcontactdetail.receivesmailflg">relationship_receivesmail</column>
+            <column column="studentcontactdetail.schoolpickupflg">relationship_schoolpickup</column>
+            <column column="codeset.code">relationship_relationship_code</column>
+            <column column="studentcontactdetail.relationshipnote">relationship_relationship_note</column>
+        </columns>
+        <sql>
+            <![CDATA[
+SELECT DISTINCT
+    person.dcid AS person_dcid,
+    person.id AS person_id,
+    students.student_number AS student_student_number,
+    students.dcid AS student_dcid,
+    studentcontactassoc.contactpriorityorder AS relationship_priority_order,
+    studentcontactdetail.isactive AS relationship_isactive,
+    studentcontactdetail.iscustodial AS relationship_iscustodial,
+    studentcontactdetail.isemergency AS relationship_isemergency,
+    studentcontactdetail.liveswithflg AS relationship_liveswith,
+    studentcontactdetail.receivesmailflg AS relationship_receivesmail,
+    studentcontactdetail.schoolpickupflg AS relationship_schoolpickup,
+    codeset.code AS relationship_relationship_code,
+    studentcontactdetail.relationshipnote AS relationship_relationship_note
+    
+    
+    
+FROM person
+    INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
+    INNER JOIN studentcontactdetail ON studentcontactdetail.studentcontactassocid = studentcontactassoc.studentcontactassocid
+    INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
+    INNER JOIN codeset ON codeset.codesetid = studentcontactdetail.relationshiptypecodesetid
+    
+
+WHERE students.enroll_status = 0
+    AND person.id IS NOT NULL
+    AND studentcontactassoc.personid IS NOT NULL
+
+ORDER BY person.dcid, students.dcid
+            ]]>
+        </sql>
+    </query>
 </queries>
 
