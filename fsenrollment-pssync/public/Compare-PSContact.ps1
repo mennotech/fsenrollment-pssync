@@ -151,10 +151,19 @@ function Compare-PSContact {
             if ($TemplateConfig.ColumnMappings -and $TemplateConfig.ColumnMappings.Contact) {
                 $columnMappings = $TemplateConfig.ColumnMappings.Contact
             }
+            
+            # Get CheckForChanges for Relationship entity from EntityTypeMap
+            if ($TemplateConfig.EntityTypeMap -and $TemplateConfig.EntityTypeMap.Relationship -and $TemplateConfig.EntityTypeMap.Relationship.CheckForChanges) {
+                $relationshipCheckForChanges = $TemplateConfig.EntityTypeMap.Relationship.CheckForChanges
+            } else {
+                # Default relationship fields to check
+                $relationshipCheckForChanges = @('ContactPriorityOrder', 'RelationshipType', 'RelationshipNote', 'HasCustody', 'LivesWith', 'AllowSchoolPickup', 'IsEmergencyContact', 'ReceivesMail')
+            }
         } else {
             $keyField = 'ContactID'
             $psKeyField = 'person_id'
             $checkForChanges = @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
+            $relationshipCheckForChanges = @('ContactPriorityOrder', 'RelationshipType', 'RelationshipNote', 'HasCustody', 'LivesWith', 'AllowSchoolPickup', 'IsEmergencyContact', 'ReceivesMail')
         }
         
         # Override with MatchOn parameter if provided
@@ -170,7 +179,8 @@ function Compare-PSContact {
         
         Write-Verbose "Using CSV key field: $keyField"
         Write-Verbose "Using PowerSchool key field: $psKeyField"
-        Write-Verbose "Fields to check for changes: $($checkForChanges -join ', ')"
+        Write-Verbose "Contact fields to check for changes: $($checkForChanges -join ', ')"
+        Write-Verbose "Relationship fields to check for changes: $($relationshipCheckForChanges -join ', ')"
         
         # Initialize result collections
         $newContacts = [System.Collections.Generic.List[PSCustomObject]]::new()
@@ -319,7 +329,7 @@ function Compare-PSContact {
                         # Get PowerSchool relationships for this person
                         $psRelationships = if ($psRelationshipLookup.ContainsKey($personId)) { $psRelationshipLookup[$personId] } else { @() }
                         
-                        $relationshipChanges = Compare-ContactRelationshipFields -CsvRelationships $csvRelationships -PowerSchoolRelationships $psRelationships -ContactIdentifier $matchKey
+                        $relationshipChanges = Compare-ContactRelationshipFields -CsvRelationships $csvRelationships -PowerSchoolRelationships $psRelationships -ContactIdentifier $matchKey -CheckForChanges $relationshipCheckForChanges
                         Write-Verbose "Contact ${matchKey}: Relationship changes - Added: $($relationshipChanges.Added.Count), Modified: $($relationshipChanges.Modified.Count), Removed: $($relationshipChanges.Removed.Count)"
                     }
                     

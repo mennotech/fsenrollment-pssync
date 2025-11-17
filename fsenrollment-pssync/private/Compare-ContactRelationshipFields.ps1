@@ -21,6 +21,10 @@
 .PARAMETER ContactIdentifier
     The contact identifier (person_id or ContactID) used for matching. Used in change records.
 
+.PARAMETER CheckForChanges
+    Array of field names to check for changes. Only fields specified in this array will be compared.
+    Default: @('ContactPriorityOrder', 'RelationshipType', 'RelationshipNote', 'HasCustody', 'LivesWith', 'AllowSchoolPickup', 'IsEmergencyContact', 'ReceivesMail')
+
 .OUTPUTS
     PSCustomObject with properties:
     - Added: Array of PSStudentContactRelationship objects that are new (in CSV, not in PowerSchool)
@@ -47,7 +51,10 @@ function Compare-ContactRelationshipFields {
         [array]$PowerSchoolRelationships = @(),
 
         [Parameter(Mandatory = $true)]
-        [string]$ContactIdentifier
+        [string]$ContactIdentifier,
+
+        [Parameter(Mandatory = $false)]
+        [string[]]$CheckForChanges = @('ContactPriorityOrder', 'RelationshipType', 'RelationshipNote', 'HasCustody', 'LivesWith', 'AllowSchoolPickup', 'IsEmergencyContact', 'ReceivesMail')
     )
 
     # Initialize result collections
@@ -102,109 +109,115 @@ function Compare-ContactRelationshipFields {
         }
 
         if ($psLookup.ContainsKey($matchKey)) {
-            # Relationship exists in PowerSchool - check for changes in other fields
+            # Relationship exists in PowerSchool - check for changes in specified fields only
             $psRel = $psLookup[$matchKey]
             $changes = [System.Collections.Generic.List[PSCustomObject]]::new()
 
-            # Compare ContactPriorityOrder
-            if ($null -ne $csvRel.ContactPriorityOrder) {
-                $csvPriority = [int]$csvRel.ContactPriorityOrder
-                $psPriority = if ($null -eq $psRel.relationship_priority_order) { 0 } else { [int]$psRel.relationship_priority_order }
-                if ($csvPriority -ne $psPriority) {
-                    $changes.Add([PSCustomObject]@{
-                        Field = 'ContactPriorityOrder'
-                        OldValue = $psPriority
-                        NewValue = $csvPriority
-                    })
-                }
-            }
-
-            # Compare RelationshipType
-            if (-not [string]::IsNullOrWhiteSpace($csvRel.RelationshipType)) {
-                $csvType = Normalize-ComparisonValue -Value $csvRel.RelationshipType
-                $psType = Normalize-ComparisonValue -Value $psRel.relationship_relationship_code
-                if ($csvType -ne $psType) {
-                    $changes.Add([PSCustomObject]@{
-                        Field = 'RelationshipType'
-                        OldValue = $psType
-                        NewValue = $csvType
-                    })
-                }
-            }
-
-            # Compare RelationshipNote
-            $csvNote = Normalize-ComparisonValue -Value $csvRel.RelationshipNote
-            $psNote = Normalize-ComparisonValue -Value $psRel.relationship_relationship_note
-            if ($csvNote -ne $psNote) {
-                $changes.Add([PSCustomObject]@{
-                    Field = 'RelationshipNote'
-                    OldValue = $psNote
-                    NewValue = $csvNote
-                })
-            }
-
-            # Compare HasCustody (CSV bool vs PS integer 0/1)
-            if ($null -ne $csvRel.HasCustody) {
-                $csvCustody = if ($csvRel.HasCustody) { 1 } else { 0 }
-                $psCustody = if ($null -eq $psRel.relationship_iscustodial) { 0 } else { [int]$psRel.relationship_iscustodial }
-                if ($csvCustody -ne $psCustody) {
-                    $changes.Add([PSCustomObject]@{
-                        Field = 'HasCustody'
-                        OldValue = $psCustody
-                        NewValue = $csvCustody
-                    })
-                }
-            }
-
-            # Compare LivesWith (CSV bool vs PS integer 0/1)
-            if ($null -ne $csvRel.LivesWith) {
-                $csvLivesWith = if ($csvRel.LivesWith) { 1 } else { 0 }
-                $psLivesWith = if ($null -eq $psRel.relationship_liveswith) { 0 } else { [int]$psRel.relationship_liveswith }
-                if ($csvLivesWith -ne $psLivesWith) {
-                    $changes.Add([PSCustomObject]@{
-                        Field = 'LivesWith'
-                        OldValue = $psLivesWith
-                        NewValue = $csvLivesWith
-                    })
-                }
-            }
-
-            # Compare AllowSchoolPickup (CSV bool vs PS integer 0/1)
-            if ($null -ne $csvRel.AllowSchoolPickup) {
-                $csvPickup = if ($csvRel.AllowSchoolPickup) { 1 } else { 0 }
-                $psPickup = if ($null -eq $psRel.relationship_schoolpickup) { 0 } else { [int]$psRel.relationship_schoolpickup }
-                if ($csvPickup -ne $psPickup) {
-                    $changes.Add([PSCustomObject]@{
-                        Field = 'AllowSchoolPickup'
-                        OldValue = $psPickup
-                        NewValue = $csvPickup
-                    })
-                }
-            }
-
-            # Compare IsEmergencyContact (CSV bool vs PS integer 0/1)
-            if ($null -ne $csvRel.IsEmergencyContact) {
-                $csvEmergency = if ($csvRel.IsEmergencyContact) { 1 } else { 0 }
-                $psEmergency = if ($null -eq $psRel.relationship_isemergency) { 0 } else { [int]$psRel.relationship_isemergency }
-                if ($csvEmergency -ne $psEmergency) {
-                    $changes.Add([PSCustomObject]@{
-                        Field = 'IsEmergencyContact'
-                        OldValue = $psEmergency
-                        NewValue = $csvEmergency
-                    })
-                }
-            }
-
-            # Compare ReceivesMail (CSV bool vs PS integer 0/1)
-            if ($null -ne $csvRel.ReceivesMail) {
-                $csvMail = if ($csvRel.ReceivesMail) { 1 } else { 0 }
-                $psMail = if ($null -eq $psRel.relationship_receivesmail) { 0 } else { [int]$psRel.relationship_receivesmail }
-                if ($csvMail -ne $psMail) {
-                    $changes.Add([PSCustomObject]@{
-                        Field = 'ReceivesMail'
-                        OldValue = $psMail
-                        NewValue = $csvMail
-                    })
+            # Only compare fields specified in CheckForChanges array
+            foreach ($fieldName in $CheckForChanges) {
+                switch ($fieldName) {
+                    'ContactPriorityOrder' {
+                        if ($null -ne $csvRel.ContactPriorityOrder) {
+                            $csvPriority = [int]$csvRel.ContactPriorityOrder
+                            $psPriority = if ($null -eq $psRel.relationship_priority_order) { 0 } else { [int]$psRel.relationship_priority_order }
+                            if ($csvPriority -ne $psPriority) {
+                                $changes.Add([PSCustomObject]@{
+                                    Field = 'ContactPriorityOrder'
+                                    OldValue = $psPriority
+                                    NewValue = $csvPriority
+                                })
+                            }
+                        }
+                    }
+                    'RelationshipType' {
+                        if (-not [string]::IsNullOrWhiteSpace($csvRel.RelationshipType)) {
+                            $csvType = Normalize-ComparisonValue -Value $csvRel.RelationshipType
+                            $psType = Normalize-ComparisonValue -Value $psRel.relationship_relationship_code
+                            if ($csvType -ne $psType) {
+                                $changes.Add([PSCustomObject]@{
+                                    Field = 'RelationshipType'
+                                    OldValue = $psType
+                                    NewValue = $csvType
+                                })
+                            }
+                        }
+                    }
+                    'RelationshipNote' {
+                        $csvNote = Normalize-ComparisonValue -Value $csvRel.RelationshipNote
+                        $psNote = Normalize-ComparisonValue -Value $psRel.relationship_relationship_note
+                        if ($csvNote -ne $psNote) {
+                            $changes.Add([PSCustomObject]@{
+                                Field = 'RelationshipNote'
+                                OldValue = $psNote
+                                NewValue = $csvNote
+                            })
+                        }
+                    }
+                    'HasCustody' {
+                        if ($null -ne $csvRel.HasCustody) {
+                            $csvCustody = if ($csvRel.HasCustody) { 1 } else { 0 }
+                            $psCustody = if ($null -eq $psRel.relationship_iscustodial) { 0 } else { [int]$psRel.relationship_iscustodial }
+                            if ($csvCustody -ne $psCustody) {
+                                $changes.Add([PSCustomObject]@{
+                                    Field = 'HasCustody'
+                                    OldValue = $psCustody
+                                    NewValue = $csvCustody
+                                })
+                            }
+                        }
+                    }
+                    'LivesWith' {
+                        if ($null -ne $csvRel.LivesWith) {
+                            $csvLivesWith = if ($csvRel.LivesWith) { 1 } else { 0 }
+                            $psLivesWith = if ($null -eq $psRel.relationship_liveswith) { 0 } else { [int]$psRel.relationship_liveswith }
+                            if ($csvLivesWith -ne $psLivesWith) {
+                                $changes.Add([PSCustomObject]@{
+                                    Field = 'LivesWith'
+                                    OldValue = $psLivesWith
+                                    NewValue = $csvLivesWith
+                                })
+                            }
+                        }
+                    }
+                    'AllowSchoolPickup' {
+                        if ($null -ne $csvRel.AllowSchoolPickup) {
+                            $csvPickup = if ($csvRel.AllowSchoolPickup) { 1 } else { 0 }
+                            $psPickup = if ($null -eq $psRel.relationship_schoolpickup) { 0 } else { [int]$psRel.relationship_schoolpickup }
+                            if ($csvPickup -ne $psPickup) {
+                                $changes.Add([PSCustomObject]@{
+                                    Field = 'AllowSchoolPickup'
+                                    OldValue = $psPickup
+                                    NewValue = $csvPickup
+                                })
+                            }
+                        }
+                    }
+                    'IsEmergencyContact' {
+                        if ($null -ne $csvRel.IsEmergencyContact) {
+                            $csvEmergency = if ($csvRel.IsEmergencyContact) { 1 } else { 0 }
+                            $psEmergency = if ($null -eq $psRel.relationship_isemergency) { 0 } else { [int]$psRel.relationship_isemergency }
+                            if ($csvEmergency -ne $psEmergency) {
+                                $changes.Add([PSCustomObject]@{
+                                    Field = 'IsEmergencyContact'
+                                    OldValue = $psEmergency
+                                    NewValue = $csvEmergency
+                                })
+                            }
+                        }
+                    }
+                    'ReceivesMail' {
+                        if ($null -ne $csvRel.ReceivesMail) {
+                            $csvMail = if ($csvRel.ReceivesMail) { 1 } else { 0 }
+                            $psMail = if ($null -eq $psRel.relationship_receivesmail) { 0 } else { [int]$psRel.relationship_receivesmail }
+                            if ($csvMail -ne $psMail) {
+                                $changes.Add([PSCustomObject]@{
+                                    Field = 'ReceivesMail'
+                                    OldValue = $psMail
+                                    NewValue = $csvMail
+                                })
+                            }
+                        }
+                    }
                 }
             }
 
