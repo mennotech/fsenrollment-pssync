@@ -67,19 +67,31 @@ $result = Apply-PSStudentChange -JsonPath './data/pending_changes.json'
 When first testing with live PowerSchool data, use the `-Limit` parameter to apply only a few changes:
 
 ```powershell
-# Test with just 5 changes
-$result = Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5
+# Test with just 5 changes using WhatIf first
+Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf
+
+# If WhatIf looks good, apply the test batch
+$testResult = Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5
 
 # Review the results carefully
 Write-Host "Test Results:"
-Write-Host "  Applied: $($result.Summary.TotalApplied)"
-Write-Host "  Failed: $($result.Summary.TotalFailed)"
+Write-Host "  Applied: $($testResult.Summary.TotalApplied)"
+Write-Host "  Failed: $($testResult.Summary.TotalFailed)"
 
-# If successful, apply remaining changes
-if ($result.Summary.TotalFailed -eq 0) {
-    Write-Host "Test successful! Applying all changes..."
-    $fullResult = Apply-PSStudentChange -JsonPath './data/pending_changes.json'
-}
+# IMPORTANT: After testing with -Limit, you need to manually track which changes
+# were applied to avoid reprocessing. The function processes changes in order
+# (New students first, then Updates). Consider one of these approaches:
+
+# Option 1: Test with WhatIf, then apply all at once
+Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf
+# Review output, then apply all changes
+Apply-PSStudentChange -JsonPath './data/pending_changes.json'
+
+# Option 2: Export separate test and production change files
+# Process and review a subset, then process remaining separately
+
+# Option 3: Use the result to track progress and filter remaining changes
+# (This requires manual processing of the changes object)
 ```
 
 ### 4. Dry Run (Preview Changes Without Applying)

@@ -282,10 +282,7 @@ function Build-StudentPayload {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [PSStudent]$Student,
-        
-        [Parameter(Mandatory = $false)]
-        [bool]$IsNew = $false
+        [PSStudent]$Student
     )
 
     # Build basic student object
@@ -316,13 +313,13 @@ function Build-StudentPayload {
     }
 
     # Date fields
-    if ($Student.DOB) { 
+    if ($Student.DOB -and $Student.DOB -is [DateTime]) { 
         $studentData['dob'] = $Student.DOB.ToString('yyyy-MM-dd')
     }
-    if ($Student.EntryDate) { 
+    if ($Student.EntryDate -and $Student.EntryDate -is [DateTime]) { 
         $studentData['entrydate'] = $Student.EntryDate.ToString('yyyy-MM-dd')
     }
-    if ($Student.ExitDate) { 
+    if ($Student.ExitDate -and $Student.ExitDate -is [DateTime]) { 
         $studentData['exitdate'] = $Student.ExitDate.ToString('yyyy-MM-dd')
     }
 
@@ -393,53 +390,80 @@ function Build-UpdatePayload {
                 $studentData['name'] = @{}
             }
             $studentData['name'][$matches[1]] = $newValue
+            continue
         }
         elseif ($psFieldPath -and $psFieldPath -match '^extension\.([^.]+)\.(.+)$') {
             # Extension field - would need proper extension structure
             # This is complex and depends on PowerSchool version
             Write-Warning "Extension field updates not yet implemented: $psFieldPath"
+            continue
         }
         elseif ($psFieldPath -and $psFieldPath -match '^@([^.]+)\.(.+)$') {
             # Expansion field - typically read-only
             Write-Warning "Expansion field updates not supported: $psFieldPath"
+            continue
         }
-        else {
-            # Standard field - map by field name
-            $apiFieldName = switch ($fieldName) {
-                'StudentNumber' { 'local_id' }
-                'SchoolID' { 'school_id' }
-                'FirstName' { 
-                    if (-not $studentData['name']) { $studentData['name'] = @{} }
-                    $studentData['name']['first_name'] = $newValue
-                    continue
-                }
-                'MiddleName' { 
-                    if (-not $studentData['name']) { $studentData['name'] = @{} }
-                    $studentData['name']['middle_name'] = $newValue
-                    continue
-                }
-                'LastName' { 
-                    if (-not $studentData['name']) { $studentData['name'] = @{} }
-                    $studentData['name']['last_name'] = $newValue
-                    continue
-                }
-                'GradeLevel' { 'grade_level' }
-                'Gender' { 'gender' }
-                'DOB' { 'dob' }
-                'EnrollStatus' { 'enroll_status' }
-                'EntryDate' { 'entrydate' }
-                'ExitDate' { 'exitdate' }
-                'HomePhone' { 'home_phone' }
-                'Street' { 'street' }
-                'City' { 'city' }
-                'State' { 'state' }
-                'Zip' { 'zip' }
-                default { $fieldName.ToLower() }
+        
+        # Standard field - map by field name
+        $apiFieldName = switch ($fieldName) {
+            'StudentNumber' { 'local_id' }
+            'SchoolID' { 'school_id' }
+            'FirstName' { 
+                if (-not $studentData['name']) { $studentData['name'] = @{} }
+                $studentData['name']['first_name'] = $newValue
+                continue
             }
-            
-            if ($apiFieldName -and -not $studentData.ContainsKey($apiFieldName)) {
-                $studentData[$apiFieldName] = $newValue
+            'MiddleName' { 
+                if (-not $studentData['name']) { $studentData['name'] = @{} }
+                $studentData['name']['middle_name'] = $newValue
+                continue
             }
+            'LastName' { 
+                if (-not $studentData['name']) { $studentData['name'] = @{} }
+                $studentData['name']['last_name'] = $newValue
+                continue
+            }
+            'GradeLevel' { 'grade_level' }
+            'Gender' { 'gender' }
+            'DOB' { 
+                # Format date as string if it's a DateTime
+                if ($newValue -is [DateTime]) {
+                    $studentData['dob'] = $newValue.ToString('yyyy-MM-dd')
+                } else {
+                    $studentData['dob'] = $newValue
+                }
+                continue
+            }
+            'EnrollStatus' { 'enroll_status' }
+            'EntryDate' { 
+                # Format date as string if it's a DateTime
+                if ($newValue -is [DateTime]) {
+                    $studentData['entrydate'] = $newValue.ToString('yyyy-MM-dd')
+                } else {
+                    $studentData['entrydate'] = $newValue
+                }
+                continue
+            }
+            'ExitDate' { 
+                # Format date as string if it's a DateTime
+                if ($newValue -is [DateTime]) {
+                    $studentData['exitdate'] = $newValue.ToString('yyyy-MM-dd')
+                } else {
+                    $studentData['exitdate'] = $newValue
+                }
+                continue
+            }
+            'HomePhone' { 'home_phone' }
+            'Street' { 'street' }
+            'City' { 'city' }
+            'State' { 'state' }
+            'Zip' { 'zip' }
+            default { $fieldName.ToLower() }
+        }
+        
+        # Only set if we have a valid API field name and it's not already set
+        if ($apiFieldName) {
+            $studentData[$apiFieldName] = $newValue
         }
     }
 
