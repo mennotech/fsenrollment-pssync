@@ -2,6 +2,10 @@
     TemplateName = 'fs_powerschool_nonapi_report_students'
     Description = 'Final Site Enrollment PowerSchool Non-API Report - Students Export'
     EntityType = 'PSStudent'
+    # DateTime format used in CSV files (adjust based on FinalSite location settings)
+    # This is the default format. Individual columns can override with their own DateTimeFormat property.
+    # Common formats: 'MM/dd/yyyy' (US), 'dd/MM/yyyy' (International), 'yyyy-MM-dd' (ISO)
+    DateTimeFormat = 'dd/MM/yyyy'
     # Key field for matching records between CSV and PowerSchool
     KeyField = 'StudentNumber'
     # PowerSchool API field that corresponds to the key field
@@ -14,6 +18,7 @@
     # If not provided, the default ConvertFrom-CsvRow function is used with ColumnMappings
     CustomParser = $null
     # Column mappings - EntityType is inherited from template-level EntityType
+    # Each mapping can optionally specify DateTimeFormat for datetime fields
     # PowerSchoolAPIField syntax:
     #   - Standard fields: 'local_id', 'student_number'
     #   - Nested fields: 'name.first_name', 'demographics.gender'
@@ -30,11 +35,11 @@
         @{ CSVColumn = 'Grade_Level'; EntityProperty = 'GradeLevel'; DataType = 'int' }
         @{ CSVColumn = 'Home_Phone'; EntityProperty = 'HomePhone'; DataType = 'string' }
         @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string' }
-        @{ CSVColumn = 'DOB'; EntityProperty = 'DOB'; DataType = 'datetime'; PowerSchoolAPIField = '@demographics.birth_date' }
+        @{ CSVColumn = 'DOB'; EntityProperty = 'DOB'; DataType = 'datetime'; DateTimeFormat = 'dd/MM/yyyy'; PowerSchoolAPIField = '@demographics.birth_date' }
         @{ CSVColumn = 'FTEID'; EntityProperty = 'FTEID'; DataType = 'string' }
         @{ CSVColumn = 'Enroll_Status'; EntityProperty = 'EnrollStatus'; DataType = 'int' }
-        @{ CSVColumn = 'EntryDate'; EntityProperty = 'EntryDate'; DataType = 'datetime' }
-        @{ CSVColumn = 'ExitDate'; EntityProperty = 'ExitDate'; DataType = 'datetime' }
+        @{ CSVColumn = 'EntryDate'; EntityProperty = 'EntryDate'; DataType = 'datetime'; DateTimeFormat = 'M/d/yy' }
+        @{ CSVColumn = 'ExitDate'; EntityProperty = 'ExitDate'; DataType = 'datetime'; DateTimeFormat = 'M/d/yyyy' }
         @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string' }
         @{ CSVColumn = 'City'; EntityProperty = 'City'; DataType = 'string' }
         @{ CSVColumn = 'State'; EntityProperty = 'State'; DataType = 'string' }

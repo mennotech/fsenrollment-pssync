@@ -12,6 +12,7 @@ A template configuration contains:
 - **TemplateName**: Unique identifier for the template
 - **Description**: Human-readable description of the template
 - **EntityType**: PowerShell class name for the entity (e.g., 'PSStudent', 'PSNormalizedData')
+- **DateTimeFormat**: (Optional) DateTime format string for parsing date fields (e.g., 'MM/dd/yyyy', 'dd/MM/yyyy')
 - **CustomParser**: (Optional) Name of a custom parser function for complex CSV formats
 - **ColumnMappings**: Column mappings from CSV to entity properties
   - For simple formats: Array of mappings (EntityType inherited from template)
@@ -27,6 +28,8 @@ For simple CSV formats with one entity per row, use column mappings with EntityT
     TemplateName = 'template_name'
     Description = 'Template description'
     EntityType = 'PSStudent'
+    # DateTime format for parsing date fields (adjust based on FinalSite location settings)
+    DateTimeFormat = 'MM/dd/yyyy'  # US format, use 'dd/MM/yyyy' for international
     CustomParser = $null
     # EntityType is inherited from template-level setting for all mappings
     ColumnMappings = @(
@@ -46,6 +49,8 @@ For complex CSV formats (multi-row, conditional logic, etc.), create a custom pa
     TemplateName = 'template_name'
     Description = 'Template description'
     EntityType = 'PSNormalizedData'
+    # DateTime format for parsing date fields
+    DateTimeFormat = 'MM/dd/yyyy'
     CustomParser = 'Import-CustomParserFunction'
     # EntityTypeMap defines entity types for hashtable keys
     EntityTypeMap = @{

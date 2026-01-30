@@ -248,6 +248,88 @@ The `Compare-PSContact` function checks the following data:
 **Email Addresses** (optional - checked if PowerSchoolEmailData is provided):
 - Email address
 - Email type
+
+## DateTime Format Configuration
+
+The FSEnrollment-PSSync module supports configurable datetime formats to handle different FinalSite location settings and mixed datetime formats within CSV files.
+
+### Template-Level DateTime Format
+
+Configure a default datetime format for the entire template:
+
+```powershell
+@{
+    # Default datetime format for the template (applies to all datetime columns)
+    DateTimeFormat = 'dd/MM/yyyy'  # e.g., 31/12/2023 for UK format
+    
+    # Column mappings...
+    ColumnMappings = @(
+        # datetime columns will use the template DateTimeFormat by default
+    )
+}
+```
+
+### Per-Column DateTime Format
+
+For CSV files with mixed datetime formats, specify formats for individual columns:
+
+```powershool
+@{
+    # Template-level format (fallback for columns without specific format)
+    DateTimeFormat = 'dd/MM/yyyy'
+    
+    ColumnMappings = @(
+        @{
+            CsvColumn = 'DOB'
+            PropertyName = 'DOB'
+            DataType = 'datetime'
+            DateTimeFormat = 'dd/MM/yyyy'  # UK format: 31/12/1999
+        },
+        @{
+            CsvColumn = 'EntryDate'
+            PropertyName = 'EntryDate' 
+            DataType = 'datetime'
+            DateTimeFormat = 'M/d/yy'      # US short format: 12/31/99
+        },
+        @{
+            CsvColumn = 'ExitDate'
+            PropertyName = 'ExitDate'
+            DataType = 'datetime'
+            DateTimeFormat = 'M/d/yyyy'    # US long format: 12/31/1999
+        }
+    )
+}
+```
+
+### Format Precedence
+
+The datetime parsing uses this precedence:
+1. **Column-specific format**: If `DateTimeFormat` is specified in the column mapping
+2. **Template-level format**: If `DateTimeFormat` is specified at the template level
+3. **Auto-parsing**: Falls back to PowerShell's default `[DateTime]::Parse()` method
+
+### Common DateTime Formats
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| `dd/MM/yyyy` | 31/12/2023 | Day/Month/Year (UK/EU format) |
+| `MM/dd/yyyy` | 12/31/2023 | Month/Day/Year (US format) |
+| `M/d/yyyy` | 12/31/2023 | Month/Day/Year (no leading zeros) |
+| `M/d/yy` | 12/31/23 | Month/Day/Year (2-digit year) |
+| `yyyy-MM-dd` | 2023-12-31 | ISO format |
+| `dd-MMM-yyyy` | 31-Dec-2023 | Day-Month-Year with month name |
+
+### Error Handling
+
+When datetime parsing fails:
+- A warning is displayed showing the failed value and expected format
+- The datetime field is set to `DateTime.MinValue` (0001-01-01)
+- Processing continues with other records
+
+Example warning:
+```
+WARNING: Failed to convert '31/12/1999' to datetime using column format 'MM/dd/yyyy' for property DOB
+```
 - Priority order
 - Primary status
 

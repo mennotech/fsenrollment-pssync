@@ -59,6 +59,13 @@ function Import-FSParentsCustomParser {
             $null 
         }
 
+        # Get the datetime format from template configuration (optional)
+        $dateTimeFormat = if ($TemplateConfig -and $TemplateConfig.DateTimeFormat) {
+            $TemplateConfig.DateTimeFormat
+        } else {
+            $null
+        }
+
         # First pass: identify excluded contacts (only if exclude column is configured and exists in CSV)
         if ($excludeColumnName -and $CsvData.Count -gt 0) {
             # Check if the exclude column exists in the CSV
@@ -108,7 +115,7 @@ function Import-FSParentsCustomParser {
             if ($isRelationshipRow) {
                 # This is a relationship row
                 $relationship = [PSStudentContactRelationship]::new()
-                Invoke-ColumnMapping -CsvRow $row -Entity $relationship -ColumnMappings $relationshipMappings
+                Invoke-ColumnMapping -CsvRow $row -Entity $relationship -ColumnMappings $relationshipMappings -DateTimeFormat $dateTimeFormat
                 
                 $normalizedData.Relationships.Add($relationship)
                 Write-Verbose "Added relationship: Contact $contactId -> Student $($row.studentNumber) as $($row.'Relationship Type')"
@@ -117,7 +124,7 @@ function Import-FSParentsCustomParser {
                 # This is a new contact row
                 if (-not $processedContacts.ContainsKey($contactId)) {
                     $contact = [PSContact]::new()
-                    Invoke-ColumnMapping -CsvRow $row -Entity $contact -ColumnMappings $contactMappings
+                    Invoke-ColumnMapping -CsvRow $row -Entity $contact -ColumnMappings $contactMappings -DateTimeFormat $dateTimeFormat
                     
                     $normalizedData.Contacts.Add($contact)
                     $processedContacts[$contactId] = $true
@@ -127,7 +134,7 @@ function Import-FSParentsCustomParser {
                 # Add email address if present
                 if (-not [string]::IsNullOrWhiteSpace($row.'Email Address')) {
                     $email = [PSEmailAddress]::new()
-                    Invoke-ColumnMapping -CsvRow $row -Entity $email -ColumnMappings $emailMappings
+                    Invoke-ColumnMapping -CsvRow $row -Entity $email -ColumnMappings $emailMappings -DateTimeFormat $dateTimeFormat
                     
                     $normalizedData.EmailAddresses.Add($email)
                     Write-Verbose "Added email for $contactId : $($email.EmailAddress)"
@@ -136,7 +143,7 @@ function Import-FSParentsCustomParser {
                 # Add address if present
                 if (-not [string]::IsNullOrWhiteSpace($row.Street)) {
                     $address = [PSAddress]::new()
-                    Invoke-ColumnMapping -CsvRow $row -Entity $address -ColumnMappings $addressMappings
+                    Invoke-ColumnMapping -CsvRow $row -Entity $address -ColumnMappings $addressMappings -DateTimeFormat $dateTimeFormat
                     
                     $normalizedData.Addresses.Add($address)
                     Write-Verbose "Added address for $contactId : $($address.City), $($address.State)"
@@ -145,7 +152,7 @@ function Import-FSParentsCustomParser {
                 # Add phone number if present
                 if (-not [string]::IsNullOrWhiteSpace($row.phoneNumberAsEntered)) {
                     $phone = [PSPhoneNumber]::new()
-                    Invoke-ColumnMapping -CsvRow $row -Entity $phone -ColumnMappings $phoneMappings
+                    Invoke-ColumnMapping -CsvRow $row -Entity $phone -ColumnMappings $phoneMappings -DateTimeFormat $dateTimeFormat
                     
                     $normalizedData.PhoneNumbers.Add($phone)
                     Write-Verbose "Added phone for $contactId : $($phone.PhoneType) - $($phone.PhoneNumber)"
@@ -155,7 +162,7 @@ function Import-FSParentsCustomParser {
                 # This is an additional phone number row (no contact info, just phone data)
                 if (-not [string]::IsNullOrWhiteSpace($row.phoneNumberAsEntered)) {
                     $phone = [PSPhoneNumber]::new()
-                    Invoke-ColumnMapping -CsvRow $row -Entity $phone -ColumnMappings $phoneMappings
+                    Invoke-ColumnMapping -CsvRow $row -Entity $phone -ColumnMappings $phoneMappings -DateTimeFormat $dateTimeFormat
                     
                     $normalizedData.PhoneNumbers.Add($phone)
                     Write-Verbose "Added additional phone for $contactId : $($phone.PhoneType) - $($phone.PhoneNumber)"
