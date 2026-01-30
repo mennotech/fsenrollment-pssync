@@ -657,7 +657,7 @@ Describe 'Apply-PSStudentChange Helper Functions' {
                 $student.LastName = 'Doe'
                 $student.GradeLevel = 9
                 
-                $payload = Build-StudentPayload -Student $student -IsNew $true
+                $payload = Build-StudentPayload -Student $student
                 
                 $payload.students.student.local_id | Should -Be '123456'
                 $payload.students.student.grade_level | Should -Be 9

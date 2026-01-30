@@ -153,7 +153,7 @@ function Apply-PSStudentChange {
                         Write-Verbose "Creating new student: $matchKey"
                         
                         # Build student payload for API
-                        $payload = Build-StudentPayload -Student $student -IsNew $true
+                        $payload = Build-StudentPayload -Student $student
                         
                         # Make API call to create student
                         $result = Invoke-CreateStudent -Payload $payload -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
