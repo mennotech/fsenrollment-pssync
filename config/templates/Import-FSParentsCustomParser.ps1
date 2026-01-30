@@ -52,22 +52,43 @@ function Import-FSParentsCustomParser {
         $addressMappings = if ($TemplateConfig -and $TemplateConfig.ColumnMappings.Address) { $TemplateConfig.ColumnMappings.Address } else { @() }
         $relationshipMappings = if ($TemplateConfig -and $TemplateConfig.ColumnMappings.Relationship) { $TemplateConfig.ColumnMappings.Relationship } else { @() }
 
-        # First pass: identify excluded contacts
-        foreach ($row in $CsvData) {
-            $contactId = $row.'New Contact Identifier'
-            $hasContactInfo = -not [string]::IsNullOrWhiteSpace($row.'First Name')
+        # Get the exclude column name from template configuration (optional)
+        $excludeColumnName = if ($TemplateConfig -and $TemplateConfig.ExcludeColumnName) { 
+            $TemplateConfig.ExcludeColumnName 
+        } else { 
+            $null 
+        }
+
+        # First pass: identify excluded contacts (only if exclude column is configured and exists in CSV)
+        if ($excludeColumnName -and $CsvData.Count -gt 0) {
+            # Check if the exclude column exists in the CSV
+            $firstRow = $CsvData[0]
+            $columnExists = $firstRow.PSObject.Properties.Name -contains $excludeColumnName
             
-            # Only check exclude flag on contact info rows
-            if ($hasContactInfo) {
-                if (-not [string]::IsNullOrWhiteSpace($row.'Exclude from PowerSchool Export')) {
-                    $excludeValue = $row.'Exclude from PowerSchool Export'.ToString().Trim()
-                    $excludeFromExport = $excludeValue -in @('true', 'True', 'TRUE', '1', 'yes', 'Yes', 'YES')
+            if ($columnExists) {
+                Write-Verbose "Exclude column '$excludeColumnName' found in CSV, checking for excluded contacts"
+                
+                foreach ($row in $CsvData) {
+                    $contactId = $row.'New Contact Identifier'
+                    $hasContactInfo = -not [string]::IsNullOrWhiteSpace($row.'First Name')
                     
-                    if ($excludeFromExport) {
-                        $excludedContacts[$contactId] = $true
-                        Write-Verbose "Marking contact for exclusion: $contactId ($($row.'First Name') $($row.'Last Name'))"
+                    # Only check exclude flag on contact info rows
+                    if ($hasContactInfo) {
+                        $excludeValue = $row.$excludeColumnName
+                        if (-not [string]::IsNullOrWhiteSpace($excludeValue)) {
+                            $excludeValueStr = $excludeValue.ToString().Trim()
+                            $excludeFromExport = $excludeValueStr -in @('true', 'True', 'TRUE', '1', 'yes', 'Yes', 'YES')
+                            
+                            if ($excludeFromExport) {
+                                $excludedContacts[$contactId] = $true
+                                Write-Verbose "Marking contact for exclusion: $contactId ($($row.'First Name') $($row.'Last Name'))"
+                            }
+                        }
                     }
                 }
+            }
+            else {
+                Write-Verbose "Exclude column '$excludeColumnName' not found in CSV, proceeding without exclusions"
             }
         }
 
