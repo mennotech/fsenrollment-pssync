@@ -204,7 +204,7 @@ function Get-PowerSchoolStudent {
                 }
             }
             
-            return $students
+            return , $students
         }
         catch {
             Write-Error "Failed to retrieve PowerSchool student data: $_"

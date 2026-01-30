@@ -156,33 +156,37 @@ Describe 'Get-PowerSchoolStudent' {
         }
 
         It 'Should handle multiple pages of results' {
-            $callCount = 0
-            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
-                $callCount++
-                if ($callCount -eq 1) {
-                    # First page - full page
-                    return @{
-                        students = @{
-                            student = @(1..10 | ForEach-Object {
-                                @{ id = $_; student_number = "$_" }
-                            })
+            InModuleScope FSEnrollment-PSSync {
+                # Use script scope within module to track call count
+                $script:testCallCount = 0
+                
+                Mock Invoke-PowerSchoolApiRequest {
+                    $script:testCallCount++
+                    if ($script:testCallCount -eq 1) {
+                        # First page - full page
+                        return @{
+                            students = @{
+                                student = @(1..10 | ForEach-Object {
+                                    @{ id = $_; student_number = "$_" }
+                                })
+                            }
                         }
-                    }
-                } else {
-                    # Second page - partial page (signals end)
-                    return @{
-                        students = @{
-                            student = @(
-                                @{ id = 11; student_number = '11' }
-                            )
+                    } else {
+                        # Second page - partial page (signals end)
+                        return @{
+                            students = @{
+                                student = @(
+                                    @{ id = 11; student_number = '11' }
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            $result = Get-PowerSchoolStudent -All -PageSize 10
-            $result.Count | Should -Be 11
-            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest -Times 2
+                $result = Get-PowerSchoolStudent -All -PageSize 10
+                $result.Count | Should -Be 11
+                Should -Invoke Invoke-PowerSchoolApiRequest -Times 2
+            }
         }
 
         It 'Should stop pagination when page is not full' {
@@ -221,23 +225,23 @@ Describe 'Get-PowerSchoolStudent' {
 
     Context 'Connection Validation' {
         It 'Should call Test-PowerSchoolConnection before making API request' {
-            Mock Test-PowerSchoolConnection { }
+            Mock -ModuleName FSEnrollment-PSSync Test-PowerSchoolConnection { }
             Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 return @{ students = @{ student = @() } }
             }
 
             Get-PowerSchoolStudent -All
-            Should -Invoke Test-PowerSchoolConnection -Times 1
+            Should -Invoke -ModuleName FSEnrollment-PSSync Test-PowerSchoolConnection -Times 1
         }
 
         It 'Should retrieve access token for API request' {
-            Mock Get-PowerSchoolAccessToken { return 'test-token' }
+            Mock -ModuleName FSEnrollment-PSSync Get-PowerSchoolAccessToken { return 'test-token' }
             Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 return @{ students = @{ student = @() } }
             }
 
             Get-PowerSchoolStudent -All
-            Should -Invoke Get-PowerSchoolAccessToken -Times 1
+            Should -Invoke -ModuleName FSEnrollment-PSSync Get-PowerSchoolAccessToken -Times 1
         }
     }
 
