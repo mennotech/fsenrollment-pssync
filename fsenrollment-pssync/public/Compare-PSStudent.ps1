@@ -56,10 +56,11 @@ function Compare-PSStudent {
         [PSNormalizedData]$CsvData,
 
         [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
         [array]$PowerSchoolData,
 
         [Parameter(Mandatory = $false)]
-        [ValidateSet('StudentNumber')]
+        [ValidateSet('StudentNumber', 'FTEID')]
         [string]$MatchOn = 'StudentNumber'
     )
 
