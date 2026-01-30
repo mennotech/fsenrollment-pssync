@@ -5,6 +5,7 @@ PowerShell 7+ module to process Final Site Enrollment CSVs and synchronize chang
 ## Features
 
 ✅ **CSV Parsing**: Import and normalize Final Site Enrollment data  
+✅ **Contact Exclusion**: Optionally exclude specific contacts from import via CSV column  
 ✅ **PowerSchool Authentication**: Secure OAuth 2.0 connection with automatic token renewal  
 ✅ **Change Detection**: Compare CSV data with PowerSchool to identify new, updated, and unchanged records
 ✅ **Contact Change Detection**: Comprehensive comparison of contacts, emails, phones, addresses, and relationships  

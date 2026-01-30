@@ -54,6 +54,7 @@ class PSContact {
     [string]$Gender
     [string]$Employer
     [bool]$IsActive
+    [bool]$ExcludeFromExport
 
     PSContact() {}
 }
@@ -64,6 +65,7 @@ class PSEmailAddress {
     [string]$EmailAddress
     [string]$EmailAddressID
     [bool]$IsPrimary
+    [bool]$ExcludeFromExport
 
     PSEmailAddress() {}
 }
@@ -77,6 +79,7 @@ class PSPhoneNumber {
     [bool]$IsPreferred
     [bool]$IsSMS
     [string]$PhoneNumberID
+    [bool]$ExcludeFromExport
 
     PSPhoneNumber() {}
 }
@@ -93,6 +96,7 @@ class PSAddress {
     [string]$PostalCode
     [string]$AddressID
     [int]$PriorityOrder
+    [bool]$ExcludeFromExport
 
     PSAddress() {}
 }
@@ -113,6 +117,7 @@ class PSStudentContactRelationship {
     [bool]$AllowSchoolPickup
     [bool]$IsEmergencyContact
     [bool]$ReceivesMail
+    [bool]$ExcludeFromExport
 
     PSStudentContactRelationship() {}
 }
