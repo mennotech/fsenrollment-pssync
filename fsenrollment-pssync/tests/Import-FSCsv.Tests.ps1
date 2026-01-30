@@ -114,24 +114,24 @@ Describe 'Import-FSCsv' {
         }
 
         It 'Should import correct number of contacts' {
-            $Result.Contacts.Count | Should -Be 22
+            $Result.Contacts.Count | Should -Be 21
         }
 
         It 'Should import correct number of email addresses' {
-            $Result.EmailAddresses.Count | Should -Be 22
+            $Result.EmailAddresses.Count | Should -Be 21
         }
 
         It 'Should import correct number of phone numbers' {
-            # 22 primary phones + 17 additional phones = 39 total
-            $Result.PhoneNumbers.Count | Should -Be 39
+            # 21 primary phones + 15 additional phones = 36 total (one contact with 3 phones excluded)
+            $Result.PhoneNumbers.Count | Should -Be 36
         }
 
         It 'Should import correct number of addresses' {
-            $Result.Addresses.Count | Should -Be 22
+            $Result.Addresses.Count | Should -Be 21
         }
 
         It 'Should import correct number of relationships' {
-            $Result.Relationships.Count | Should -Be 32
+            $Result.Relationships.Count | Should -Be 30
         }
 
         It 'Should have empty Students collection' {
@@ -220,6 +220,60 @@ Describe 'Import-FSCsv' {
                 $_.ContactIdentifier -eq 'd39a8193-e5a3-11ec-b1e3-025d0f476dca' 
             }
             $ContactRels.Count | Should -Be 3
+        }
+    }
+
+    Context 'Parents CSV Exclude Functionality' {
+        BeforeAll {
+            $TestDataPath = Join-Path $PSScriptRoot '../../data/examples/fs_powerschool_nonapi_report/parents_example.csv'
+            $Result = Import-FSCsv -Path $TestDataPath -TemplateName 'fs_powerschool_nonapi_report_parents'
+        }
+
+        It 'Should exclude contacts with ExcludeFromExport set to true' {
+            # Sunny Zimmer (e2857c92-c511-11ed-b1e3-025d0f476dca) should be excluded
+            $ExcludedContact = $Result.Contacts | Where-Object { 
+                $_.ContactIdentifier -eq 'e2857c92-c511-11ed-b1e3-025d0f476dca' 
+            }
+            $ExcludedContact | Should -BeNullOrEmpty
+        }
+
+        It 'Should exclude email addresses for excluded contacts' {
+            # Email for Sunny Zimmer should be excluded
+            $ExcludedEmail = $Result.EmailAddresses | Where-Object { 
+                $_.ContactIdentifier -eq 'e2857c92-c511-11ed-b1e3-025d0f476dca' 
+            }
+            $ExcludedEmail | Should -BeNullOrEmpty
+        }
+
+        It 'Should exclude phone numbers for excluded contacts' {
+            # All 3 phones for Sunny Zimmer should be excluded
+            $ExcludedPhones = $Result.PhoneNumbers | Where-Object { 
+                $_.ContactIdentifier -eq 'e2857c92-c511-11ed-b1e3-025d0f476dca' 
+            }
+            $ExcludedPhones | Should -BeNullOrEmpty
+        }
+
+        It 'Should exclude addresses for excluded contacts' {
+            # Address for Sunny Zimmer should be excluded
+            $ExcludedAddress = $Result.Addresses | Where-Object { 
+                $_.ContactIdentifier -eq 'e2857c92-c511-11ed-b1e3-025d0f476dca' 
+            }
+            $ExcludedAddress | Should -BeNullOrEmpty
+        }
+
+        It 'Should exclude relationships for excluded contacts' {
+            # Both relationships for Sunny Zimmer should be excluded
+            $ExcludedRels = $Result.Relationships | Where-Object { 
+                $_.ContactIdentifier -eq 'e2857c92-c511-11ed-b1e3-025d0f476dca' 
+            }
+            $ExcludedRels | Should -BeNullOrEmpty
+        }
+
+        It 'Should include contacts without ExcludeFromExport flag' {
+            # Verify that other contacts are still imported
+            $Result.Contacts.Count | Should -BeGreaterThan 0
+            $FirstContact = $Result.Contacts[0]
+            $FirstContact.ContactIdentifier | Should -Not -BeNullOrEmpty
         }
     }
 }

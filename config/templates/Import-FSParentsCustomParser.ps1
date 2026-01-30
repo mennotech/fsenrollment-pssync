@@ -41,6 +41,9 @@ function Import-FSParentsCustomParser {
         
         # Track processed contacts to avoid duplicates
         $processedContacts = @{}
+        
+        # Track excluded contacts (by ContactIdentifier)
+        $excludedContacts = @{}
 
         # Get column mappings for each entity type
         $contactMappings = if ($TemplateConfig -and $TemplateConfig.ColumnMappings.Contact) { $TemplateConfig.ColumnMappings.Contact } else { @() }
@@ -49,20 +52,31 @@ function Import-FSParentsCustomParser {
         $addressMappings = if ($TemplateConfig -and $TemplateConfig.ColumnMappings.Address) { $TemplateConfig.ColumnMappings.Address } else { @() }
         $relationshipMappings = if ($TemplateConfig -and $TemplateConfig.ColumnMappings.Relationship) { $TemplateConfig.ColumnMappings.Relationship } else { @() }
 
-        # Process each row
+        # First pass: identify excluded contacts
+        foreach ($row in $CsvData) {
+            $contactId = $row.'New Contact Identifier'
+            $hasContactInfo = -not [string]::IsNullOrWhiteSpace($row.'First Name')
+            
+            # Only check exclude flag on contact info rows
+            if ($hasContactInfo) {
+                if (-not [string]::IsNullOrWhiteSpace($row.'Exclude from PowerSchool Export')) {
+                    $excludeValue = $row.'Exclude from PowerSchool Export'.ToString().Trim()
+                    $excludeFromExport = $excludeValue -in @('true', 'True', 'TRUE', '1', 'yes', 'Yes', 'YES')
+                    
+                    if ($excludeFromExport) {
+                        $excludedContacts[$contactId] = $true
+                        Write-Verbose "Marking contact for exclusion: $contactId ($($row.'First Name') $($row.'Last Name'))"
+                    }
+                }
+            }
+        }
+
+        # Second pass: process rows, skipping excluded contacts
         foreach ($row in $CsvData) {
             $contactId = $row.'New Contact Identifier'
             
-            # Check if this contact should be excluded from export
-            $excludeFromExport = $false
-            if (-not [string]::IsNullOrWhiteSpace($row.'Exclude from PowerSchool Export')) {
-                $excludeValue = $row.'Exclude from PowerSchool Export'.ToString().Trim()
-                $excludeFromExport = $excludeValue -in @('true', 'True', 'TRUE', '1', 'yes', 'Yes', 'YES')
-            }
-            
-            # Skip this contact and all related data if excluded
-            if ($excludeFromExport) {
-                Write-Verbose "Skipping excluded contact: $contactId"
+            # Skip all rows for excluded contacts
+            if ($excludedContacts.ContainsKey($contactId)) {
                 continue
             }
             
