@@ -135,7 +135,7 @@ Maps parent/contact data from Final Site Enrollment's PowerSchool Non-API Report
 
 - **Entity Type**: PSNormalizedData
 - **Parser Type**: Custom parser (`Import-FSParentsCustomParser`)
-- **Usage**: `Import-FSParentsCsv -Path parents.csv`
+- **Usage**: `Import-FSCsv -Path parents.csv -TemplateName 'fs_powerschool_nonapi_report_parents'`
 - **Format**: Complex multi-row format
 
 **Multi-row format handled by custom parser**:
@@ -149,6 +149,30 @@ Maps parent/contact data from Final Site Enrollment's PowerSchool Non-API Report
 - PSPhoneNumber
 - PSAddress
 - PSStudentContactRelationship
+
+**Optional Exclusion Feature**:
+
+The template supports excluding contacts from import using an optional CSV column. To enable this feature, configure the `ExcludeColumnName` property in the template:
+
+```powershell
+# Optional: Set the CSV column name for excluding contacts
+ExcludeColumnName = 'Exclude from PowerSchool Export'
+```
+
+When configured and the column exists in the CSV:
+- Contacts with the exclude column set to TRUE/true/1/yes are skipped
+- All associated data (emails, phones, addresses, relationships) are also excluded
+- If the column name is omitted from the template, the exclusion feature is disabled
+- If the column doesn't exist in the CSV, all contacts are imported normally
+
+**Example CSV with exclusion**:
+```csv
+New Contact Identifier,First Name,Last Name,...,Exclude from PowerSchool Export
+abc-123,John,Smith,...,false
+def-456,Jane,Doe,...,true    # This contact will be excluded
+def-456,,,,...,              # Additional phone row - auto-excluded
+def-456,,,,...,              # Relationship row - auto-excluded
+```
 
 ## Creating New Templates
 

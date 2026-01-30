@@ -107,6 +107,65 @@ $custodyContacts = $parentData.Relationships | Where-Object { $_.HasCustody -eq 
 Write-Host "`nContacts with Custody: $($custodyContacts.Count)"
 ```
 
+### Excluding Contacts from Import
+
+The parent CSV template supports excluding specific contacts from import using an optional CSV column. This is useful when certain contacts should not be synced to PowerSchool.
+
+**Template Configuration** (in `config/templates/fs_powerschool_nonapi_report_parents.psd1`):
+
+```powershell
+@{
+    # ... other configuration ...
+    
+    # Optional: Name of CSV column for excluding contacts
+    # If omitted, the exclusion feature is disabled
+    ExcludeColumnName = 'Exclude from PowerSchool Export'
+}
+```
+
+**CSV Format**:
+
+```csv
+New Contact Identifier,First Name,Last Name,...,Exclude from PowerSchool Export
+abc-123,John,Smith,...,false
+def-456,Jane,Doe,...,true    # This contact will be excluded
+def-456,,,,...,              # Additional phone row - auto-excluded
+def-456,,,,...,              # Relationship row - auto-excluded
+```
+
+**Import Behavior**:
+
+```powershell
+# Import with verbose output to see excluded contacts
+$parentData = Import-FSCsv -Path './parents.csv' `
+    -TemplateName 'fs_powerschool_nonapi_report_parents' `
+    -Verbose
+
+# VERBOSE: Exclude column 'Exclude from PowerSchool Export' found in CSV, checking for excluded contacts
+# VERBOSE: Marking contact for exclusion: def-456 (Jane Doe)
+# VERBOSE: Added contact: John Smith (abc-123)
+# VERBOSE: Skipping all rows for excluded contact def-456
+
+Write-Host "Imported $($parentData.Contacts.Count) contacts"
+# Note: Excluded contacts and all their related data (emails, phones, addresses, relationships) are not imported
+```
+
+**Backward Compatibility**:
+
+The exclude feature is optional and backward compatible:
+- If `ExcludeColumnName` is not configured in the template, all contacts are imported
+- If the column exists in the template but not in the CSV, all contacts are imported
+- Only when both the template configuration and CSV column exist are exclusions applied
+
+**Customizing the Column Name**:
+
+Different environments can use different column names by customizing the template:
+
+```powershell
+# In your custom template copy
+ExcludeColumnName = 'Skip Import'  # Use your CSV's column name
+```
+
 ### Exporting Normalized Data
 
 ```powershell
