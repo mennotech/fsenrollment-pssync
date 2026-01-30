@@ -112,7 +112,7 @@ Describe 'Get-PowerSchoolStudent' {
         It 'Should construct query for StudentNumber lookup' {
             Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
                 param($Uri)
-                $Uri | Should -Match 'q=student_number==123456'
+                $Uri | Should -Match 'q=local_id==123456'
                 return @{ students = @{ student = @() } }
             }
 
