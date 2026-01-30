@@ -53,6 +53,19 @@ function Import-FSParentsCustomParser {
         foreach ($row in $CsvData) {
             $contactId = $row.'New Contact Identifier'
             
+            # Check if this contact should be excluded from export
+            $excludeFromExport = $false
+            if (-not [string]::IsNullOrWhiteSpace($row.'Exclude from PowerSchool Export')) {
+                $excludeValue = $row.'Exclude from PowerSchool Export'.ToString().Trim()
+                $excludeFromExport = $excludeValue -in @('true', 'True', 'TRUE', '1', 'yes', 'Yes', 'YES')
+            }
+            
+            # Skip this contact and all related data if excluded
+            if ($excludeFromExport) {
+                Write-Verbose "Skipping excluded contact: $contactId"
+                continue
+            }
+            
             # Determine row type
             $isRelationshipRow = -not [string]::IsNullOrWhiteSpace($row.studentNumber)
             $hasContactInfo = -not [string]::IsNullOrWhiteSpace($row.'First Name')
