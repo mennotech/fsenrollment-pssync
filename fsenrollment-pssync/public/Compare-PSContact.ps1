@@ -53,7 +53,10 @@
     Currently supports 'ContactID' and 'ContactIdentifier'.
 
 .OUTPUTS
-    PSCustomObject with properties: New, Updated, Unchanged, Summary
+    PSCustomObject with properties: New, Updated, Unchanged, Summary, TemplateMetadata
+    
+    The TemplateMetadata property contains the template configuration from the CSV import,
+    which can be passed to Submit-PSContactChange for field mapping.
     
     Note: The Removed collection is not included as this function does not detect removed contacts.
 
@@ -401,6 +404,7 @@ function Compare-PSContact {
                 Updated = $updatedContacts
                 Unchanged = $unchangedContacts
                 Summary = $summary
+                TemplateMetadata = $CsvData.TemplateMetadata
             }
             
             Write-Verbose "Comparison complete: $($newContacts.Count) new, $($updatedContacts.Count) updated, $($unchangedContacts.Count) unchanged"
