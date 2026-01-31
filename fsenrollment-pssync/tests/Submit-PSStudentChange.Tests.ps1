@@ -16,7 +16,7 @@ Describe 'Submit-PSStudentChange' {
             $script:PowerSchoolTokenExpiry = (Get-Date).AddHours(1)
         }
 
-        # Create sample change data
+        # Create sample change data with TemplateMetadata
         $script:SampleChanges = [PSCustomObject]@{
             New = @()
             Updated = @()
@@ -29,6 +29,18 @@ Describe 'Submit-PSStudentChange' {
                 UnchangedCount = 0
                 MatchField = 'StudentNumber'
             }
+            TemplateMetadata = @{
+                TemplateName = 'test_template'
+                KeyField = 'StudentNumber'
+                PowerSchoolKeyField = 'local_id'
+                PowerSchoolKeyDataType = 'int'
+                CheckForChanges = @('FirstName', 'LastName')
+                ColumnMappings = @(
+                    @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                    @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                    @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                )
+            }
         }
     }
 
@@ -39,9 +51,23 @@ Describe 'Submit-PSStudentChange' {
                 Mock Test-PowerSchoolConnection { }
                 Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
+                $templateMetadata = @{
+                    TemplateName = 'test_template'
+                    KeyField = 'StudentNumber'
+                    PowerSchoolKeyField = 'local_id'
+                    PowerSchoolKeyDataType = 'int'
+                    CheckForChanges = @('FirstName', 'LastName')
+                    ColumnMappings = @(
+                        @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                        @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                    )
+                }
+                
                 $changes = [PSCustomObject]@{
                     New = @()
                     Updated = @()
+                    TemplateMetadata = $templateMetadata
                 }
                 
                 { Submit-PSStudentChange -Changes $changes -WhatIf } | Should -Not -Throw
@@ -74,6 +100,18 @@ Describe 'Submit-PSStudentChange' {
                 $changes = [PSCustomObject]@{
                     New = @()
                     Updated = @()
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 { Submit-PSStudentChange -Changes $changes } | Should -Throw "*Not connected to PowerSchool*"
@@ -86,9 +124,23 @@ Describe 'Submit-PSStudentChange' {
                 $script:PowerSchoolToken = $null
                 $script:PowerSchoolBaseUrl = $null
                 
+                $templateMetadata = @{
+                    TemplateName = 'test_template'
+                    KeyField = 'StudentNumber'
+                    PowerSchoolKeyField = 'local_id'
+                    PowerSchoolKeyDataType = 'int'
+                    CheckForChanges = @('FirstName', 'LastName')
+                    ColumnMappings = @(
+                        @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                        @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                    )
+                }
+                
                 $changes = [PSCustomObject]@{
                     New = @()
                     Updated = @()
+                    TemplateMetadata = $templateMetadata
                 }
                 
                 { Submit-PSStudentChange -Changes $changes -WhatIf } | Should -Not -Throw
@@ -101,9 +153,23 @@ Describe 'Submit-PSStudentChange' {
                 Mock Test-PowerSchoolConnection { }
                 Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
+                $templateMetadata = @{
+                    TemplateName = 'test_template'
+                    KeyField = 'StudentNumber'
+                    PowerSchoolKeyField = 'local_id'
+                    PowerSchoolKeyDataType = 'int'
+                    CheckForChanges = @('FirstName', 'LastName')
+                    ColumnMappings = @(
+                        @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                        @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                    )
+                }
+                
                 $changes = [PSCustomObject]@{
                     New = @()
                     Updated = @()
+                    TemplateMetadata = $templateMetadata
                 }
                 
                 { Submit-PSStudentChange -Changes $changes -Limit 5 -WhatIf } | Should -Not -Throw
@@ -139,6 +205,18 @@ Describe 'Submit-PSStudentChange' {
                         }
                     )
                     Updated = @()
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes
@@ -175,6 +253,18 @@ Describe 'Submit-PSStudentChange' {
                 $changes = [PSCustomObject]@{
                     New = $newStudents
                     Updated = @()
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes
@@ -214,6 +304,18 @@ Describe 'Submit-PSStudentChange' {
                 $changes = [PSCustomObject]@{
                     New = $newStudents
                     Updated = @()
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes -WarningAction SilentlyContinue
@@ -261,6 +363,18 @@ Describe 'Submit-PSStudentChange' {
                             )
                         }
                     )
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes
@@ -311,6 +425,18 @@ Describe 'Submit-PSStudentChange' {
                             )
                         }
                     )
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes
@@ -357,6 +483,18 @@ Describe 'Submit-PSStudentChange' {
                 $changes = [PSCustomObject]@{
                     New = @()
                     Updated = $updates
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes -WarningAction SilentlyContinue
@@ -383,6 +521,7 @@ Describe 'Submit-PSStudentChange' {
                     
                     [PSCustomObject]@{
                         MatchKey = "12345$_"
+                        MatchField = 'StudentNumber'
                         Student = $student
                     }
                 }
@@ -390,6 +529,18 @@ Describe 'Submit-PSStudentChange' {
                 $changes = [PSCustomObject]@{
                     New = $newStudents
                     Updated = @()
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes -Limit 3
@@ -408,6 +559,7 @@ Describe 'Submit-PSStudentChange' {
                 $updates = 1..5 | ForEach-Object {
                     [PSCustomObject]@{
                         MatchKey = "12345$_"
+                        MatchField = 'StudentNumber'
                         PowerSchoolStudent = @{ id = 12345 + $_ }
                         Changes = @(
                             [PSCustomObject]@{
@@ -423,6 +575,18 @@ Describe 'Submit-PSStudentChange' {
                 $changes = [PSCustomObject]@{
                     New = @()
                     Updated = $updates
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes -Limit 2
@@ -447,16 +611,19 @@ Describe 'Submit-PSStudentChange' {
                     New = @(
                         [PSCustomObject]@{
                             MatchKey = '123456'
+                            MatchField = 'StudentNumber'
                             Student = $newStudent
                         },
                         [PSCustomObject]@{
                             MatchKey = '123457'
+                            MatchField = 'StudentNumber'
                             Student = $newStudent
                         }
                     )
                     Updated = @(
                         [PSCustomObject]@{
                             MatchKey = '123458'
+                            MatchField = 'StudentNumber'
                             PowerSchoolStudent = @{ id = 12345 }
                             Changes = @(
                                 [PSCustomObject]@{
@@ -468,6 +635,18 @@ Describe 'Submit-PSStudentChange' {
                             )
                         }
                     )
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes -Limit 2
@@ -498,10 +677,23 @@ Describe 'Submit-PSStudentChange' {
                     New = @(
                         [PSCustomObject]@{
                             MatchKey = '123456'
+                            MatchField = 'StudentNumber'
                             Student = $newStudent
                         }
                     )
                     Updated = @()
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 { Submit-PSStudentChange -Changes $changes -WhatIf } | Should -Not -Throw
@@ -533,10 +725,23 @@ Describe 'Submit-PSStudentChange' {
                     New = @(
                         [PSCustomObject]@{
                             MatchKey = '123456'
+                            MatchField = 'StudentNumber'
                             Student = $newStudent
                         }
                     )
                     Updated = @()
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 Submit-PSStudentChange -Changes $changes -MaxRetries 5 | Out-Null
@@ -568,10 +773,23 @@ Describe 'Submit-PSStudentChange' {
                     New = @(
                         [PSCustomObject]@{
                             MatchKey = '123456'
+                            MatchField = 'StudentNumber'
                             Student = $newStudent
                         }
                     )
                     Updated = @()
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 Submit-PSStudentChange -Changes $changes -RetryDelaySeconds 10 | Out-Null
@@ -600,6 +818,12 @@ Describe 'Submit-PSStudentChange' {
                     }
                 )
                 Updated = @()
+                TemplateMetadata = @{
+                    TemplateName = 'test_template'
+                    KeyField = 'StudentNumber'
+                    PowerSchoolKeyField = 'local_id'
+                    ColumnMappings = @()
+                }
             }
             
             $changes | ConvertTo-Json -Depth 10 | Set-Content -Path $tempFile.FullName
@@ -631,6 +855,18 @@ Describe 'Submit-PSStudentChange' {
                 $changes = [PSCustomObject]@{
                     New = @()
                     Updated = @()
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes
@@ -666,6 +902,18 @@ Describe 'Submit-PSStudentChange' {
                         }
                     )
                     Updated = @()
+                    TemplateMetadata = @{
+                        TemplateName = 'test_template'
+                        KeyField = 'StudentNumber'
+                        PowerSchoolKeyField = 'local_id'
+                        PowerSchoolKeyDataType = 'int'
+                        CheckForChanges = @('FirstName', 'LastName')
+                        ColumnMappings = @(
+                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        )
+                    }
                 }
                 
                 $result = Submit-PSStudentChange -Changes $changes -WarningAction SilentlyContinue
@@ -739,7 +987,17 @@ Describe 'Submit-PSStudentChange Helper Functions' {
                     }
                 )
                 
-                $payload = Build-UpdatePayload -Changes $changes -StudentDCID 12345
+                                $powerSchoolStudent = @{
+                    id = 12345
+                    local_id = '123456'
+                    name = @{
+                        first_name = 'John'
+                        last_name = 'Doe'
+                    }
+                    grade_level = 9
+                }
+                
+                $payload = Build-UpdatePayload -Changes $changes -StudentDCID 12345 -PowerSchoolStudent $powerSchoolStudent
                 
                 $payload.students.student.id | Should -Be 12345
                 $payload.students.student.name.first_name | Should -Be 'Jonathan'
@@ -764,7 +1022,17 @@ Describe 'Submit-PSStudentChange Helper Functions' {
                     }
                 )
                 
-                $payload = Build-UpdatePayload -Changes $changes -StudentDCID 12345
+                                $powerSchoolStudent = @{
+                    id = 12345
+                    local_id = '123456'
+                    name = @{
+                        first_name = 'John'
+                        last_name = 'Doe'
+                    }
+                    grade_level = 9
+                }
+                
+                $payload = Build-UpdatePayload -Changes $changes -StudentDCID 12345 -PowerSchoolStudent $powerSchoolStudent
                 
                 $payload.students.student.name.first_name | Should -Be 'Jonathan'
                 $payload.students.student.name.last_name | Should -Be 'Smith'
@@ -772,3 +1040,5 @@ Describe 'Submit-PSStudentChange Helper Functions' {
         }
     }
 }
+
+
