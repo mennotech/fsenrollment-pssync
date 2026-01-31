@@ -26,9 +26,19 @@
 
 .PARAMETER Expansions
     Array of expansions to include in the response (e.g., 'demographics', 'addresses', 'phones').
+    If TemplateMetadata or TemplateName is provided, required expansions are automatically detected and merged.
 
 .PARAMETER Extensions
     Array of extensions to include in the response for custom PowerSchool extensions.
+    If TemplateMetadata or TemplateName is provided, required extensions are automatically detected and merged.
+
+.PARAMETER TemplateMetadata
+    Template metadata hashtable from Import-FSCsv. When provided, automatically detects required
+    expansions and extensions from PowerSchoolAPIField mappings in the template.
+
+.PARAMETER TemplateName
+    Name of the template configuration file (without .psd1 extension). When provided, loads the
+    template and automatically detects required expansions and extensions.
 
 .OUTPUTS
     PSCustomObject or array of PSCustomObjects representing student data from PowerSchool.
@@ -45,6 +55,17 @@
     Retrieves all students in the district.
 
 .EXAMPLE
+    $csvData = Import-FSCsv -Path './students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
+    $students = Get-PowerSchoolStudent -All -TemplateMetadata $csvData.TemplateMetadata
+    
+    Automatically detects and includes required expansions and extensions based on template configuration.
+
+.EXAMPLE
+    $students = Get-PowerSchoolStudent -All -TemplateName 'fs_powerschool_nonapi_report_students'
+    
+    Loads template and automatically includes required expansions and extensions.
+
+.EXAMPLE
     $student = Get-PowerSchoolStudent -DCID 12345 -Expansions @('demographics', 'addresses')
     
     Retrieves a student by PowerSchool internal DCID with demographics and addresses expanded.
@@ -59,6 +80,7 @@
     Requires an active PowerSchool connection via Connect-PowerSchool.
     Implements exponential backoff retry logic for API failures.
     Supports both expansions (standard fields) and extensions (custom fields).
+    When using TemplateMetadata or TemplateName, required fields are automatically detected.
 #>
 function Get-PowerSchoolStudent {
     [CmdletBinding(DefaultParameterSetName = 'ByNumber')]
@@ -80,7 +102,13 @@ function Get-PowerSchoolStudent {
         [string[]]$Expansions = @(),
 
         [Parameter(Mandatory = $false)]
-        [string[]]$Extensions = @()
+        [string[]]$Extensions = @(),
+
+        [Parameter(Mandatory = $false)]
+        [hashtable]$TemplateMetadata,
+
+        [Parameter(Mandatory = $false)]
+        [string]$TemplateName
     )
 
     begin {
@@ -88,6 +116,42 @@ function Get-PowerSchoolStudent {
         
         # Ensure we have a valid connection
         Test-PowerSchoolConnection
+        
+        # Auto-detect required expansions and extensions from template
+        if ($TemplateName) {
+            Write-Verbose "Loading template: $TemplateName"
+            $templatePath = Join-Path $PSScriptRoot "../../config/templates/$TemplateName.psd1"
+            if (-not (Test-Path $templatePath)) {
+                throw "Template not found: $templatePath"
+            }
+            $TemplateMetadata = Import-PowerShellDataFile -Path $templatePath
+        }
+        
+        if ($TemplateMetadata) {
+            Write-Verbose "Auto-detecting required PowerSchool fields from template"
+            $required = Get-RequiredPowerSchoolFields -TemplateMetadata $TemplateMetadata
+            
+            # Merge auto-detected with manually specified (avoid duplicates)
+            $allExpansions = [System.Collections.Generic.HashSet[string]]::new([string[]]$Expansions)
+            $allExtensions = [System.Collections.Generic.HashSet[string]]::new([string[]]$Extensions)
+            
+            foreach ($exp in $required.Expansions) {
+                [void]$allExpansions.Add($exp)
+            }
+            foreach ($ext in $required.Extensions) {
+                [void]$allExtensions.Add($ext)
+            }
+            
+            $Expansions = @($allExpansions)
+            $Extensions = @($allExtensions)
+            
+            if ($Expansions.Count -gt 0) {
+                Write-Verbose "Using expansions: $($Expansions -join ', ')"
+            }
+            if ($Extensions.Count -gt 0) {
+                Write-Verbose "Using extensions: $($Extensions -join ', ')"
+            }
+        }
         
         # Get access token
         $accessToken = Get-PowerSchoolAccessToken

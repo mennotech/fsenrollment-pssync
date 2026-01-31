@@ -25,7 +25,10 @@
     Currently only 'StudentNumber' is supported (matches against 'local_id' in PowerSchool API).
 
 .OUTPUTS
-    PSCustomObject with properties: New, Updated, Unchanged, Summary
+    PSCustomObject with properties: New, Updated, Unchanged, Summary, TemplateMetadata
+    
+    The TemplateMetadata property contains the template configuration from the CSV import,
+    which can be passed to Submit-PSStudentChange for field mapping.
     
     Note: The Removed collection is not included as this function does not detect removed students.
 
@@ -184,6 +187,7 @@ function Compare-PSStudent {
                 Updated = $updatedStudents
                 Unchanged = $unchangedStudents
                 Summary = $summary
+                TemplateMetadata = $CsvData.TemplateMetadata
             }
             
             Write-Verbose "Comparison complete: $($newStudents.Count) new, $($updatedStudents.Count) updated, $($unchangedStudents.Count) unchanged"

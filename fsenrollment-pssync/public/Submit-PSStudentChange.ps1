@@ -17,11 +17,13 @@
 
 .PARAMETER Changes
     PSCustomObject containing the comparison results from Compare-PSStudent.
-    Must have New and Updated properties.
+    Must have New, Updated, and TemplateMetadata properties.
+    TemplateMetadata is required for field mapping and must be included in the Changes object.
 
 .PARAMETER JsonPath
     Path to a JSON file containing the comparison results.
     Alternative to providing Changes parameter.
+    The JSON file must include TemplateMetadata for field mapping.
 
 .PARAMETER Limit
     Maximum number of changes to apply. Useful for testing with live data.
@@ -63,10 +65,19 @@
     # Apply changes with custom retry settings
     Submit-PSStudentChange -Changes $changes -MaxRetries 5 -RetryDelaySeconds 10
 
+.EXAMPLE
+    # Complete workflow from CSV import to applying changes
+    $csvData = Import-FSCsv -Path './students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
+    $psData = Get-PowerSchoolStudent -All
+    $changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psData
+    Submit-PSStudentChange -Changes $changes
+
 .NOTES
     Requires an active PowerSchool connection (Connect-PowerSchool must be called first).
     Uses the PowerSchool API v1 endpoints for creating and updating students.
     Only applies changes to student demographic fields, not contact information.
+    TemplateMetadata is required and must be included in the Changes object from Compare-PSStudent.
+    All field mappings are driven by the template configuration - no hardcoded mappings exist.
 #>
 function Submit-PSStudentChange {
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Object')]
@@ -121,6 +132,37 @@ function Submit-PSStudentChange {
             if (-not $Changes.PSObject.Properties['New'] -or -not $Changes.PSObject.Properties['Updated']) {
                 throw "Invalid changes object. Must contain 'New' and 'Updated' properties."
             }
+            
+            # Extract and validate TemplateMetadata from Changes object
+            if (-not $Changes.PSObject.Properties['TemplateMetadata'] -or -not $Changes.TemplateMetadata) {
+                throw "TemplateMetadata not found in Changes object. Ensure you're passing output from Compare-PSStudent which includes template metadata."
+            }
+            
+            # Convert TemplateMetadata from PSCustomObject to Hashtable if needed (happens when loading from JSON)
+            if ($Changes.TemplateMetadata -is [PSCustomObject]) {
+                $TemplateMetadata = @{}
+                foreach ($property in $Changes.TemplateMetadata.PSObject.Properties) {
+                    if ($property.Value -is [Array]) {
+                        # Convert array items if they're PSCustomObjects
+                        $TemplateMetadata[$property.Name] = @($property.Value | ForEach-Object {
+                            if ($_ -is [PSCustomObject]) {
+                                $ht = @{}
+                                foreach ($prop in $_.PSObject.Properties) {
+                                    $ht[$prop.Name] = $prop.Value
+                                }
+                                $ht
+                            } else {
+                                $_
+                            }
+                        })
+                    } else {
+                        $TemplateMetadata[$property.Name] = $property.Value
+                    }
+                }
+            } else {
+                $TemplateMetadata = $Changes.TemplateMetadata
+            }
+            Write-Verbose "Using TemplateMetadata from Changes object (Template: $($TemplateMetadata.TemplateName))"
 
             # Calculate total changes to apply
             $totalChanges = $Changes.New.Count + $Changes.Updated.Count
@@ -151,18 +193,71 @@ function Submit-PSStudentChange {
                     $student = $newStudent.Student
                     $matchKey = $newStudent.MatchKey
                     
-                    # Build student payload for API (always build for WhatIf display)
-                    $payload = Build-StudentPayload -Student $student
+                    # Build student payload for API (always build for detailed display)
+                    $payload = Build-StudentPayload -Student $student -TemplateMetadata $TemplateMetadata
+                    
+                    if ($WhatIfPreference) {
+                        Write-Host "`n=== WHATIF: New Student Creation ===" -ForegroundColor Cyan
+                        Write-Host "Student: $matchKey ($($student.FirstName) $($student.LastName))" -ForegroundColor Yellow
+                        Write-Verbose "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/v1/student" -ForegroundColor Gray
+                        
+                        # Show field details for new student - iterate dynamically
+                        Write-Host "Student Fields to Create:" -ForegroundColor Gray
+                        $studentData = $payload.students.student
+                        
+                        # Display standard fields
+                        foreach ($key in ($studentData.Keys | Where-Object { $_ -notin @('client_uid', 'action', 'name', 'id') } | Sort-Object)) {
+                            $value = $studentData[$key]
+                            if ($null -ne $value -and $value -ne '') {
+                                # Format the field name for display
+                                $displayName = ($key -replace '_', ' ').ToUpper()
+                                $displayName = (Get-Culture).TextInfo.ToTitleCase($displayName.ToLower())
+                                Write-Host "  ${displayName}: $value" -ForegroundColor White
+                            }
+                        }
+                        
+                        # Display name fields if present
+                        if ($studentData.name) {
+                            foreach ($nameKey in ($studentData.name.Keys | Sort-Object)) {
+                                $value = $studentData.name[$nameKey]
+                                if ($null -ne $value -and $value -ne '') {
+                                    $displayName = ($nameKey -replace '_', ' ').ToUpper()
+                                    $displayName = (Get-Culture).TextInfo.ToTitleCase($displayName.ToLower())
+                                    Write-Host "  ${displayName}: $value" -ForegroundColor White
+                                }
+                            }
+                        }
+                        
+                        # Only show full payload with -Verbose
+                        Write-Verbose "API Payload: $($payload | ConvertTo-Json -Depth 10)"
+                    }
                     
                     if ($PSCmdlet.ShouldProcess("New Student: $matchKey ($($student.FirstName) $($student.LastName))", "Create in PowerSchool")) {
-                        if ($WhatIfPreference) {
-                            Write-Host "`n=== WHATIF: New Student Creation ===" -ForegroundColor Cyan
-                            Write-Host "Student: $matchKey ($($student.FirstName) $($student.LastName))" -ForegroundColor Yellow
-                            Write-Host "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/v1/student" -ForegroundColor Gray
-                            Write-Host "API Payload:" -ForegroundColor Gray
-                            Write-Host ($payload | ConvertTo-Json -Depth 10) -ForegroundColor White
-                        } else {
+                        if (-not $WhatIfPreference) {
                             Write-Verbose "Creating new student: $matchKey"
+                            Write-Verbose "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/v1/student"
+                            Write-Verbose "Student fields being created:"
+                            $studentData = $payload.students.student
+                            
+                            # Display standard fields
+                            foreach ($key in ($studentData.Keys | Where-Object { $_ -notin @('client_uid', 'action', 'name', 'id') } | Sort-Object)) {
+                                $value = $studentData[$key]
+                                if ($null -ne $value -and $value -ne '') {
+                                    Write-Verbose "  ${key}: $value"
+                                }
+                            }
+                            
+                            # Display name fields if present
+                            if ($studentData.name) {
+                                foreach ($nameKey in ($studentData.name.Keys | Sort-Object)) {
+                                    $value = $studentData.name[$nameKey]
+                                    if ($null -ne $value -and $value -ne '') {
+                                        Write-Verbose "  name.${nameKey}: $value"
+                                    }
+                                }
+                            }
+                            
+                            Write-Verbose "API Payload: $($payload | ConvertTo-Json -Depth 10 -Compress)"
                             
                             # Make API call to create student
                             $result = Invoke-CreateStudent -Payload $payload -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
@@ -170,6 +265,7 @@ function Submit-PSStudentChange {
                             if ($result.Success) {
                                 $script:ApplyResults.NewStudentsApplied++
                                 Write-Host "✓ Created new student: $matchKey ($($student.FirstName) $($student.LastName))" -ForegroundColor Green
+                                Write-Verbose "Successfully created student with API response: $($result.Response | ConvertTo-Json -Depth 10 -Compress)"
                             } else {
                                 throw $result.Error
                             }
@@ -216,35 +312,58 @@ function Submit-PSStudentChange {
                         throw "PowerSchool student DCID not found for $matchKey"
                     }
                     
-                    # Build update payload (always build for WhatIf display)
-                    $payload = Build-UpdatePayload -Changes $changes -StudentDCID $dcid
+                    # Build update payload (always build for detailed display)
+                    $payload = Build-UpdatePayload -Changes $changes -StudentDCID $dcid -PowerSchoolStudent $psStudent -TemplateMetadata $TemplateMetadata
+                    $updateMessage = "Student: $matchKey (DCID: $dcid) Name: $($psStudent.name.first_name) $($psStudent.name.middle_name) $($psStudent.name.last_name) - $($changes.Count) changes Fields: $($changes.Field -join ', ')"
+                    if ($WhatIfPreference) {
+                        Write-Verbose "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/v1/student"
+                        Write-Verbose "Field Changes ($($changes.Count) total):"
+                        foreach ($change in $changes) {
+                            Write-Verbose "  $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
+                            # Use the PowerSchoolAPIField from the change item if available, otherwise look it up
+                            $mappingDesc = if ($change.PowerSchoolAPIField) {
+                                $change.PowerSchoolAPIField
+                            } else {
+                                Get-PowerSchoolFieldMapping -EntityProperty $change.Field -TemplateMetadata $TemplateMetadata
+                            }
+                            if ($mappingDesc) {
+                                Write-Verbose "    (API Field: $mappingDesc)"
+                            }
+                        }
+                        
+                        # Only show full payload with -Verbose
+                        Write-Verbose "API Payload: $($payload | ConvertTo-Json -Depth 10)"
+                    }
                     
-                    if ($PSCmdlet.ShouldProcess("Student: $matchKey (DCID: $dcid) - $($changes.Count) changes", "Update in PowerSchool")) {
-                        if ($WhatIfPreference) {
-                            Write-Host "`n=== WHATIF: Student Update ===" -ForegroundColor Cyan
-                            Write-Host "Student: $matchKey (DCID: $dcid)" -ForegroundColor Yellow
-                            Write-Host "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/v1/student" -ForegroundColor Gray
-                            Write-Host "Field Changes:" -ForegroundColor Gray
+                    if ($PSCmdlet.ShouldProcess($updateMessage, "Update in PowerSchool")) {
+                        if (-not $WhatIfPreference) {
+                            Write-Verbose "Updating student: $matchKey (DCID: $dcid) with $($changes.Count) changes"
+                            Write-Verbose "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/v1/student"
+                            Write-Verbose "Changes being applied:"
                             foreach ($change in $changes) {
-                                Write-Host "  $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'" -ForegroundColor White
-                                if ($change.PowerSchoolAPIField) {
-                                    Write-Host "    (API Field: $($change.PowerSchoolAPIField))" -ForegroundColor DarkGray
+                                Write-Verbose "  $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
+                                # Use the PowerSchoolAPIField from the change item if available, otherwise look it up
+                                $mappingDesc = if ($change.PowerSchoolAPIField) {
+                                    $change.PowerSchoolAPIField
+                                } else {
+                                    Get-PowerSchoolFieldMapping -EntityProperty $change.Field -TemplateMetadata $TemplateMetadata
+                                }
+                                if ($mappingDesc) {
+                                    Write-Verbose "    API Field: $mappingDesc"
                                 }
                             }
-                            Write-Host "API Payload:" -ForegroundColor Gray
-                            Write-Host ($payload | ConvertTo-Json -Depth 10) -ForegroundColor White
-                        } else {
-                            Write-Verbose "Updating student: $matchKey (DCID: $dcid) with $($changes.Count) changes"
+                            Write-Verbose "API Payload: $($payload | ConvertTo-Json -Depth 10 -Compress)"
                             
                             # Make API call to update student
                             $result = Invoke-UpdateStudent -DCID $dcid -Payload $payload -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
                             
                             if ($result.Success) {
                                 $script:ApplyResults.UpdatedStudentsApplied++
-                                Write-Host "✓ Updated student: $matchKey (DCID: $dcid) - $($changes.Count) fields" -ForegroundColor Cyan
+                                Write-Host "✓ $updateMessage" -ForegroundColor Cyan
                                 foreach ($change in $changes) {
                                     Write-Verbose "  $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
                                 }
+                                Write-Verbose "Successfully updated student with API response: $($result.Response | ConvertTo-Json -Depth 10 -Compress)"
                             } else {
                                 throw $result.Error
                             }
@@ -311,7 +430,10 @@ function Build-StudentPayload {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [PSStudent]$Student
+        [PSStudent]$Student,
+        
+        [Parameter(Mandatory = $false)]
+        [hashtable]$TemplateMetadata
     )
 
     # Build basic student object
@@ -326,65 +448,157 @@ function Build-StudentPayload {
 
     $studentData = $payload.students.student
 
-    # Map PSStudent properties to PowerSchool API fields
-    # These are the core demographic fields
-    if ($Student.StudentNumber) { $studentData['local_id'] = $Student.StudentNumber }
-    if ($Student.SchoolID) { $studentData['school_id'] = $Student.SchoolID }
-    if ($Student.GradeLevel) { $studentData['grade_level'] = $Student.GradeLevel }
-    if ($Student.Gender) { $studentData['gender'] = $Student.Gender }
-    if ($Student.EnrollStatus) { $studentData['enroll_status'] = $Student.EnrollStatus }
+    # Iterate through all properties of the Student object and map them dynamically
+    $studentProperties = $Student.PSObject.Properties | Where-Object { $null -ne $_.Value -and $_.Value -ne '' }
     
-    # Name fields - these go in nested 'name' object
-    $nameData = @{}
-    if ($Student.FirstName) { $nameData['first_name'] = $Student.FirstName }
-    if ($Student.MiddleName) { $nameData['middle_name'] = $Student.MiddleName }
-    if ($Student.LastName) { $nameData['last_name'] = $Student.LastName }
-    
-    if ($nameData.Count -gt 0) {
-        $studentData['name'] = $nameData
+    foreach ($property in $studentProperties) {
+        $propertyName = $property.Name
+        $propertyValue = $property.Value
+        
+        # Skip StudentNumber as it's already set as client_uid
+        if ($propertyName -eq 'StudentNumber') {
+            # Also set it as local_id
+            $psFieldPath = Get-PowerSchoolFieldMapping -EntityProperty $propertyName -TemplateMetadata $TemplateMetadata
+            if ($psFieldPath) {
+                Set-PowerSchoolFieldValue -StudentData $studentData -FieldPath $psFieldPath -Value $propertyValue
+            }
+            continue
+        }
+        
+        # Get the PowerSchool API field mapping for this property
+        $psFieldPath = Get-PowerSchoolFieldMapping -EntityProperty $propertyName -TemplateMetadata $TemplateMetadata
+        
+        if ($psFieldPath) {
+            # Apply the value using the field path
+            Set-PowerSchoolFieldValue -StudentData $studentData -FieldPath $psFieldPath -Value $propertyValue
+        } else {
+            Write-Verbose "No PowerSchool API field mapping found for property: $propertyName (skipping)"
+        }
     }
-
-    # Date fields
-    if ($Student.DOB -and $Student.DOB -is [DateTime]) { 
-        $studentData['dob'] = $Student.DOB.ToString('yyyy-MM-dd')
-    }
-    if ($Student.EntryDate -and $Student.EntryDate -is [DateTime]) { 
-        $studentData['entrydate'] = $Student.EntryDate.ToString('yyyy-MM-dd')
-    }
-    if ($Student.ExitDate -and $Student.ExitDate -is [DateTime]) { 
-        $studentData['exitdate'] = $Student.ExitDate.ToString('yyyy-MM-dd')
-    }
-
-    # Contact information (phone)
-    if ($Student.HomePhone) { $studentData['home_phone'] = $Student.HomePhone }
-
-    # Address fields
-    if ($Student.Street -or $Student.City -or $Student.State -or $Student.Zip) {
-        if ($Student.Street) { $studentData['street'] = $Student.Street }
-        if ($Student.City) { $studentData['city'] = $Student.City }
-        if ($Student.State) { $studentData['state'] = $Student.State }
-        if ($Student.Zip) { $studentData['zip'] = $Student.Zip }
-    }
-
-    # Mailing address fields
-    if ($Student.MailingStreet -or $Student.MailingCity -or $Student.MailingState -or $Student.MailingZip) {
-        if ($Student.MailingStreet) { $studentData['mailing_street'] = $Student.MailingStreet }
-        if ($Student.MailingCity) { $studentData['mailing_city'] = $Student.MailingCity }
-        if ($Student.MailingState) { $studentData['mailing_state'] = $Student.MailingState }
-        if ($Student.MailingZip) { $studentData['mailing_zip'] = $Student.MailingZip }
-    }
-
-    # Extension fields
-    if ($Student.FTEID) { 
-        # FTEID is typically in an extension table
-        # This would need to be mapped to the correct extension structure
-        # For now, include it as a note in comments
-    }
-
-    if ($Student.FamilyIdent) { $studentData['family_ident'] = $Student.FamilyIdent }
-    if ($Student.TransferComment) { $studentData['transfer_comment'] = $Student.TransferComment }
 
     return $payload
+}
+
+# Private helper function to merge expansion field changes with existing PowerSchool data
+function Merge-ExpansionFieldChanges {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$StudentData,
+        
+        [Parameter(Mandatory = $true)]
+        [array]$ExpansionChanges,
+        
+        [Parameter(Mandatory = $true)]
+        [PSCustomObject]$PowerSchoolStudent,
+        
+        [Parameter(Mandatory = $true)]
+        [string]$ExpansionName
+    )
+    
+    # Pattern to match expansion fields: @expansionName.subtype.field or @expansionName.field
+    # Examples: @addresses.physical.street, @demographics.birth_date
+    $pattern = "^@$ExpansionName\.(.+)$"
+    
+    # Determine if this expansion type requires merging all existing fields
+    # Addresses require all fields (street, city, state, postal_code) to be submitted together
+    # Other expansions like demographics can be updated with just the changed fields
+    $requiresFullMerge = $ExpansionName -in @('addresses')
+    
+    # Group changes by subtype (e.g., physical/mailing for addresses, or direct field for demographics)
+    $groupedChanges = @{}
+    
+    foreach ($change in $ExpansionChanges) {
+        if ($change.PowerSchoolAPIField -match $pattern) {
+            $fieldPath = $matches[1]  # e.g., "physical.street" or "birth_date"
+            
+            # Check if there's a subtype (nested level)
+            if ($fieldPath -match '^([^.]+)\.(.+)$') {
+                # Has subtype: e.g., physical.street
+                $subType = $matches[1]
+                $fieldName = $matches[2]
+                
+                if (-not $groupedChanges.ContainsKey($subType)) {
+                    $groupedChanges[$subType] = @()
+                }
+                $groupedChanges[$subType] += @{
+                    Change = $change
+                    FieldName = $fieldName
+                }
+            } else {
+                # Direct field: e.g., birth_date
+                if (-not $groupedChanges.ContainsKey('_direct')) {
+                    $groupedChanges['_direct'] = @()
+                }
+                $groupedChanges['_direct'] += @{
+                    Change = $change
+                    FieldName = $fieldPath
+                }
+            }
+        }
+    }
+    
+    # Process each group
+    foreach ($groupKey in $groupedChanges.Keys) {
+        if ($groupKey -eq '_direct') {
+            # Direct expansion fields (no subtype)
+            Write-Verbose "Processing $ExpansionName changes"
+            
+            # Create the expansion structure if not exists
+            if (-not $StudentData[$ExpansionName]) {
+                $StudentData[$ExpansionName] = @{}
+            }
+            
+            if ($requiresFullMerge) {
+                # Merge with existing data - copy all existing fields first
+                $existingData = if ($PowerSchoolStudent.$ExpansionName) {
+                    $PowerSchoolStudent.$ExpansionName
+                } else {
+                    @{}
+                }
+                
+                foreach ($prop in $existingData.PSObject.Properties) {
+                    $StudentData[$ExpansionName][$prop.Name] = $prop.Value
+                }
+            }
+            
+            # Apply the changed fields on top
+            foreach ($item in $groupedChanges[$groupKey]) {
+                $StudentData[$ExpansionName][$item.FieldName] = $item.Change.NewValue
+                Write-Verbose "  Updated $ExpansionName.$($item.FieldName) = $($item.Change.NewValue)"
+            }
+        } else {
+            # Subtyped expansion fields (e.g., addresses.physical)
+            Write-Verbose "Processing $ExpansionName.$groupKey changes"
+            
+            # Create the nested structure if not exists
+            if (-not $StudentData[$ExpansionName]) {
+                $StudentData[$ExpansionName] = @{}
+            }
+            if (-not $StudentData[$ExpansionName][$groupKey]) {
+                $StudentData[$ExpansionName][$groupKey] = @{}
+            }
+            
+            if ($requiresFullMerge) {
+                # Merge with existing data - copy all existing fields first
+                $existingData = if ($PowerSchoolStudent.$ExpansionName -and $PowerSchoolStudent.$ExpansionName.$groupKey) {
+                    $PowerSchoolStudent.$ExpansionName.$groupKey
+                } else {
+                    @{}
+                }
+                
+                foreach ($prop in $existingData.PSObject.Properties) {
+                    $StudentData[$ExpansionName][$groupKey][$prop.Name] = $prop.Value
+                }
+            }
+            
+            # Apply the changed fields on top
+            foreach ($item in $groupedChanges[$groupKey]) {
+                $StudentData[$ExpansionName][$groupKey][$item.FieldName] = $item.Change.NewValue
+                Write-Verbose "  Updated $ExpansionName.$groupKey.$($item.FieldName) = $($item.Change.NewValue)"
+            }
+        }
+    }
 }
 
 # Private helper function to build update payload from changes
@@ -395,7 +609,13 @@ function Build-UpdatePayload {
         [array]$Changes,
         
         [Parameter(Mandatory = $true)]
-        [int]$StudentDCID
+        [int]$StudentDCID,
+        
+        [Parameter(Mandatory = $true)]
+        [PSCustomObject]$PowerSchoolStudent,
+        
+        [Parameter(Mandatory = $false)]
+        [hashtable]$TemplateMetadata
     )
 
     # Build update object
@@ -411,97 +631,95 @@ function Build-UpdatePayload {
 
     $studentData = $payload.students.student
 
-    # Map each change to PowerSchool API field
+    # Process expansion field changes (addresses, demographics, etc.)
+    # Pattern: @expansion_name.field_path
+    $expansionChanges = $Changes | Where-Object { $_.PowerSchoolAPIField -match '^@([^.]+)\.' }
+    
+    if ($expansionChanges) {
+        # Group by expansion name
+        $expansionGroups = $expansionChanges | Group-Object { 
+            if ($_.PowerSchoolAPIField -match '^@([^.]+)\.') { $matches[1] }
+        }
+        
+        foreach ($group in $expansionGroups) {
+            $expansionName = $group.Name
+            Merge-ExpansionFieldChanges -StudentData $studentData `
+                -ExpansionChanges $group.Group `
+                -PowerSchoolStudent $PowerSchoolStudent `
+                -ExpansionName $expansionName
+        }
+        
+        # Remove expansion changes from the main processing loop
+        $Changes = $Changes | Where-Object { $_.PowerSchoolAPIField -notmatch '^@' }
+    }
+
+    # Map each remaining change to PowerSchool API field
     foreach ($change in $Changes) {
         $fieldName = $change.Field
         $newValue = $change.NewValue
-        $psFieldPath = $change.PowerSchoolAPIField
+        
+        # Get the PowerSchool API field path - prefer from change object, otherwise lookup
+        $psFieldPath = if ($change.PowerSchoolAPIField) {
+            $change.PowerSchoolAPIField
+        } else {
+            Get-PowerSchoolFieldMapping -EntityProperty $fieldName -TemplateMetadata $TemplateMetadata
+        }
+        
+        if (-not $psFieldPath) {
+            Write-Warning "No PowerSchool API field mapping found for: $fieldName"
+            continue
+        }
 
-        # Handle different field path types
-        if ($psFieldPath -and $psFieldPath -match '^name\.(.+)$') {
-            # Name field - create nested name object
-            if (-not $studentData['name']) {
-                $studentData['name'] = @{}
-            }
-            $studentData['name'][$matches[1]] = $newValue
-            continue
-        }
-        elseif ($psFieldPath -and $psFieldPath -match '^extension\.([^.]+)\.(.+)$') {
-            # Extension field - would need proper extension structure
-            # This is complex and depends on PowerSchool version
-            Write-Warning "Extension field updates not yet implemented: $psFieldPath"
-            continue
-        }
-        elseif ($psFieldPath -and $psFieldPath -match '^@([^.]+)\.(.+)$') {
-            # Expansion field - typically read-only
-            Write-Warning "Expansion field updates not supported: $psFieldPath"
-            continue
-        }
-        
-        # Standard field - map by field name
-        $apiFieldName = switch ($fieldName) {
-            'StudentNumber' { 'local_id' }
-            'SchoolID' { 'school_id' }
-            'FirstName' { 
-                if (-not $studentData['name']) { $studentData['name'] = @{} }
-                $studentData['name']['first_name'] = $newValue
-                continue
-            }
-            'MiddleName' { 
-                if (-not $studentData['name']) { $studentData['name'] = @{} }
-                $studentData['name']['middle_name'] = $newValue
-                continue
-            }
-            'LastName' { 
-                if (-not $studentData['name']) { $studentData['name'] = @{} }
-                $studentData['name']['last_name'] = $newValue
-                continue
-            }
-            'GradeLevel' { 'grade_level' }
-            'Gender' { 'gender' }
-            'DOB' { 
-                # Format date as string if it's a DateTime
-                if ($newValue -is [DateTime]) {
-                    $studentData['dob'] = $newValue.ToString('yyyy-MM-dd')
-                } else {
-                    $studentData['dob'] = $newValue
-                }
-                continue
-            }
-            'EnrollStatus' { 'enroll_status' }
-            'EntryDate' { 
-                # Format date as string if it's a DateTime
-                if ($newValue -is [DateTime]) {
-                    $studentData['entrydate'] = $newValue.ToString('yyyy-MM-dd')
-                } else {
-                    $studentData['entrydate'] = $newValue
-                }
-                continue
-            }
-            'ExitDate' { 
-                # Format date as string if it's a DateTime
-                if ($newValue -is [DateTime]) {
-                    $studentData['exitdate'] = $newValue.ToString('yyyy-MM-dd')
-                } else {
-                    $studentData['exitdate'] = $newValue
-                }
-                continue
-            }
-            'HomePhone' { 'home_phone' }
-            'Street' { 'street' }
-            'City' { 'city' }
-            'State' { 'state' }
-            'Zip' { 'zip' }
-            default { $fieldName.ToLower() }
-        }
-        
-        # Only set if we have a valid API field name and it's not already set
-        if ($apiFieldName) {
-            $studentData[$apiFieldName] = $newValue
-        }
+        # Apply the value based on the field path type
+        Set-PowerSchoolFieldValue -StudentData $studentData -FieldPath $psFieldPath -Value $newValue
     }
 
     return $payload
+}
+
+# Private helper function to set a value in the student data structure based on field path
+function Set-PowerSchoolFieldValue {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$StudentData,
+        
+        [Parameter(Mandatory = $true)]
+        [string]$FieldPath,
+        
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        [AllowEmptyString()]
+        $Value
+    )
+
+    # Handle different field path types
+    if ($FieldPath -match '^name\.(.+)$') {
+        # Name field - create nested name object
+        if (-not $StudentData['name']) {
+            $StudentData['name'] = @{}
+        }
+        $StudentData['name'][$matches[1]] = $Value
+    }
+    elseif ($FieldPath -match '^extension\.([^.]+)\.(.+)$') {
+        # Extension field - would need proper extension structure
+        # This is complex and depends on PowerSchool version
+        Write-Warning "Extension field updates not yet implemented: $FieldPath"
+    }
+    elseif ($FieldPath -match '^@(.+)$') {
+        # Expansion fields - handled separately in Build-UpdatePayload via Merge-ExpansionFieldChanges
+        # This warning should only appear if expansion fields are used outside of UPDATE operations
+        Write-Warning "Expansion field should be handled by Merge-ExpansionFieldChanges: $FieldPath"
+    }
+    else {
+        # Direct field mapping - handle date formatting if needed
+        if ($Value -is [DateTime]) {
+            # Format dates as ISO string for PowerSchool API
+            $StudentData[$FieldPath] = $Value.ToString('yyyy-MM-dd')
+        } else {
+            $StudentData[$FieldPath] = $Value
+        }
+    }
 }
 
 # Private helper function to invoke student creation API
@@ -533,7 +751,10 @@ function Invoke-CreateStudent {
 
         $uri = "$script:PowerSchoolBaseUrl/ws/v1/student"
 
-        Write-Verbose "POST $uri"
+        Write-Verbose "Making API call to create student"
+        Write-Verbose "URI: POST $uri"
+        Write-Verbose "Headers: Authorization=Bearer [REDACTED], Content-Type=application/json, Accept=application/json"
+        Write-Verbose "Payload: $($Payload | ConvertTo-Json -Depth 10 -Compress)"
         
         $response = Invoke-PowerSchoolApiRequest `
             -Uri $uri `
@@ -543,12 +764,15 @@ function Invoke-CreateStudent {
             -MaxRetries $MaxRetries `
             -InitialRetryDelaySeconds $RetryDelaySeconds
 
+        Write-Verbose "API call successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+
         return [PSCustomObject]@{
             Success = $true
             Response = $response
         }
     }
     catch {
+        Write-Verbose "API call failed: $($_.Exception.Message)"
         return [PSCustomObject]@{
             Success = $false
             Error = $_.Exception.Message
@@ -589,7 +813,10 @@ function Invoke-UpdateStudent {
         # PowerSchool uses POST to /ws/v1/student with action=UPDATE and id in payload
         $uri = "$script:PowerSchoolBaseUrl/ws/v1/student"
 
-        Write-Verbose "POST $uri (Update student DCID: $DCID)"
+        Write-Verbose "Making API call to update student DCID: $DCID"
+        Write-Verbose "URI: POST $uri"
+        Write-Verbose "Headers: Authorization=Bearer [REDACTED], Content-Type=application/json, Accept=application/json"
+        Write-Verbose "Payload: $($Payload | ConvertTo-Json -Depth 10 -Compress)"
         
         $response = Invoke-PowerSchoolApiRequest `
             -Uri $uri `
@@ -599,12 +826,15 @@ function Invoke-UpdateStudent {
             -MaxRetries $MaxRetries `
             -InitialRetryDelaySeconds $RetryDelaySeconds
 
+        Write-Verbose "API call successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+
         return [PSCustomObject]@{
             Success = $true
             Response = $response
         }
     }
     catch {
+        Write-Verbose "API call failed: $($_.Exception.Message)"
         return [PSCustomObject]@{
             Success = $false
             Error = $_.Exception.Message

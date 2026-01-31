@@ -13,7 +13,7 @@
     # PowerSchool API key field data type (for proper type conversion during matching)
     PowerSchoolKeyDataType = 'int'
     # Fields to check for changes during comparison
-    CheckForChanges = @('FirstName', 'MiddleName', 'LastName')
+    CheckForChanges = @('FirstName', 'MiddleName', 'LastName', 'Street', 'City', 'State', 'Zip', 'DOB')
     # Optional: Custom parser function for complex CSV formats
     # If not provided, the default ConvertFrom-CsvRow function is used with ColumnMappings
     CustomParser = $null
@@ -40,14 +40,14 @@
         @{ CSVColumn = 'Enroll_Status'; EntityProperty = 'EnrollStatus'; DataType = 'int' }
         @{ CSVColumn = 'EntryDate'; EntityProperty = 'EntryDate'; DataType = 'datetime'; DateTimeFormat = 'M/d/yy' }
         @{ CSVColumn = 'ExitDate'; EntityProperty = 'ExitDate'; DataType = 'datetime'; DateTimeFormat = 'M/d/yyyy' }
-        @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string' }
-        @{ CSVColumn = 'City'; EntityProperty = 'City'; DataType = 'string' }
-        @{ CSVColumn = 'State'; EntityProperty = 'State'; DataType = 'string' }
-        @{ CSVColumn = 'Zip'; EntityProperty = 'Zip'; DataType = 'string' }
-        @{ CSVColumn = 'Mailing_Street'; EntityProperty = 'MailingStreet'; DataType = 'string' }
-        @{ CSVColumn = 'Mailing_City'; EntityProperty = 'MailingCity'; DataType = 'string' }
-        @{ CSVColumn = 'Mailing_State'; EntityProperty = 'MailingState'; DataType = 'string' }
-        @{ CSVColumn = 'Mailing_Zip'; EntityProperty = 'MailingZip'; DataType = 'string' }
+        @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string'; PowerSchoolAPIField = '@addresses.physical.street' }
+        @{ CSVColumn = 'City'; EntityProperty = 'City'; DataType = 'string'; PowerSchoolAPIField = '@addresses.physical.city' }
+        @{ CSVColumn = 'State'; EntityProperty = 'State'; DataType = 'string'; PowerSchoolAPIField = '@addresses.physical.state_province' }
+        @{ CSVColumn = 'Zip'; EntityProperty = 'Zip'; DataType = 'string'; PowerSchoolAPIField = '@addresses.physical.postal_code' }
+        @{ CSVColumn = 'Mailing_Street'; EntityProperty = 'MailingStreet'; DataType = 'string'; PowerSchoolAPIField = '@addresses.mailing.street' }
+        @{ CSVColumn = 'Mailing_City'; EntityProperty = 'MailingCity'; DataType = 'string'; PowerSchoolAPIField = '@addresses.mailing.city' }
+        @{ CSVColumn = 'Mailing_State'; EntityProperty = 'MailingState'; DataType = 'string'; PowerSchoolAPIField = '@addresses.mailing.state_province' }
+        @{ CSVColumn = 'Mailing_Zip'; EntityProperty = 'MailingZip'; DataType = 'string'; PowerSchoolAPIField = '@addresses.mailing.postal_code' }
         @{ CSVColumn = 'Sched_NextYearGrade'; EntityProperty = 'SchedNextYearGrade'; DataType = 'int' }
         @{ CSVColumn = 'Next_School'; EntityProperty = 'NextSchool'; DataType = 'string' }
         @{ CSVColumn = 'Sched_Scheduled'; EntityProperty = 'SchedScheduled'; DataType = 'int' }

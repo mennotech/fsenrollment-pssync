@@ -46,24 +46,29 @@ Write-Host "Imported $($csvData.Students.Count) students from CSV"
 ### 3. Fetch PowerSchool Data
 
 ```powershell
-# Automatically detect required extensions and expansions from template
+# Recommended: Automatically detect required extensions and expansions from template
+$csvData = Import-FSCsv -Path './data/students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
+$psStudents = Get-PowerSchoolStudent -All -TemplateMetadata $csvData.TemplateMetadata
+Write-Host "Retrieved $($psStudents.Count) students from PowerSchool"
+
+# Alternative: Load template directly without importing CSV first
+$psStudents = Get-PowerSchoolStudent -All -TemplateName 'fs_powerschool_nonapi_report_students'
+
+# Alternative: Manual detection (not recommended - use automatic detection above)
+$csvData = Import-FSCsv -Path './data/students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
 $required = Get-RequiredPowerSchoolFields -TemplateMetadata $csvData.TemplateMetadata
 Write-Host "Required Extensions: $($required.Extensions -join ', ')"
 Write-Host "Required Expansions: $($required.Expansions -join ', ')"
-
-# Get all students from PowerSchool with required extensions and expansions
 $psStudents = Get-PowerSchoolStudent -All `
     -Extensions $required.Extensions `
     -Expansions $required.Expansions
 
-Write-Host "Retrieved $($psStudents.Count) students from PowerSchool"
-
-# Alternative: Manual specification
+# Manual specification (not recommended - template-based detection is more maintainable)
 $psStudents = Get-PowerSchoolStudent -All `
     -Extensions @('u_students_extension', 'studentcorefields') `
-    -Expansions @('demographics')
+    -Expansions @('demographics', 'addresses')
 
-# Get a specific student by student number (recommended for CSV data)
+# Get a specific student by student number
 $student = Get-PowerSchoolStudent -StudentNumber '123456'
 
 # Get a specific student by DCID (PowerSchool internal ID) with expansions
@@ -71,6 +76,8 @@ $student = Get-PowerSchoolStudent -StudentNumber '123456'
 $student = Get-PowerSchoolStudent -DCID 12345 `
     -Expansions @('demographics', 'addresses', 'phones')
 ```
+
+**Important**: When you use `-TemplateMetadata` or `-TemplateName`, the function automatically detects which PowerSchool API expansions (like `addresses`, `demographics`) and extensions (like `u_students_extension`) are needed based on the `PowerSchoolAPIField` mappings in your template. This ensures all necessary data is retrieved for accurate comparison.
 
 ### 4. Compare and Detect Changes
 
@@ -125,9 +132,11 @@ try {
         -TemplateName 'fs_powerschool_nonapi_report_students' `
         -Verbose
     
-    # Step 3: Fetch PowerSchool data
+    # Step 3: Fetch PowerSchool data (automatically detects required fields from template)
     Write-Host "Fetching PowerSchool student data..." -ForegroundColor Yellow
-    $psStudents = Get-PowerSchoolStudent -All -Verbose
+    $psStudents = Get-PowerSchoolStudent -All `
+        -TemplateMetadata $csvData.TemplateMetadata `
+        -Verbose
     
     # Step 4: Compare and detect changes
     Write-Host "Comparing data..." -ForegroundColor Yellow

@@ -81,14 +81,22 @@ function Compare-StudentFields {
                 }
             }
             elseif ($psFieldPath -match '^@([^.]+)\.(.+)$') {
-                # Expansion field: @expansion_name.field_name
+                # Expansion field: @expansion_name.nested.field.path
                 $expansionName = $matches[1]
-                $expansionField = $matches[2]
+                $expansionFieldPath = $matches[2]
                 
-                # Access expansion data
+                # Access expansion data - handle nested paths like physical.street
                 $psValue = $null
                 if ($PowerSchoolStudent.$expansionName) {
-                    $psValue = $PowerSchoolStudent.$expansionName.$expansionField
+                    $psValue = $PowerSchoolStudent.$expansionName
+                    $fieldParts = $expansionFieldPath -split '\.'
+                    foreach ($part in $fieldParts) {
+                        if ($null -ne $psValue) {
+                            $psValue = $psValue.$part
+                        } else {
+                            break
+                        }
+                    }
                 }
             }
             else {

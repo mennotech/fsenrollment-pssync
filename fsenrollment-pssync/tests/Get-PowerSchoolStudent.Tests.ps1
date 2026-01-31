@@ -270,6 +270,140 @@ Describe 'Get-PowerSchoolStudent' {
         }
     }
 
+    Context 'Template-Based Auto-Detection' {
+        It 'Should auto-detect expansions from TemplateMetadata' {
+            Mock -ModuleName FSEnrollment-PSSync Get-RequiredPowerSchoolFields {
+                return [PSCustomObject]@{
+                    Extensions = @()
+                    Expansions = @('demographics', 'addresses')
+                }
+            }
+
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
+                param($Uri)
+                $Uri | Should -Match 'expansions=demographics,addresses|expansions=addresses,demographics'
+                return @{ students = @{ student = @() } }
+            }
+
+            $templateMetadata = @{ ColumnMappings = @() }
+            Get-PowerSchoolStudent -All -TemplateMetadata $templateMetadata
+            
+            Should -Invoke -ModuleName FSEnrollment-PSSync Get-RequiredPowerSchoolFields -Times 1
+        }
+
+        It 'Should auto-detect extensions from TemplateMetadata' {
+            Mock -ModuleName FSEnrollment-PSSync Get-RequiredPowerSchoolFields {
+                return [PSCustomObject]@{
+                    Extensions = @('u_students_extension')
+                    Expansions = @()
+                }
+            }
+
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
+                param($Uri)
+                $Uri | Should -Match 'extensions=u_students_extension'
+                return @{ students = @{ student = @() } }
+            }
+
+            $templateMetadata = @{ ColumnMappings = @() }
+            Get-PowerSchoolStudent -All -TemplateMetadata $templateMetadata
+            
+            Should -Invoke -ModuleName FSEnrollment-PSSync Get-RequiredPowerSchoolFields -Times 1
+        }
+
+        It 'Should load template and auto-detect when using TemplateName' {
+            # Create a temporary test template file
+            $tempTemplatePath = Join-Path $TestDrive 'test_template.psd1'
+            $tempTemplateContent = @'
+@{
+    TemplateName = 'test_template'
+    EntityType = 'PSStudent'
+    ColumnMappings = @(
+        @{ CSVColumn = 'DOB'; EntityProperty = 'DOB'; DataType = 'datetime'; PowerSchoolAPIField = '@demographics.birth_date' }
+    )
+}
+'@
+            $tempTemplateContent | Out-File -FilePath $tempTemplatePath -Encoding UTF8
+
+            Mock -ModuleName FSEnrollment-PSSync Get-RequiredPowerSchoolFields {
+                return [PSCustomObject]@{
+                    Extensions = @()
+                    Expansions = @('demographics')
+                }
+            }
+
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
+                return @{ students = @{ student = @() } }
+            }
+
+            InModuleScope FSEnrollment-PSSync {
+                param($TemplatePath)
+                # Override the template path resolution
+                Mock Join-Path {
+                    param($Path, $ChildPath)
+                    if ($ChildPath -match 'test_template\.psd1$') {
+                        return $TemplatePath
+                    }
+                    return (Microsoft.PowerShell.Management\Join-Path $Path $ChildPath)
+                }
+                
+                Get-PowerSchoolStudent -All -TemplateName 'test_template'
+                
+                Should -Invoke Get-RequiredPowerSchoolFields -Times 1
+            } -ArgumentList $tempTemplatePath
+        }
+
+        It 'Should merge manual expansions with auto-detected ones' {
+            Mock -ModuleName FSEnrollment-PSSync Get-RequiredPowerSchoolFields {
+                return [PSCustomObject]@{
+                    Extensions = @()
+                    Expansions = @('demographics')
+                }
+            }
+
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
+                param($Uri)
+                # Should include both demographics (auto) and phones (manual)
+                $Uri | Should -Match 'demographics'
+                $Uri | Should -Match 'phones'
+                return @{ students = @{ student = @() } }
+            }
+
+            $templateMetadata = @{ ColumnMappings = @() }
+            Get-PowerSchoolStudent -All -TemplateMetadata $templateMetadata -Expansions @('phones')
+        }
+
+        It 'Should not duplicate expansions when merging' {
+            Mock -ModuleName FSEnrollment-PSSync Get-RequiredPowerSchoolFields {
+                return [PSCustomObject]@{
+                    Extensions = @()
+                    Expansions = @('demographics', 'addresses')
+                }
+            }
+
+            Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
+                param($Uri)
+                # Verify demographics appears only once
+                $matches = [regex]::Matches($Uri, 'demographics')
+                $matches.Count | Should -Be 1
+                return @{ students = @{ student = @() } }
+            }
+
+            $templateMetadata = @{ ColumnMappings = @() }
+            Get-PowerSchoolStudent -All -TemplateMetadata $templateMetadata -Expansions @('demographics')
+        }
+
+        It 'Should throw error when TemplateName file not found' {
+            InModuleScope FSEnrollment-PSSync {
+                Mock Import-PowerShellDataFile {
+                    throw "File not found"
+                }
+                
+                { Get-PowerSchoolStudent -All -TemplateName 'nonexistent_template' -ErrorAction Stop } | Should -Throw
+            }
+        }
+    }
+
     Context 'Error Handling' {
         It 'Should throw error on API failure' {
             Mock -ModuleName FSEnrollment-PSSync Invoke-PowerSchoolApiRequest {
