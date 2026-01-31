@@ -8,6 +8,14 @@
     Analyzes template column mappings to determine which PowerSchool API extensions and
     expansions are required to retrieve all fields specified in the template.
     
+    NOTE: Most users don't need to call this function directly. Get-PowerSchoolStudent 
+    automatically calls this function internally when you use -TemplateMetadata or -TemplateName.
+    
+    This function is useful for:
+    - Advanced scenarios where you need to inspect required fields before retrieving data
+    - Custom workflows that need field detection logic separate from data retrieval
+    - Debugging template configurations
+    
     Parses PowerSchoolAPIField values:
     - extension.table_name.field → adds 'table_name' to extensions
     - @expansion_name.field → adds 'expansion_name' to expansions
@@ -20,15 +28,27 @@
     PSCustomObject with properties: Extensions (array), Expansions (array)
 
 .EXAMPLE
+    # RECOMMENDED APPROACH: Let Get-PowerSchoolStudent handle detection automatically
+    $csvData = Import-FSCsv -Path './students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
+    $students = Get-PowerSchoolStudent -All -TemplateMetadata $csvData.TemplateMetadata
+    
+    # Get-PowerSchoolStudent calls Get-RequiredPowerSchoolFields internally
+
+.EXAMPLE
+    # Advanced: Inspect required fields before retrieving data
     $csvData = Import-FSCsv -Path './students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
     $required = Get-RequiredPowerSchoolFields -TemplateMetadata $csvData.TemplateMetadata
-    $students = Get-PowerSchoolStudent -All -Extensions $required.Extensions -Expansions $required.Expansions
     
-    Automatically detects and retrieves all PowerSchool data needed for comparison based on template.
+    Write-Host "This template requires:"
+    Write-Host "  Extensions: $($required.Extensions -join ', ')"
+    Write-Host "  Expansions: $($required.Expansions -join ', ')"
+    
+    # Then retrieve data
+    $students = Get-PowerSchoolStudent -All -TemplateMetadata $csvData.TemplateMetadata
 
 .NOTES
-    This function helps ensure all necessary PowerSchool data is retrieved for accurate comparison.
-    Automatically detects required API features from template configuration.
+    This function is called internally by Get-PowerSchoolStudent when using -TemplateMetadata or -TemplateName.
+    Most workflows don't need to call this function directly.
     Returns empty arrays if no extensions or expansions are required.
 #>
 function Get-RequiredPowerSchoolFields {

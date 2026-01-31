@@ -35,22 +35,21 @@
 .EXAMPLE
     $csvData = Import-FSCsv -Path './students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
     
-    # Automatically detect required extensions and expansions from template
-    $required = Get-RequiredPowerSchoolFields -TemplateMetadata $csvData.TemplateMetadata
-    $psData = Get-PowerSchoolStudent -All -Extensions $required.Extensions -Expansions $required.Expansions
+    # Automatically detect and retrieve required extensions and expansions
+    $psData = Get-PowerSchoolStudent -All -TemplateMetadata $csvData.TemplateMetadata
     
     $changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psData
     
     Write-Host "New: $($changes.New.Count), Updated: $($changes.Updated.Count)"
     
-    Compares students using template-driven field mapping. Extensions and expansions are
-    automatically detected from PowerSchoolAPIField values in template.
+    Compares students using template-driven field mapping. Get-PowerSchoolStudent automatically
+    detects required extensions and expansions from the template's PowerSchoolAPIField mappings.
 
 .NOTES
     This function performs field-by-field comparison to detect what changed.
     The Updated collection contains objects with OldValue and NewValue properties.
     Template metadata controls matching field, type conversion, and fields to check.
-    Use Get-RequiredPowerSchoolFields to automatically detect required extensions/expansions.
+    Use -TemplateMetadata with Get-PowerSchoolStudent to automatically retrieve all required fields.
 #>
 function Compare-PSStudent {
     [CmdletBinding()]

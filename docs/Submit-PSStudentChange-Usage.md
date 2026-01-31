@@ -23,11 +23,8 @@ Connect-PowerSchool
 $csvData = Import-FSCsv -Path './data/students.csv' `
     -TemplateName 'fs_powerschool_nonapi_report_students'
 
-# Get PowerSchool data
-$required = Get-RequiredPowerSchoolFields -TemplateMetadata $csvData.TemplateMetadata
-$psStudents = Get-PowerSchoolStudent -All `
-    -Extensions $required.Extensions `
-    -Expansions $required.Expansions
+# Get PowerSchool data (automatically detects required extensions and expansions)
+$psStudents = Get-PowerSchoolStudent -All -TemplateMetadata $csvData.TemplateMetadata
 
 # Compare to detect changes
 $changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psStudents
