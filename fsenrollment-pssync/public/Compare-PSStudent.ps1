@@ -62,7 +62,7 @@ function Compare-PSStudent {
         [array]$PowerSchoolData,
 
         [Parameter(Mandatory = $false)]
-        [ValidateSet('StudentNumber', 'FTEID')]
+        [ValidateSet('StudentNumber')]
         [string]$MatchOn = 'StudentNumber'
     )
 
