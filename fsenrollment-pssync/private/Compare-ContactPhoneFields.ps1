@@ -77,7 +77,7 @@ function Compare-ContactPhoneFields {
         if (-not [string]::IsNullOrWhiteSpace($normalizedPhone)) {
             # Store in lookup - if duplicate phones exist, last one wins
             if ($psLookup.ContainsKey($normalizedPhone)) {
-                Write-Warning "Duplicate phone number found in PowerSchool data: $($psPhone.phonenumber_phonenumber) (normalized: $normalizedPhone). Using most recent entry."
+                Write-Verbose "Duplicate phone number found in PowerSchool data: $($psPhone.phonenumber_phonenumber) (normalized: $normalizedPhone). Using most recent entry."
             }
             $psLookup[$normalizedPhone] = $psPhone
         }
@@ -89,7 +89,7 @@ function Compare-ContactPhoneFields {
         $normalizedPhone = Normalize-PhoneNumber -PhoneNumber $csvPhone.PhoneNumber
         if (-not [string]::IsNullOrWhiteSpace($normalizedPhone)) {
             if ($csvLookup.ContainsKey($normalizedPhone)) {
-                Write-Warning "Duplicate phone number found in CSV data: $($csvPhone.PhoneNumber) (normalized: $normalizedPhone). Using most recent entry."
+                Write-Verbose "Duplicate phone number found in CSV data: $($csvPhone.PhoneNumber) (normalized: $normalizedPhone). Using most recent entry."
             }
             $csvLookup[$normalizedPhone] = $csvPhone
         }
