@@ -216,7 +216,7 @@ function Submit-PSContactChange {
                     if ($WhatIfPreference) {
                         Write-Host "`n=== WHATIF: New Contact Creation ===" -ForegroundColor Cyan
                         Write-Host "Contact: $matchKey ($($contact.FirstName) $($contact.LastName))" -ForegroundColor Yellow
-                        Write-Verbose "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/contacts/contact" -ForegroundColor Gray
+                        Write-Verbose "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/contacts/contact"
                         
                         # Show field details for new contact - iterate dynamically
                         Write-Host "Contact Fields to Create:" -ForegroundColor Gray
