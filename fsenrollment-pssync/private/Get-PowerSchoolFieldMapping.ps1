@@ -49,15 +49,12 @@ function Get-PowerSchoolFieldMapping {
         }
     }
 
-    # Fallback to default field mappings for common student fields
+    # Fallback to default field mappings for common student and contact fields
     $defaultFieldMapping = @{
+        # Student fields (use nested structure for v1 API)
         'StudentNumber' = 'local_id'
         'SchoolID' = 'school_id'
-        'FirstName' = 'name.first_name'
-        'MiddleName' = 'name.middle_name'
-        'LastName' = 'name.last_name'
         'GradeLevel' = 'grade_level'
-        'Gender' = 'gender'
         'DOB' = 'dob'
         'EnrollStatus' = 'enroll_status'
         'EntryDate' = 'entrydate'
@@ -73,6 +70,19 @@ function Get-PowerSchoolFieldMapping {
         'MailingZip' = 'mailing_zip'
         'FamilyIdent' = 'family_ident'
         'TransferComment' = 'transfer_comment'
+        
+        # Shared fields - context determines API structure
+        # For Student API (v1): these use name.first_name pattern
+        # For Contact API (contacts): these use firstName pattern (flat)
+        'FirstName' = 'name.first_name'  # Default to student pattern
+        'MiddleName' = 'name.middle_name'
+        'LastName' = 'name.last_name'
+        'Gender' = 'gender'
+        
+        # Contact-specific fields (flat structure for Contact API)
+        'Prefix' = 'prefix'
+        'Suffix' = 'suffix'
+        'Employer' = 'employer'
     }
 
     return $defaultFieldMapping[$EntityProperty]
