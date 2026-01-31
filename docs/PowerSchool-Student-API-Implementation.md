@@ -1,8 +1,20 @@
 # PowerSchool Student API - Implementation Guide
 
-This document describes the actual implementation of the PowerSchool Student API integration based on the working code in `Submit-PSStudentChange`.
+This document describes the actual implementation of the PowerSchool Student API integration based on the working code in `Submit-PSStudentChange` and `Get-PowerSchoolStudent`.
 
-## API Endpoint
+## API Endpoints
+
+### Retrieve Student Data
+
+**URL**: `GET /ws/v1/student/{student_dcid}`
+
+Retrieves a single student record by DCID. Supports expansions to include additional data.
+
+**Query Parameters**:
+- `expansions`: Comma-separated list of expansions to include (see Expansion Fields section)
+- `extensions`: Comma-separated list of extension tables to include
+
+### Create or Update Student Data
 
 **URL**: `POST /ws/v1/student`
 
@@ -103,6 +115,233 @@ All requests must include:
 
 ## Field Mapping
 
+### GET Response Structure
+
+When retrieving a student via `GET /ws/v1/student/{student_dcid}`, the response includes:
+
+**Core Fields** (always returned):
+- `@expansions`: String listing all expansions included in the response
+- `@extensions`: String listing all available extension tables
+- `id`: Student DCID (PowerSchool internal ID)
+- `local_id`: Student number
+- `state_province_id`: State/province identifier
+- `name`: Nested object containing name fields
+
+**Expansion Fields** (returned when requested via `expansions` parameter):
+- `demographics`: Gender, birth date, projected graduation year
+- `addresses`: Physical and mailing addresses
+- `school_enrollment`: Current enrollment status, grade level, dates, school assignment
+- `initial_enrollment`: District and school entry grade levels
+- `contact`: Contact information
+- `contact_info`: Additional contact details
+- `phones`: Phone numbers
+- `alerts`: Student alerts
+- `ethnicity_race`: Ethnicity and race information
+- `schedule_setup`: Schedule configuration
+- `fees`: Fee information
+- `lunch`: Lunch program details
+- `counselors`: Assigned counselors
+- `global_id`: Global identifiers
+
+**Extension Fields** (returned when requested via `extensions` parameter):
+- `_extension_data`: Object containing custom extension table data
+  - `_table_extension`: Array or object with custom field definitions
+  - Each extension table contains `_field` arrays with name, type, and value
+  - Extension tables are institution-specific custom fields
+
+### Expansion Field Details
+
+#### Demographics Expansion
+
+Returned when `demographics` is included in expansions parameter:
+
+```json
+"demographics": {
+  "gender": "M",
+  "birth_date": "2020-04-20",
+  "projected_graduation_year": 2038
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| gender | string | Student gender (M/F) |
+| birth_date | string | Date of birth (YYYY-MM-DD) |
+| projected_graduation_year | integer | Expected graduation year |
+
+#### Addresses Expansion
+
+Returned when `addresses` is included in expansions parameter:
+
+```json
+"addresses": {
+  "physical": {
+    "street": "100 Main Street",
+    "city": "Winnipeg",
+    "state_province": "MB",
+    "postal_code": "R3P 1A2",
+    "grid_location": "Lat: 49.8483235, Lng: -97.1823154"
+  },
+  "mailing": {
+    "street": "Box 1234",
+    "city": "Winnipeg",
+    "state_province": "MB",
+    "postal_code": "R3P 3B4",
+    "grid_location": "Lat: 49.8483235, Lng: -97.1823154"
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| physical.street | string | Physical address street |
+| physical.city | string | Physical address city |
+| physical.state_province | string | Physical address state/province |
+| physical.postal_code | string | Physical address postal code |
+| mailing.street | string | Mailing address street |
+| mailing.city | string | Mailing address city |
+| mailing.state_province | string | Mailing address state/province |
+| mailing.postal_code | string | Mailing address postal code |
+
+**Note**: When updating address fields, use the expansion field notation in your change detection:
+- `@addresses.physical.street`
+- `@addresses.physical.city`
+- `@addresses.mailing.postal_code`
+
+#### School Enrollment Expansion
+
+Returned when `school_enrollment` is included in expansions parameter:
+
+```json
+"school_enrollment": {
+  "enroll_status": "A",
+  "enroll_status_description": "Active",
+  "enroll_status_code": 0,
+  "grade_level": 10,
+  "entry_date": "2025-09-02",
+  "exit_date": "2026-07-01",
+  "school_number": 300,
+  "school_id": 5,
+  "entry_code": 100,
+  "entry_comment": "Promote Same School",
+  "full_time_equivalency": {
+    "fteid": 101,
+    "name": "Full Time"
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| enroll_status | string | Status code (A=Active, etc.) |
+| enroll_status_description | string | Human-readable status |
+| enroll_status_code | integer | Numeric status code |
+| grade_level | integer | Current grade (K=0, 1=1, etc.) |
+| entry_date | string | School entry date (YYYY-MM-DD) |
+| exit_date | string | School exit date (YYYY-MM-DD) |
+| school_number | integer | School number |
+| school_id | integer | School ID |
+| entry_code | integer | Entry code |
+| full_time_equivalency | object | FTE information |
+
+#### Initial Enrollment Expansion
+
+Returned when `initial_enrollment` is included in expansions parameter:
+
+```json
+"initial_enrollment": {
+  "district_entry_grade_level": 0,
+  "school_entry_grade_level": 0
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| district_entry_grade_level | integer | Grade level when entering district |
+| school_entry_grade_level | integer | Grade level when entering school |
+
+#### Extension Data
+
+Returned when specific extension tables are requested via `extensions` parameter:
+
+```json
+"_extension_data": {
+  "_table_extension": {
+    "recordFound": true,
+    "_field": [
+      {
+        "name": "pscore_legal_gender",
+        "type": "String",
+        "value": "M"
+      },
+      {
+        "name": "pscore_legal_first_name",
+        "type": "String",
+        "value": "Mickennly"
+      },
+      {
+        "name": "allergies",
+        "type": "String",
+        "value": "Allergy to Nuts"
+      },
+      {
+        "name": "pscore_legal_middle_name",
+        "type": "String",
+        "value": "Middle Mack"
+      },
+      {
+        "name": "pscore_legal_last_name",
+        "type": "String",
+        "value": "Mouser"
+      }
+    ],
+    "name": "studentcorefields"
+  }
+}
+```
+
+**Structure**:
+- `_extension_data`: Root object for all extension data
+- `_table_extension`: Can be a single object or array of extension tables
+- `recordFound`: Boolean indicating if extension record exists
+- `_field`: Array of field objects, each containing:
+  - `name`: Field name
+  - `type`: Data type (String, Integer, Date, etc.)
+  - `value`: Field value
+- `name`: Extension table name
+
+**Note**: Extension tables are institution-specific and contain custom fields defined by your PowerSchool administrator. Common examples include legal names, allergies, additional demographic data, and custom tracking fields.
+
+**Updating Extension Fields**: Extension fields require a special array structure in POST payloads:
+
+```json
+{
+  "students": {
+    "student": {
+      "client_uid": "1051",
+      "id": 1051,
+      "action": "UPDATE",
+      "_extension_data": {
+        "studentcorefields": {
+          "_field": [
+            {
+              "name": "pscore_legal_first_name",
+              "value": "NewValue"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+**Current Implementation Status**: Extension field updates are **NOT IMPLEMENTED** in the current module. The special array structure (`_field` with `name`/`value` pairs) requires dedicated handling in the `Build-UpdatePayload` function.
+
+### POST (INSERT/UPDATE) Field Mapping
+
+The following mappings apply when creating or updating students via POST operations.
+
 ### Core Demographic Fields
 
 | PSStudent Property | PowerSchool API Field | Type | Notes |
@@ -137,6 +376,20 @@ Dates must be formatted as `YYYY-MM-DD`:
 
 ### Address Fields
 
+**Note**: Address fields use expansion notation when retrieving data but use direct fields when creating/inserting students. When updating existing students, use the expansion field paths.
+
+**For GET operations** (returned via `addresses` expansion):
+- `@addresses.physical.street`
+- `@addresses.physical.city`
+- `@addresses.physical.state_province`
+- `@addresses.physical.postal_code`
+- `@addresses.mailing.street`
+- `@addresses.mailing.city`
+- `@addresses.mailing.state_province`
+- `@addresses.mailing.postal_code`
+
+**For INSERT operations** (creating new students):
+
 | PSStudent Property | PowerSchool API Field | Type |
 |-------------------|----------------------|------|
 | Street | street | string |
@@ -147,6 +400,18 @@ Dates must be formatted as `YYYY-MM-DD`:
 | MailingCity | mailing_city | string |
 | MailingState | mailing_state | string |
 | MailingZip | mailing_zip | string |
+
+**For UPDATE operations** (updating existing students):
+
+Use expansion field notation in change records:
+- `@addresses.physical.street`
+- `@addresses.physical.city`
+- `@addresses.physical.state_province` 
+- `@addresses.physical.postal_code`
+- `@addresses.mailing.street`
+- `@addresses.mailing.city`
+- `@addresses.mailing.state_province`
+- `@addresses.mailing.postal_code`
 
 ### Contact Fields
 
@@ -167,25 +432,75 @@ Dates must be formatted as `YYYY-MM-DD`:
 
 ```json
 {
-  "result": {
-    "status": "SUCCESS",
-    "client_uid": "123456",
-    "action_performed": "INSERT",
-    "student_dcid": 12345
+  "results": {
+    "insert_count": 1,
+    "update_count": 0,
+    "delete_count": 0,
+    "result": {
+      "client_uid": "123456",
+      "status": "SUCCESS",
+      "action": "INSERT",
+      "success_message": {
+        "id": 12345,
+        "ref": "https://your-school.powerschool.com/ws/v1/student/12345"
+      }
+    }
   }
 }
 ```
 
-### Error Responses
+### Validation Error Response (HTTP 200!)
+
+**Critical**: PowerSchool returns HTTP 200 OK even for validation errors. Check the `status` field in the JSON response:
+
+```json
+{
+  "results": {
+    "insert_count": 0,
+    "update_count": 0,
+    "delete_count": 0,
+    "result": {
+      "client_uid": "123456",
+      "status": "ERROR",
+      "action": "UPDATE",
+      "error_message": {
+        "error": {
+          "field": "students/demographics/birth_date",
+          "error_code": "INVALID_DATE_VALUE",
+          "error_description": "Date value or date format is invalid."
+        }
+      }
+    }
+  }
+}
+```
+
+**Always check**: `response.results.result.status === "ERROR"` to detect validation failures.
+
+### HTTP Error Responses
 
 | Status Code | Description |
 |-------------|-------------|
-| 400 | Bad Request - Invalid data format |
+| 400 | Bad Request - Invalid JSON format |
 | 401 | Unauthorized - Invalid or expired access token |
-| 422 | Unprocessable Entity - Data validation failed |
+| 422 | Unprocessable Entity - Malformed request |
 | 429 | Too Many Requests - Rate limit exceeded |
 | 500+ | Server Error - PowerSchool internal error |
+## PowerSchool Validation Behavior
 
+Based on live API testing, PowerSchool validates:
+
+**Strict Validation** (will reject with ERROR status):
+- Date formats (must be valid date strings like `YYYY-MM-DD`)
+- Required fields (e.g., physical address street cannot be empty)
+
+**Permissive Validation** (will accept):
+- Empty values for optional fields (e.g., birth_date can be cleared with empty string)
+- Out-of-range values (e.g., grade_level = 999 accepted)
+- Format variations (e.g., accepts both US ZIP codes and Canadian postal codes)
+- Multiple date formats (accepts `MM/DD/YYYY`, converts to `YYYY-MM-DD`)
+
+**Recommendation**: Implement application-level validation for fields like grade level ranges and postal code formats before submitting to API.
 ## Error Handling and Retry Logic
 
 The implementation includes automatic retry logic with exponential backoff:
@@ -319,13 +634,84 @@ Makes the actual API call for student updates.
 
 ## Extension Fields
 
-**Note**: Extension fields (custom PowerSchool fields) are not fully implemented yet. The code will warn about extension field updates:
+**Status**: Extension field updates are **IMPLEMENTED** as of January 31, 2026.
 
-```
-Warning: Extension field updates not yet implemented: extension.table_name.field_name
+**Usage**: Extension fields use the pattern `extension.{table_name}.{field_name}` in change detection.
+
+**Example**:
+```powershell
+$change = [PSCustomObject]@{
+    Field = 'LegalFirstName'
+    OldValue = 'John'
+    NewValue = 'Jonathan'
+    PowerSchoolAPIField = 'extension.studentcorefields.pscore_legal_first_name'
+}
 ```
 
-For extension fields, you would need to structure them according to PowerSchool's extension data format.
+**Required Structure**: Extension fields must be submitted in the `_table_extension` format:
+
+**GET Response Format** (how extension data is returned):
+```json
+"_extension_data": {
+  "_table_extension": {
+    "recordFound": true,
+    "_field": [
+      {
+        "name": "pscore_legal_first_name",
+        "type": "String",
+        "value": "John"
+      }
+    ],
+    "name": "studentcorefields"
+  }
+}
+```
+
+**POST Request Format** (how extension data must be sent):
+```json
+{
+  "students": {
+    "student": {
+      "_extension_data": {
+        "_table_extension": {
+          "name": "studentcorefields",
+          "_field": [
+            {
+              "name": "pscore_legal_first_name",
+              "value": "Jonathan"
+            }
+          ]
+        }
+      },
+      "client_uid": "1234",
+      "id": 1234,
+      "action": "UPDATE"
+    }
+  }
+}
+```
+
+**Critical Requirements**:
+1. **Query Parameter**: Must include `?extensions={table_name}` in the URI
+2. **Structure**: Use `_extension_data._table_extension` (not `_extension_data.{table_name}`)
+3. **Field Format**: Each field requires `name` and `value` properties (minimum)
+4. **Table Name**: Specify the table name in the `name` property within `_table_extension`
+
+**Optional Fields**:
+- `type`: Not required for updates (PowerSchool returns it in GET responses but doesn't need it in POST)
+- `recordFound`: Not required for updates
+
+**Implementation Details**:
+- `Merge-ExtensionFieldChanges` function handles building the extension structure
+- `Invoke-UpdateStudent` automatically detects extension data and adds `?extensions={table_name}` query parameter
+- Uses minimal structure with only `name` and `value` for each field
+- Only one extension table can be updated per API call (PowerSchool API limitation)
+
+**PowerSchool API Behavior**:
+- Returns HTTP 200 OK with `"status":"SUCCESS"` even if structure is incorrect
+- Updates only take effect when all three requirements are met (query parameter, structure, field format)
+- No validation error is returned for incorrect structure - the update silently fails
+
 
 ## Best Practices
 
@@ -375,6 +761,118 @@ if ($result.FailedChanges.Count -gt 0) {
     }
 }
 ```
+
+## Complete GET Response Example
+
+Example of retrieving a student with multiple expansions and extensions:
+
+```powershell
+$student = Get-PowerSchoolStudent -DCID 1051 `
+    -Expansions demographics,addresses,school_enrollment,contact,initial_enrollment `
+    -Extensions studentcorefields
+```
+
+**Response**:
+
+```json
+{
+  "@expansions": "demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch, counselors, global_id",
+  "@extensions": "s_mb_stu_x,c_studentlocator,u_mba_report_cards,s_stu_crosslea_x,studentfullnamecorefields,integration_students,s_stu_crdc_x,s_stu_x,activities,u_private_preferred_name,s_stu_directadmit_x,u_students_extension,s_stu_ncea_x,s_stu_edfi_x,studentcorefields",
+  "_extension_data": {
+    "_table_extension": {
+      "recordFound": true,
+      "_field": [
+        {
+          "name": "pscore_legal_gender",
+          "type": "String",
+          "value": "M"
+        },
+        {
+          "name": "pscore_legal_first_name",
+          "type": "String",
+          "value": "Mickennly"
+        },
+        {
+          "name": "allergies",
+          "type": "String",
+          "value": "Allergy to Nuts"
+        },
+        {
+          "name": "pscore_legal_middle_name",
+          "type": "String",
+          "value": "Middle Mack"
+        },
+        {
+          "name": "pscore_legal_last_name",
+          "type": "String",
+          "value": "Mouser"
+        }
+      ],
+      "name": "studentcorefields"
+    }
+  },
+  "id": 1051,
+  "local_id": 202503,
+  "student_username": "mickeymouse",
+  "name": {
+    "first_name": "Mickey",
+    "middle_name": "Middle",
+    "last_name": "Mouse"
+  },
+  "demographics": {
+    "gender": "M",
+    "birth_date": "2010-01-01",
+    "projected_graduation_year": 2028
+  },
+  "addresses": {
+    "physical": {
+      "street": "100 Main Street",
+      "city": "Winnipeg",
+      "state_province": "MB",
+      "postal_code": "R3P 1A2",
+      "grid_location": "Lat: 49.8483235, Lng: -97.1823154"
+    },
+    "mailing": {
+      "street": "Box 1234",
+      "city": "Winnipeg",
+      "state_province": "MB",
+      "postal_code": "R3P 3B4",
+      "grid_location": "Lat: 49.8483235, Lng: -97.1823154"
+    }
+  },
+  "school_enrollment": {
+    "enroll_status": "A",
+    "enroll_status_description": "Active",
+    "enroll_status_code": 0,
+    "grade_level": 10,
+    "entry_date": "2025-09-02",
+    "exit_date": "2026-07-01",
+    "school_number": 300,
+    "school_id": 5,
+    "entry_code": 100,
+    "entry_comment": "Promote Same School",
+    "full_time_equivalency": {
+      "fteid": 101,
+      "name": "Full Time"
+    }
+  },
+  "initial_enrollment": {
+    "district_entry_grade_level": 0,
+    "school_entry_grade_level": 0
+  }
+}
+```
+
+**Key Observations**:
+- The `id` field contains the student DCID (1051)
+- The `local_id` field contains the student number (202503)
+- The `_extension_data` contains custom fields from the `studentcorefields` extension table
+- Extension fields include legal names (pscore_legal_first_name, etc.) and custom data (allergies)
+- The `@extensions` field lists all available extension tables, but only requested ones are returned in `_extension_data`
+- Expansion fields are nested objects, not arrays
+- Address data uses `state_province` and `postal_code` (not `state` and `zip`)
+- The `@expansions` field shows all expansions included in the response
+- Date fields use ISO format: YYYY-MM-DD
 
 ## References
 

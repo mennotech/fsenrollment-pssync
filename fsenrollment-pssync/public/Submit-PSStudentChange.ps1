@@ -315,6 +315,12 @@ function Submit-PSStudentChange {
                     $psStudent = $updatedStudent.PowerSchoolStudent
                     
                     # Get student DCID for update
+                    if (-not $psStudent -and $updatedStudent.StudentDCID) {
+                        # If PowerSchoolStudent not provided but StudentDCID is, fetch the student
+                        Write-Verbose "Fetching PowerSchool student with DCID: $($updatedStudent.StudentDCID)"
+                        $psStudent = Get-PowerSchoolStudent -DCID $updatedStudent.StudentDCID -Expansions @('demographics')
+                    }
+                    
                     $dcid = $psStudent.id
                     if (-not $dcid) {
                         throw "PowerSchool student DCID not found for $matchKey"
@@ -609,6 +615,54 @@ function Merge-ExpansionFieldChanges {
     }
 }
 
+# Private helper function to merge extension field changes into student data
+function Merge-ExtensionFieldChanges {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$StudentData,
+        
+        [Parameter(Mandatory = $true)]
+        [array]$ExtensionChanges,
+        
+        [Parameter(Mandatory = $true)]
+        [string]$TableName
+    )
+    
+    # Pattern to match extension fields: extension.table_name.field_name
+    $pattern = "^extension\.$TableName\.(.+)$"
+    
+    Write-Verbose "Processing extension table '$TableName' changes"
+    
+    # Create the _extension_data structure if not exists
+    if (-not $StudentData['_extension_data']) {
+        $StudentData['_extension_data'] = @{}
+    }
+    
+    # Create the _table_extension structure if not exists
+    if (-not $StudentData['_extension_data']['_table_extension']) {
+        $StudentData['_extension_data']['_table_extension'] = @{
+            '_field' = @()
+            'name' = $TableName
+        }
+    }
+    
+    # Process each change
+    foreach ($change in $ExtensionChanges) {
+        if ($change.PowerSchoolAPIField -match $pattern) {
+            $fieldName = $matches[1]
+            
+            # Add the field to the _field array - testing with minimal structure (name/value only)
+            $StudentData['_extension_data']['_table_extension']['_field'] += @{
+                name = $fieldName
+                value = $change.NewValue
+            }
+            
+            Write-Verbose "  Updated $TableName.$fieldName = $($change.NewValue)"
+        }
+    }
+}
+
 # Private helper function to build update payload from changes
 function Build-UpdatePayload {
     [CmdletBinding()]
@@ -659,6 +713,27 @@ function Build-UpdatePayload {
         
         # Remove expansion changes from the main processing loop
         $Changes = $Changes | Where-Object { $_.PowerSchoolAPIField -notmatch '^@' }
+    }
+
+    # Process extension field changes (custom tables like studentcorefields)
+    # Pattern: extension.table_name.field_name
+    $extensionChanges = $Changes | Where-Object { $_.PowerSchoolAPIField -match '^extension\.([^.]+)\.' }
+    
+    if ($extensionChanges) {
+        # Group by extension table name
+        $extensionGroups = $extensionChanges | Group-Object { 
+            if ($_.PowerSchoolAPIField -match '^extension\.([^.]+)\.') { $matches[1] }
+        }
+        
+        foreach ($group in $extensionGroups) {
+            $tableName = $group.Name
+            Merge-ExtensionFieldChanges -StudentData $studentData `
+                -ExtensionChanges $group.Group `
+                -TableName $tableName
+        }
+        
+        # Remove extension changes from the main processing loop
+        $Changes = $Changes | Where-Object { $_.PowerSchoolAPIField -notmatch '^extension\.' }
     }
 
     # Map each remaining change to PowerSchool API field
@@ -774,6 +849,14 @@ function Invoke-CreateStudent {
 
         Write-Verbose "API call successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
 
+        # Check if PowerSchool reported an error in the response
+        # PowerSchool returns HTTP 200 even for validation errors, with error details in the JSON
+        if ($response.results.result.status -eq "ERROR") {
+            $errorMsg = $response.results.result.error_message.error
+            $errorDetail = "Field: $($errorMsg.field), Code: $($errorMsg.error_code), Description: $($errorMsg.error_description)"
+            throw "PowerSchool API validation error: $errorDetail"
+        }
+
         return [PSCustomObject]@{
             Success = $true
             Response = $response
@@ -820,6 +903,15 @@ function Invoke-UpdateStudent {
 
         # PowerSchool uses POST to /ws/v1/student with action=UPDATE and id in payload
         $uri = "$script:PowerSchoolBaseUrl/ws/v1/student"
+        
+        # Check if payload contains extension data and add extensions query parameter
+        if ($Payload.students.student._extension_data._table_extension) {
+            $tableName = $Payload.students.student._extension_data._table_extension.name
+            if ($tableName) {
+                $uri += "?extensions=$tableName"
+                Write-Verbose "Extension table being updated: $tableName"
+            }
+        }
 
         Write-Verbose "Making API call to update student DCID: $DCID"
         Write-Verbose "URI: POST $uri"
@@ -835,6 +927,14 @@ function Invoke-UpdateStudent {
             -InitialRetryDelaySeconds $RetryDelaySeconds
 
         Write-Verbose "API call successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+
+        # Check if PowerSchool reported an error in the response
+        # PowerSchool returns HTTP 200 even for validation errors, with error details in the JSON
+        if ($response.results.result.status -eq "ERROR") {
+            $errorMsg = $response.results.result.error_message.error
+            $errorDetail = "Field: $($errorMsg.field), Code: $($errorMsg.error_code), Description: $($errorMsg.error_description)"
+            throw "PowerSchool API validation error: $errorDetail"
+        }
 
         return [PSCustomObject]@{
             Success = $true
