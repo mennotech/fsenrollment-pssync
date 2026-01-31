@@ -102,9 +102,11 @@ function Submit-PSStudentChange {
         [int]$Limit = [int]::MaxValue,
 
         [Parameter(Mandatory = $false)]
+        [ValidateRange(1, 10)]
         [int]$MaxRetries = 3,
 
         [Parameter(Mandatory = $false)]
+        [ValidateRange(1, 300)]
         [int]$RetryDelaySeconds = 5
     )
 
