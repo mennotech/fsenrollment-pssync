@@ -64,44 +64,137 @@ $result = Submit-PSStudentChange -JsonPath './data/pending_changes.json'
 When first testing with live PowerSchool data, use the `-Limit` parameter to apply only a few changes:
 
 ```powershell
-# Test with just 5 changes using WhatIf first
-Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf
+# Step 1: Preview with WhatIf and Verbose to see exactly what would happen
+Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf -Verbose
 
-# If WhatIf looks good, apply the test batch
+# Step 2: Review the detailed output showing:
+#   - Exact API endpoints
+#   - Field-by-field changes
+#   - Complete JSON payloads
+#   - PowerSchool field mappings
+
+# Step 3: If everything looks correct, apply the limited test batch
 $testResult = Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5
 
-# Review the results carefully
+# Step 4: Review the results carefully
 Write-Host "Test Results:"
 Write-Host "  Applied: $($testResult.Summary.TotalApplied)"
 Write-Host "  Failed: $($testResult.Summary.TotalFailed)"
 
-# IMPORTANT: After testing with -Limit, you need to manually track which changes
-# were applied to avoid reprocessing. The function processes changes in order
-# (New students first, then Updates). Consider one of these approaches:
+if ($testResult.FailedChanges.Count -gt 0) {
+    Write-Warning "Some changes failed - review before proceeding"
+    $testResult.FailedChanges | Format-Table Type, MatchKey, Error
+}
+```
 
-# Option 1: Test with WhatIf, then apply all at once
-Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf
-# Review output, then apply all changes
+**Important Notes on Using -Limit:**
+
+- The function processes changes in order: **New students first, then Updates**
+- Using `-Limit 5` with 3 new students and 10 updates will process all 3 new students + 2 updates
+- After testing with `-Limit`, you need to track which changes were applied to avoid reprocessing
+
+**Recommended Testing Approaches:**
+
+```powershell
+# Approach 1: WhatIf preview, then apply all at once (RECOMMENDED)
+Submit-PSStudentChange -JsonPath './data/pending_changes.json' -WhatIf -Verbose
+# Carefully review output, then apply all changes
 Submit-PSStudentChange -JsonPath './data/pending_changes.json'
 
-# Option 2: Export separate test and production change files
-# Process and review a subset, then process remaining separately
+# Approach 2: Test subset, verify in PowerSchool, then manually create separate files
+# a) Test first 5 changes
+Submit-PSStudentChange -JsonPath './data/pending_batch1.json' -WhatIf -Verbose
+Submit-PSStudentChange -JsonPath './data/pending_batch1.json'
+# b) Verify changes in PowerSchool UI
+# c) Process remaining changes
+Submit-PSStudentChange -JsonPath './data/pending_batch2.json'
 
-# Option 3: Use the result to track progress and filter remaining changes
-# (This requires manual processing of the changes object)
+# Approach 3: Process one by one for critical changes
+foreach ($i in 1..3) {
+    Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit $i -WhatIf -Verbose
+    $confirm = Read-Host "Apply change $i? (y/n)"
+    if ($confirm -eq 'y') {
+        # Note: This will reprocess previous changes - manually filter instead
+    }
+}
 ```
 
 ### 4. Dry Run (Preview Changes Without Applying)
 
-Use `-WhatIf` to preview what would be changed without actually making changes:
+Use `-WhatIf` to preview what would be changed without actually making changes to PowerSchool:
 
 ```powershell
 # Preview changes without applying them
 Submit-PSStudentChange -JsonPath './data/pending_changes.json' -WhatIf
 
-# Output will show what would be changed
-# Example: "What if: Performing the operation "Create in PowerSchool" on target "New Student: 123456 (John Doe)"."
+# Or combine with -Limit and -Verbose for detailed testing
+Submit-PSStudentChange -JsonPath './data/pending_changes.json' -WhatIf -Limit 3 -Verbose
 ```
+
+**WhatIf Output Example:**
+
+The `-WhatIf` flag provides a comprehensive preview showing:
+
+1. **Summary Header**: Total changes that would be applied
+   ```
+   WhatIf: Would apply 3 of 3 changes
+   ```
+
+2. **Per-Student Details**: For each change, you'll see:
+   - Student identifier (StudentNumber, DCID, Name - anonymized in production)
+   - API endpoint that would be called
+   - Field-by-field changes with old and new values
+   - PowerSchool API field mappings
+   - Complete JSON payload that would be sent
+
+   ```
+   VERBOSE: API Endpoint: POST https://yourschool.powerschool.com/ws/v1/student
+   VERBOSE: Field Changes (2 total):
+   VERBOSE:   Street: '123 Old Street' -> '123 New Street'
+   VERBOSE:     (API Field: @addresses.physical.street)
+   VERBOSE:   DOB: '2015-01-01' -> '2015-02-01'
+   VERBOSE:     (API Field: @demographics.birth_date)
+   VERBOSE: API Payload: {
+     "students": {
+       "student": {
+         "action": "UPDATE",
+         "client_uid": "123",
+         "addresses": {
+           "physical": {
+             "postal_code": "12345",
+             "state_province": "XX",
+             "city": "City",
+             "street": "123 New Street"
+           }
+         },
+         "id": 123,
+         "demographics": {
+           "birth_date": "2015-02-01"
+         }
+       }
+     }
+   }
+   What if: Performing the operation "Update in PowerSchool" on target "Student: 123456 (DCID: 123) Name: Student Name - 2 changes Fields: Street, DOB".
+   ```
+
+3. **Summary Footer**: Final statistics showing no changes were applied
+   ```
+   === Apply Changes Summary ===
+   New Students Created: 0
+   Students Updated: 0
+   Failed Changes: 0
+   Total Applied: 0 of 3 processed
+   ```
+
+**Key Benefits of WhatIf:**
+
+- **Safe Testing**: Review exact API calls before making live changes
+- **Field Validation**: Verify field mappings and data transformations
+- **Payload Inspection**: See the complete JSON sent to PowerSchool API
+- **Expansion Field Handling**: Confirm how expansion fields (demographics, addresses) are merged with existing data
+- **Zero Risk**: No connection to PowerSchool required, no data modified
+
+**Note**: Use `-Verbose` with `-WhatIf` to see detailed field changes and API payloads. Without `-Verbose`, you'll only see high-level "What if" messages.
 
 ## Advanced Usage
 

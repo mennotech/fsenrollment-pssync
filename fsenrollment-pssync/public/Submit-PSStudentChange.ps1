@@ -31,7 +31,12 @@
 
 .PARAMETER WhatIf
     Performs a dry run without making actual changes to PowerSchool.
-    Shows what would be changed.
+    Displays detailed preview of what would be changed, including:
+    - API endpoints that would be called
+    - Field-by-field changes with old and new values
+    - PowerSchool API field mappings
+    - Complete JSON payloads that would be sent
+    Use with -Verbose for full details. No PowerSchool connection required for preview.
 
 .PARAMETER MaxRetries
     Maximum number of retry attempts for failed API calls. Default is 3.
@@ -58,8 +63,11 @@
     Write-Host "Test run: Applied $($result.Summary.TotalApplied) of 5 changes"
 
 .EXAMPLE
-    # Dry run to preview changes without applying them
-    Submit-PSStudentChange -JsonPath './data/pending_changes.json' -WhatIf
+    # Dry run to preview changes without applying them (use with -Verbose for full details)
+    Submit-PSStudentChange -JsonPath './data/pending_changes.json' -WhatIf -Verbose
+    
+    # Output shows API endpoints, field changes, and complete JSON payloads
+    # Summary shows 0 applied since no changes are made in WhatIf mode
 
 .EXAMPLE
     # Apply changes with custom retry settings
