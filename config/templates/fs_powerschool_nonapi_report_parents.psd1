@@ -2,6 +2,10 @@
     TemplateName = 'fs_powerschool_nonapi_report_parents'
     Description = 'Final Site Enrollment PowerSchool Non-API Report - Parents/Contacts Export'
     EntityType = 'PSNormalizedData'
+    # DateTime format used in CSV files (adjust based on FinalSite location settings)
+    # This is the default format. Individual columns can override with their own DateTimeFormat property.
+    # Common formats: 'MM/dd/yyyy' (US), 'dd/MM/yyyy' (International), 'yyyy-MM-dd' (ISO)
+    DateTimeFormat = 'dd/MM/yyyy'
     # Custom parser for complex multi-row format (contact rows, phone rows, relationship rows)
     CustomParser = 'Import-FSParentsCustomParser'
     # Key field for matching records between CSV and PowerSchool

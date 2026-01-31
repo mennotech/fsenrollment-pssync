@@ -41,7 +41,8 @@ function ConvertFrom-CsvRow {
         $entity = New-Object -TypeName $entityTypeName
 
         # Apply column mappings to the entity
-        Invoke-ColumnMapping -CsvRow $CsvRow -Entity $entity -ColumnMappings $TemplateConfig.ColumnMappings
+        $dateTimeFormat = if ($TemplateConfig.DateTimeFormat) { $TemplateConfig.DateTimeFormat } else { $null }
+        Invoke-ColumnMapping -CsvRow $CsvRow -Entity $entity -ColumnMappings $TemplateConfig.ColumnMappings -DateTimeFormat $dateTimeFormat
 
         return $entity
     }

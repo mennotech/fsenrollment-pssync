@@ -128,31 +128,346 @@ paths:
               schema:
                 type: string
               example: application/json
-          description: Mickey Mouse
+          description: Student record with requested expansions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  '@expansions':
+                    type: string
+                    description: Comma-separated list of expansions included in response
+                  '@extensions':
+                    type: string
+                    description: Comma-separated list of extensions available
+                  id:
+                    type: integer
+                    description: Student DCID (PowerSchool internal ID)
+                  local_id:
+                    type: integer
+                    description: Student number
+                  state_province_id:
+                    type: integer
+                    description: State/province ID
+                  name:
+                    type: object
+                    properties:
+                      first_name:
+                        type: string
+                      middle_name:
+                        type: string
+                      last_name:
+                        type: string
+                  demographics:
+                    type: object
+                    description: Included when demographics expansion is requested
+                    properties:
+                      gender:
+                        type: string
+                        example: M
+                      birth_date:
+                        type: string
+                        format: date
+                        example: '2020-04-20'
+                      projected_graduation_year:
+                        type: integer
+                        example: 2038
+                  addresses:
+                    type: object
+                    description: Included when addresses expansion is requested
+                    properties:
+                      physical:
+                        type: object
+                        properties:
+                          street:
+                            type: string
+                          city:
+                            type: string
+                          state_province:
+                            type: string
+                          postal_code:
+                            type: string
+                      mailing:
+                        type: object
+                        properties:
+                          street:
+                            type: string
+                          city:
+                            type: string
+                          state_province:
+                            type: string
+                          postal_code:
+                            type: string
+                  school_enrollment:
+                    type: object
+                    description: Included when school_enrollment expansion is requested
+                    properties:
+                      enroll_status:
+                        type: string
+                        example: A
+                      enroll_status_description:
+                        type: string
+                        example: Active
+                      enroll_status_code:
+                        type: integer
+                        example: 0
+                      grade_level:
+                        type: integer
+                        example: 0
+                      entry_date:
+                        type: string
+                        format: date
+                      exit_date:
+                        type: string
+                        format: date
+                      school_number:
+                        type: integer
+                      school_id:
+                        type: integer
+                      entry_code:
+                        type: integer
+                      full_time_equivalency:
+                        type: object
+                        properties:
+                          fteid:
+                            type: integer
+                          name:
+                            type: string
+                  initial_enrollment:
+                    type: object
+                    description: Included when initial_enrollment expansion is requested
+                    properties:
+                      district_entry_grade_level:
+                        type: integer
+                      school_entry_grade_level:
+                        type: integer
+                  _extension_data:
+                    type: object
+                    description: Included when specific extension tables are requested via extensions parameter
+                    properties:
+                      _table_extension:
+                        type: object
+                        description: Can be a single object or array of extension table objects
+                        properties:
+                          recordFound:
+                            type: boolean
+                            description: Indicates if extension record exists
+                          name:
+                            type: string
+                            description: Extension table name
+                            example: studentcorefields
+                          _field:
+                            type: array
+                            description: Array of custom field definitions
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                  description: Field name
+                                type:
+                                  type: string
+                                  description: Data type (String, Integer, Date, etc.)
+                                value:
+                                  description: Field value (type varies)
+              example:
+                '@expansions': 'demographics, addresses, alerts, phones, school_enrollment, ethnicity_race, contact, contact_info, initial_enrollment, schedule_setup, fees, lunch, counselors, global_id'
+                '@extensions': 's_mb_stu_x,c_studentlocator,u_mba_report_cards,s_stu_crosslea_x,studentfullnamecorefields,integration_students,s_stu_crdc_x,s_stu_x,activities,u_private_preferred_name,s_stu_directadmit_x,u_students_extension,s_stu_ncea_x,s_stu_edfi_x,studentcorefields'
+                _extension_data:
+                  _table_extension:
+                    recordFound: true
+                    _field:
+                      - name: pscore_legal_gender
+                        type: String
+                        value: M
+                      - name: pscore_legal_first_name
+                        type: String
+                        value: Mickennly
+                      - name: allergies
+                        type: String
+                        value: Allergy to Nuts
+                      - name: pscore_legal_middle_name
+                        type: String
+                        value: Middle Mack
+                      - name: pscore_legal_last_name
+                        type: String
+                        value: Mouser
+                    name: studentcorefields
+                id: 1051
+                local_id: 202503
+                student_username: mickeymouse
+                name:
+                  first_name: Mickey
+                  middle_name: Middle
+                  last_name: Mouse
+                demographics:
+                  gender: M
+                  birth_date: '2010-01-01'
+                  projected_graduation_year: 2028
+                addresses:
+                  physical:
+                    street: 100 Main Street
+                    city: Winnipeg
+                    state_province: MB
+                    postal_code: R3P 1A2
+                    grid_location: 'Lat: 49.8483235, Lng: -97.1823154'
+                  mailing:
+                    street: Box 1234
+                    city: Winnipeg
+                    state_province: MB
+                    postal_code: R3P 3B4
+                    grid_location: 'Lat: 49.8483235, Lng: -97.1823154'
+                school_enrollment:
+                  enroll_status: A
+                  enroll_status_description: Active
+                  enroll_status_code: 0
+                  grade_level: 10
+                  entry_date: '2025-09-02'
+                  exit_date: '2026-07-01'
+                  school_number: 300
+                  school_id: 5
+                  entry_code: 100
+                  entry_comment: Promote Same School
+                  full_time_equivalency:
+                    fteid: 101
+                    name: Full Time
+                initial_enrollment:
+                  district_entry_grade_level: 0
+                  school_entry_grade_level: 0
   /ws/v1/student:
     parameters: []
     post:
-      summary: Update Student Information
+      summary: Create or Update Student Information
+      description: >-
+        Creates a new student or updates an existing student in PowerSchool.
+        Uses the same endpoint for both operations, differentiated by the 'action' field.
+        For INSERT: Use client_uid with student number. For UPDATE: Use client_uid with DCID and include id field.
       tags: *ref_0
       parameters:
         - name: Authorization
           in: header
-          required: false
+          required: true
           example: Bearer {{access_token}}
           schema:
+            type: string
             deprecated: false
         - name: Content-Type
           in: header
-          required: false
+          required: true
           example: application/json
           schema:
+            type: string
             deprecated: false
         - name: Accept
           in: header
-          required: false
+          required: true
           example: application/json
           schema:
+            type: string
             deprecated: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                students:
+                  type: object
+                  properties:
+                    student:
+                      type: object
+                      properties:
+                        client_uid:
+                          type: string
+                          description: For INSERT - use student number. For UPDATE - use DCID as string.
+                          example: "123456"
+                        action:
+                          type: string
+                          enum: [INSERT, UPDATE]
+                          description: Operation type - INSERT for new students, UPDATE for existing students
+                          example: "INSERT"
+                        id:
+                          type: integer
+                          description: Required for UPDATE operations - the PowerSchool DCID
+                          example: 12345
+                        local_id:
+                          type: string
+                          description: Student number (for new student creation)
+                          example: "123456"
+                        school_id:
+                          type: string
+                          description: School identifier
+                          example: "100"
+                        grade_level:
+                          type: integer
+                          description: Student grade level
+                          example: 9
+                        name:
+                          type: object
+                          description: Student name fields (nested object)
+                          properties:
+                            first_name:
+                              type: string
+                              example: "John"
+                            middle_name:
+                              type: string
+                              example: "Q"
+                            last_name:
+                              type: string
+                              example: "Doe"
+                        gender:
+                          type: string
+                          example: "M"
+                        dob:
+                          type: string
+                          format: date
+                          description: Date of birth in YYYY-MM-DD format
+                          example: "2005-06-15"
+                        street:
+                          type: string
+                          example: "123 Main St"
+                        city:
+                          type: string
+                          example: "Springfield"
+                        state:
+                          type: string
+                          example: "IL"
+                        zip:
+                          type: string
+                          example: "62701"
+            examples:
+              insertStudent:
+                summary: Create new student (INSERT)
+                value:
+                  students:
+                    student:
+                      client_uid: "123456"
+                      action: "INSERT"
+                      local_id: "123456"
+                      school_id: "100"
+                      grade_level: 9
+                      name:
+                        first_name: "John"
+                        middle_name: "Q"
+                        last_name: "Doe"
+                      gender: "M"
+                      dob: "2005-06-15"
+                      street: "123 Main St"
+                      city: "Springfield"
+                      state: "IL"
+                      zip: "62701"
+              updateStudent:
+                summary: Update existing student (UPDATE)
+                value:
+                  students:
+                    student:
+                      client_uid: "12345"
+                      action: "UPDATE"
+                      id: 12345
+                      name:
+                        first_name: "Jonathan"
+                      grade_level: 10
       responses:
         '200':
           headers:
@@ -160,7 +475,125 @@ paths:
               schema:
                 type: string
               example: application/json
-          description: Update Student Information
+          description: Student created or updated successfully (or validation error - check status field)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: object
+                    properties:
+                      insert_count:
+                        type: integer
+                        description: Number of records inserted
+                        example: 1
+                      update_count:
+                        type: integer
+                        description: Number of records updated
+                        example: 0
+                      delete_count:
+                        type: integer
+                        description: Number of records deleted
+                        example: 0
+                      result:
+                        type: object
+                        description: Details about the operation
+                        properties:
+                          client_uid:
+                            oneOf:
+                              - type: string
+                              - type: integer
+                            description: Client UID from request (DCID for UPDATE, student number for INSERT)
+                          status:
+                            type: string
+                            enum: [SUCCESS, ERROR]
+                            description: Operation status - CRITICAL to check this field as PowerSchool returns HTTP 200 even for validation errors
+                          action:
+                            type: string
+                            enum: [INSERT, UPDATE]
+                            description: Action performed
+                          success_message:
+                            type: object
+                            description: Present when status is SUCCESS
+                            properties:
+                              id:
+                                type: integer
+                                description: Student DCID
+                              ref:
+                                type: string
+                                description: URL reference to the student record
+                          error_message:
+                            type: object
+                            description: Present when status is ERROR
+                            properties:
+                              error:
+                                type: array
+                                description: Array of error details
+                                items:
+                                  type: object
+                                  properties:
+                                    field:
+                                      type: string
+                                      description: Field path that failed validation
+                                    code:
+                                      type: string
+                                      description: Error code
+                                    description:
+                                      type: string
+                                      description: Human-readable error description
+              examples:
+                successInsert:
+                  summary: Successful INSERT operation
+                  value:
+                    results:
+                      insert_count: 1
+                      update_count: 0
+                      delete_count: 0
+                      result:
+                        client_uid: "123456"
+                        status: "SUCCESS"
+                        action: "INSERT"
+                        success_message:
+                          id: 12345
+                          ref: "https://your-school.powerschool.com/ws/v1/student/12345"
+                successUpdate:
+                  summary: Successful UPDATE operation
+                  value:
+                    results:
+                      insert_count: 0
+                      update_count: 1
+                      delete_count: 0
+                      result:
+                        client_uid: 1051
+                        status: "SUCCESS"
+                        action: "UPDATE"
+                        success_message:
+                          id: 1051
+                          ref: "https://your-school.powerschool.com/ws/v1/student/1051"
+                validationError:
+                  summary: Validation error (still HTTP 200!)
+                  description: PowerSchool returns HTTP 200 even for validation errors. Always check the status field.
+                  value:
+                    results:
+                      insert_count: 0
+                      update_count: 0
+                      delete_count: 0
+                      result:
+                        client_uid: 1051
+                        status: "ERROR"
+                        action: "UPDATE"
+                        error_message:
+                          error:
+                            - field: "students/demographics/birth_date"
+                              code: "INVALID_DATE_VALUE"
+                              description: "Date value or date format is invalid."
+        '400':
+          description: Bad request - invalid data format
+        '401':
+          description: Unauthorized - invalid or expired access token
+        '422':
+          description: Unprocessable entity - data validation failed
   /ws/contacts/student/{studentdcid}:
     parameters:
       - name: studentdcid

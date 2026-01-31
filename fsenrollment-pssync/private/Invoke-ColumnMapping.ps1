@@ -17,9 +17,17 @@
 .PARAMETER ColumnMappings
     Array of column mapping hashtables, each containing CSVColumn, EntityProperty, and DataType.
 
+.PARAMETER DateTimeFormat
+    Optional datetime format string to use for parsing datetime fields. If not provided,
+    uses system default parsing. Common formats: 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd'.
+
 .EXAMPLE
     $student = [PSStudent]::new()
     Invoke-ColumnMapping -CsvRow $row -Entity $student -ColumnMappings $mappings
+
+.EXAMPLE
+    $student = [PSStudent]::new()
+    Invoke-ColumnMapping -CsvRow $row -Entity $student -ColumnMappings $mappings -DateTimeFormat 'dd/MM/yyyy'
 
 .NOTES
     This is a private helper function used by CSV parsing functions and custom parsers.
@@ -34,7 +42,10 @@ function Invoke-ColumnMapping {
         [object]$Entity,
 
         [Parameter(Mandatory = $true)]
-        [array]$ColumnMappings
+        [array]$ColumnMappings,
+
+        [Parameter(Mandatory = $false)]
+        [string]$DateTimeFormat
     )
 
     foreach ($mapping in $ColumnMappings) {
@@ -75,10 +86,29 @@ function Invoke-ColumnMapping {
             }
             'datetime' {
                 try {
-                    [datetime]::Parse($value)
+                    # Check for column-specific DateTimeFormat first, then fall back to template-level format
+                    $columnDateTimeFormat = $mapping.DateTimeFormat
+                    if ($columnDateTimeFormat) {
+                        [datetime]::ParseExact($value, $columnDateTimeFormat, $null)
+                    }
+                    elseif ($DateTimeFormat) {
+                        [datetime]::ParseExact($value, $DateTimeFormat, $null)
+                    }
+                    else {
+                        [datetime]::Parse($value)
+                    }
                 }
                 catch {
-                    Write-Warning "Failed to convert '$value' to datetime for property $entityProperty"
+                    $columnDateTimeFormat = $mapping.DateTimeFormat
+                    if ($columnDateTimeFormat) {
+                        Write-Warning "Failed to convert '$value' to datetime using column format '$columnDateTimeFormat' for property $entityProperty"
+                    }
+                    elseif ($DateTimeFormat) {
+                        Write-Warning "Failed to convert '$value' to datetime using format '$DateTimeFormat' for property $entityProperty"
+                    }
+                    else {
+                        Write-Warning "Failed to convert '$value' to datetime for property $entityProperty"
+                    }
                     $null
                 }
             }

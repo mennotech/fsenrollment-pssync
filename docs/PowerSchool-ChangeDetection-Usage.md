@@ -45,32 +45,106 @@ Write-Host "Imported $($csvData.Students.Count) students from CSV"
 
 ### 3. Fetch PowerSchool Data
 
+#### **RECOMMENDED APPROACH**
+
+The best practice is to let PowerSchell automatically detect which API extensions and expansions are needed based on your template configuration. This ensures all necessary data is retrieved for accurate comparison without manual configuration.
+
+**Method 1: Using `-TemplateMetadata` (BEST - use when you already have CSV data)**
+
+This is the most common pattern for change detection workflows:
+
 ```powershell
-# Automatically detect required extensions and expansions from template
+# Step 1: Import CSV data
+$csvData = Import-FSCsv -Path './data/students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
+
+# Step 2: Fetch PowerSchool data with automatic field detection
+$psStudents = Get-PowerSchoolStudent -All -TemplateMetadata $csvData.TemplateMetadata
+
+# Step 3: Compare
+$changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psStudents
+
+Write-Host "Retrieved $($psStudents.Count) students from PowerSchool"
+```
+
+✅ **Advantages:**
+- Automatically detects required extensions and expansions from template
+- Uses the same template metadata for both import and retrieval
+- Guarantees consistency between CSV parsing and PowerSchool API calls
+- Zero configuration needed
+
+**Method 2: Using `-TemplateName` (GOOD - use when fetching data without CSV import)**
+
+Use this when you need PowerSchool data but don't have a CSV file yet:
+
+```powershell
+# Loads template and automatically detects required fields
+$psStudents = Get-PowerSchoolStudent -All -TemplateName 'fs_powerschool_nonapi_report_students'
+
+Write-Host "Retrieved $($psStudents.Count) students from PowerSchool"
+```
+
+✅ **Advantages:**
+- No need to import CSV first
+- Useful for data exploration or one-time pulls
+- Still uses template configuration for consistency
+
+#### **Alternative Approaches (NOT RECOMMENDED)**
+
+These methods work but add unnecessary complexity and maintenance burden:
+
+❌ Manual detection using Get-RequiredPowerSchoolFields
+
+```powershell
+# This works but is unnecessary - Get-PowerSchoolStudent already does this internally
+$csvData = Import-FSCsv -Path './data/students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
 $required = Get-RequiredPowerSchoolFields -TemplateMetadata $csvData.TemplateMetadata
 Write-Host "Required Extensions: $($required.Extensions -join ', ')"
 Write-Host "Required Expansions: $($required.Expansions -join ', ')"
-
-# Get all students from PowerSchool with required extensions and expansions
 $psStudents = Get-PowerSchoolStudent -All `
     -Extensions $required.Extensions `
     -Expansions $required.Expansions
+```
 
-Write-Host "Retrieved $($psStudents.Count) students from PowerSchool"
+**Why not recommended:** Adds extra steps when `Get-PowerSchoolStudent` already performs this detection internally.
 
-# Alternative: Manual specification
+❌ Manual specification
+
+```powershell
+# Hardcoding extensions and expansions - error-prone and not maintainable
 $psStudents = Get-PowerSchoolStudent -All `
     -Extensions @('u_students_extension', 'studentcorefields') `
-    -Expansions @('demographics')
+    -Expansions @('demographics', 'addresses')
+```
 
-# Get a specific student by student number (recommended for CSV data)
+**Why not recommended:** 
+- Requires manual updates when template changes
+- Error-prone - easy to miss required fields
+- Breaks consistency with template configuration
+- Not maintainable for multiple templates
+
+#### **Single Student Retrieval**
+
+```powershell
+# Get a specific student by student number (recommended for CSV imports)
 $student = Get-PowerSchoolStudent -StudentNumber '123456'
 
-# Get a specific student by DCID (PowerSchool internal ID) with expansions
-# Note: DCID is not available from CSV imports, only from PowerSchool API responses
+# Get a specific student by DCID with specific expansions
+# Note: DCID is PowerSchool's internal ID, not available from CSV imports
 $student = Get-PowerSchoolStudent -DCID 12345 `
     -Expansions @('demographics', 'addresses', 'phones')
 ```
+
+#### **How Automatic Detection Works**
+
+When you use `-TemplateMetadata` or `-TemplateName`, `Get-PowerSchoolStudent` automatically:
+
+1. Parses all `PowerSchoolAPIField` mappings in your template
+2. Identifies extension fields (format: `extension.table_name.field`)
+3. Identifies expansion fields (format: `@expansion_name.field`)
+4. Merges detected fields with any manually specified ones (no duplicates)
+5. Retrieves data with all required API features enabled
+
+This ensures **all necessary data is retrieved for accurate comparison** without manual configuration.
 
 ### 4. Compare and Detect Changes
 
@@ -125,9 +199,11 @@ try {
         -TemplateName 'fs_powerschool_nonapi_report_students' `
         -Verbose
     
-    # Step 3: Fetch PowerSchool data
+    # Step 3: Fetch PowerSchool data (automatically detects required fields from template)
     Write-Host "Fetching PowerSchool student data..." -ForegroundColor Yellow
-    $psStudents = Get-PowerSchoolStudent -All -Verbose
+    $psStudents = Get-PowerSchoolStudent -All `
+        -TemplateMetadata $csvData.TemplateMetadata `
+        -Verbose
     
     # Step 4: Compare and detect changes
     Write-Host "Comparing data..." -ForegroundColor Yellow
@@ -248,6 +324,88 @@ The `Compare-PSContact` function checks the following data:
 **Email Addresses** (optional - checked if PowerSchoolEmailData is provided):
 - Email address
 - Email type
+
+## DateTime Format Configuration
+
+The FSEnrollment-PSSync module supports configurable datetime formats to handle different FinalSite location settings and mixed datetime formats within CSV files.
+
+### Template-Level DateTime Format
+
+Configure a default datetime format for the entire template:
+
+```powershell
+@{
+    # Default datetime format for the template (applies to all datetime columns)
+    DateTimeFormat = 'dd/MM/yyyy'  # e.g., 31/12/2023 for UK format
+    
+    # Column mappings...
+    ColumnMappings = @(
+        # datetime columns will use the template DateTimeFormat by default
+    )
+}
+```
+
+### Per-Column DateTime Format
+
+For CSV files with mixed datetime formats, specify formats for individual columns:
+
+```powershool
+@{
+    # Template-level format (fallback for columns without specific format)
+    DateTimeFormat = 'dd/MM/yyyy'
+    
+    ColumnMappings = @(
+        @{
+            CsvColumn = 'DOB'
+            PropertyName = 'DOB'
+            DataType = 'datetime'
+            DateTimeFormat = 'dd/MM/yyyy'  # UK format: 31/12/1999
+        },
+        @{
+            CsvColumn = 'EntryDate'
+            PropertyName = 'EntryDate' 
+            DataType = 'datetime'
+            DateTimeFormat = 'M/d/yy'      # US short format: 12/31/99
+        },
+        @{
+            CsvColumn = 'ExitDate'
+            PropertyName = 'ExitDate'
+            DataType = 'datetime'
+            DateTimeFormat = 'M/d/yyyy'    # US long format: 12/31/1999
+        }
+    )
+}
+```
+
+### Format Precedence
+
+The datetime parsing uses this precedence:
+1. **Column-specific format**: If `DateTimeFormat` is specified in the column mapping
+2. **Template-level format**: If `DateTimeFormat` is specified at the template level
+3. **Auto-parsing**: Falls back to PowerShell's default `[DateTime]::Parse()` method
+
+### Common DateTime Formats
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| `dd/MM/yyyy` | 31/12/2023 | Day/Month/Year (UK/EU format) |
+| `MM/dd/yyyy` | 12/31/2023 | Month/Day/Year (US format) |
+| `M/d/yyyy` | 12/31/2023 | Month/Day/Year (no leading zeros) |
+| `M/d/yy` | 12/31/23 | Month/Day/Year (2-digit year) |
+| `yyyy-MM-dd` | 2023-12-31 | ISO format |
+| `dd-MMM-yyyy` | 31-Dec-2023 | Day-Month-Year with month name |
+
+### Error Handling
+
+When datetime parsing fails:
+- A warning is displayed showing the failed value and expected format
+- The datetime field is set to `DateTime.MinValue` (0001-01-01)
+- Processing continues with other records
+
+Example warning:
+```
+WARNING: Failed to convert '31/12/1999' to datetime using column format 'MM/dd/yyyy' for property DOB
+```
 - Priority order
 - Primary status
 

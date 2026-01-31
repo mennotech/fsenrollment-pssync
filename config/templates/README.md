@@ -12,8 +12,13 @@ A template configuration contains:
 - **TemplateName**: Unique identifier for the template
 - **Description**: Human-readable description of the template
 - **EntityType**: PowerShell class name for the entity (e.g., 'PSStudent', 'PSNormalizedData')
+- **DateTimeFormat**: (Optional) DateTime format string for parsing date fields (e.g., 'MM/dd/yyyy', 'dd/MM/yyyy')
+- **KeyField**: Entity property used for matching records between CSV and PowerSchool
+- **PowerSchoolKeyField**: PowerSchool API field that corresponds to the KeyField (e.g., 'local_id')
+- **PowerSchoolKeyDataType**: Data type for the PowerSchool key field (e.g., 'int', 'string')
+- **CheckForChanges**: Array of entity properties to monitor for changes during comparison
 - **CustomParser**: (Optional) Name of a custom parser function for complex CSV formats
-- **ColumnMappings**: Column mappings from CSV to entity properties
+- **ColumnMappings**: Column mappings from CSV to entity properties with PowerSchool API field paths
   - For simple formats: Array of mappings (EntityType inherited from template)
   - For complex formats: Hashtable organized by entity type
 - **EntityTypeMap**: (Optional, for complex formats) Maps hashtable keys to EntityType class names
@@ -27,10 +32,22 @@ For simple CSV formats with one entity per row, use column mappings with EntityT
     TemplateName = 'template_name'
     Description = 'Template description'
     EntityType = 'PSStudent'
+    # DateTime format for parsing date fields (adjust based on FinalSite location settings)
+    DateTimeFormat = 'MM/dd/yyyy'  # US format, use 'dd/MM/yyyy' for international
+    # Key field for matching records between CSV and PowerSchool
+    KeyField = 'StudentNumber'
+    PowerSchoolKeyField = 'local_id'
+    PowerSchoolKeyDataType = 'int'
+    # Fields to check for changes during comparison
+    CheckForChanges = @('FirstName', 'MiddleName', 'LastName', 'Street', 'City', 'State', 'Zip')
     CustomParser = $null
     # EntityType is inherited from template-level setting for all mappings
+    # PowerSchoolAPIField defines the API path for syncing changes back to PowerSchool
     ColumnMappings = @(
-        @{ CSVColumn = 'CSV_Column_Name'; EntityProperty = 'PropertyName'; DataType = 'string' }
+        @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; DataType = 'string'; PowerSchoolAPIField = 'local_id'; PowerSchoolDataType = 'int' }
+        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolAPIField = 'name.first_name' }
+        @{ CSVColumn = 'DOB'; EntityProperty = 'DOB'; DataType = 'datetime'; PowerSchoolAPIField = '@demographics.birth_date' }
+        @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string'; PowerSchoolAPIField = '@addresses.physical.street' }
         # ... more mappings (no EntityType needed in each mapping)
     )
 }
@@ -46,6 +63,8 @@ For complex CSV formats (multi-row, conditional logic, etc.), create a custom pa
     TemplateName = 'template_name'
     Description = 'Template description'
     EntityType = 'PSNormalizedData'
+    # DateTime format for parsing date fields
+    DateTimeFormat = 'MM/dd/yyyy'
     CustomParser = 'Import-CustomParserFunction'
     # EntityTypeMap defines entity types for hashtable keys
     EntityTypeMap = @{
@@ -198,6 +217,74 @@ To add support for a new CSV format:
     )
 }
 ```
+
+## PowerSchool API Field Mapping
+
+### PowerSchoolAPIField Syntax
+
+The `PowerSchoolAPIField` property in column mappings defines how the field maps to PowerSchool's API structure. This is critical for:
+1. **Change detection**: Comparing CSV data with PowerSchool API responses
+2. **Change application**: Syncing updates back to PowerSchool via API
+3. **Automatic expansion detection**: System automatically detects required API expansions
+
+**Syntax Options:**
+
+1. **Standard fields** (top-level API fields):
+   ```powershell
+   PowerSchoolAPIField = 'local_id'
+   PowerSchoolAPIField = 'student_number'
+   ```
+
+2. **Nested fields** (dot notation for nested objects):
+   ```powershell
+   PowerSchoolAPIField = 'name.first_name'
+   PowerSchoolAPIField = 'name.middle_name'
+   PowerSchoolAPIField = 'name.last_name'
+   ```
+
+3. **Expansion fields** (prefix with `@` - requires API expansion parameter):
+   ```powershell
+   PowerSchoolAPIField = '@demographics.birth_date'
+   PowerSchoolAPIField = '@demographics.gender'
+   PowerSchoolAPIField = '@addresses.physical.street'
+   PowerSchoolAPIField = '@addresses.physical.city'
+   PowerSchoolAPIField = '@addresses.mailing.street'
+   ```
+   When the system detects `@addresses` fields, it automatically adds `addresses` to the expansions parameter.
+
+4. **Extension fields** (custom PowerSchool extensions):
+   ```powershell
+   PowerSchoolAPIField = 'extension.u_students_extension.legal_first_name'
+   PowerSchoolAPIField = 'extension.studentcorefields.state_studentnumber'
+   ```
+   When the system detects `extension.table_name` fields, it automatically adds `table_name` to the extensions parameter.
+
+### Automatic Expansion/Extension Detection
+
+The `Get-RequiredPowerSchoolFields` function analyzes your template's `PowerSchoolAPIField` mappings and automatically determines which expansions and extensions are required:
+
+```powershell
+$csvData = Import-FSCsv -Path './students.csv' -TemplateName 'your_template'
+$required = Get-RequiredPowerSchoolFields -TemplateMetadata $csvData.TemplateMetadata
+# Returns: @{ Extensions = @('u_students_extension'); Expansions = @('demographics', 'addresses') }
+
+$psStudents = Get-PowerSchoolStudent -All `
+    -Extensions $required.Extensions `
+    -Expansions $required.Expansions
+```
+
+### CheckForChanges Configuration
+
+The `CheckForChanges` array specifies which entity properties should be monitored for differences during comparison:
+
+```powershell
+CheckForChanges = @('FirstName', 'MiddleName', 'LastName', 'Street', 'City', 'State', 'Zip')
+```
+
+- Only fields listed in `CheckForChanges` are compared between CSV and PowerSchool data
+- If a field changes, it's included in the `Updated` results from `Compare-PSStudent`
+- Fields must have `PowerSchoolAPIField` mappings to be properly compared and synced
+- Add all fields you want to monitor, including address, demographic, and enrollment fields
 
 ## Data Type Conversion
 

@@ -2,6 +2,23 @@
 
 This document provides examples of how to use the CSV parsing functions to import and normalize Final Site Enrollment data.
 
+## DateTime Format Configuration
+
+**Note**: As of January 2026, the module supports configurable datetime formats to handle different FinalSite location settings. See [DateTime-Format-Configuration.md](DateTime-Format-Configuration.md) for detailed configuration instructions.
+
+### Quick DateTime Format Setup
+
+```powershell
+# Configure your template for US format (MM/dd/yyyy)
+DateTimeFormat = 'MM/dd/yyyy'
+
+# Configure for International format (dd/MM/yyyy)
+DateTimeFormat = 'dd/MM/yyyy'
+
+# Configure for ISO format (yyyy-MM-dd)
+DateTimeFormat = 'yyyy-MM-dd'
+```
+
 ## Basic Usage
 
 ### Importing Students
