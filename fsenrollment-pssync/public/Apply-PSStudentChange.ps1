@@ -92,11 +92,13 @@ function Apply-PSStudentChange {
     begin {
         Write-Verbose "Starting Apply-PSStudentChange"
         
-        # Check if connected to PowerSchool
-        if (-not $script:PowerSchoolConnection -or -not $script:PowerSchoolConnection.AccessToken) {
-            throw "Not connected to PowerSchool. Please run Connect-PowerSchool first."
+        # Check if connected to PowerSchool (skip for WhatIf to allow preview without connection)
+        if (-not $WhatIf) {
+            if (-not $script:PowerSchoolToken -or -not $script:PowerSchoolBaseUrl) {
+                throw "Not connected to PowerSchool. Please run Connect-PowerSchool first."
+            }
         }
-
+        
         # Initialize result tracking
         $script:ApplyResults = [PSCustomObject]@{
             NewStudentsApplied = 0
@@ -149,20 +151,28 @@ function Apply-PSStudentChange {
                     $student = $newStudent.Student
                     $matchKey = $newStudent.MatchKey
                     
+                    # Build student payload for API (always build for WhatIf display)
+                    $payload = Build-StudentPayload -Student $student
+                    
                     if ($PSCmdlet.ShouldProcess("New Student: $matchKey ($($student.FirstName) $($student.LastName))", "Create in PowerSchool")) {
-                        Write-Verbose "Creating new student: $matchKey"
-                        
-                        # Build student payload for API
-                        $payload = Build-StudentPayload -Student $student
-                        
-                        # Make API call to create student
-                        $result = Invoke-CreateStudent -Payload $payload -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
-                        
-                        if ($result.Success) {
-                            $script:ApplyResults.NewStudentsApplied++
-                            Write-Host "✓ Created new student: $matchKey ($($student.FirstName) $($student.LastName))" -ForegroundColor Green
+                        if ($WhatIf) {
+                            Write-Host "`n=== WHATIF: New Student Creation ===" -ForegroundColor Cyan
+                            Write-Host "Student: $matchKey ($($student.FirstName) $($student.LastName))" -ForegroundColor Yellow
+                            Write-Host "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/v1/student" -ForegroundColor Gray
+                            Write-Host "API Payload:" -ForegroundColor Gray
+                            Write-Host ($payload | ConvertTo-Json -Depth 10) -ForegroundColor White
                         } else {
-                            throw $result.Error
+                            Write-Verbose "Creating new student: $matchKey"
+                            
+                            # Make API call to create student
+                            $result = Invoke-CreateStudent -Payload $payload -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
+                            
+                            if ($result.Success) {
+                                $script:ApplyResults.NewStudentsApplied++
+                                Write-Host "✓ Created new student: $matchKey ($($student.FirstName) $($student.LastName))" -ForegroundColor Green
+                            } else {
+                                throw $result.Error
+                            }
                         }
                     }
                 }
@@ -194,6 +204,10 @@ function Apply-PSStudentChange {
                 try {
                     $matchKey = $updatedStudent.MatchKey
                     $changes = $updatedStudent.Changes
+                    # Handle both single change object and array of changes
+                    if ($changes -and -not ($changes -is [array])) {
+                        $changes = @($changes)
+                    }
                     $psStudent = $updatedStudent.PowerSchoolStudent
                     
                     # Get student DCID for update
@@ -202,23 +216,38 @@ function Apply-PSStudentChange {
                         throw "PowerSchool student DCID not found for $matchKey"
                     }
                     
+                    # Build update payload (always build for WhatIf display)
+                    $payload = Build-UpdatePayload -Changes $changes -StudentDCID $dcid
+                    
                     if ($PSCmdlet.ShouldProcess("Student: $matchKey (DCID: $dcid) - $($changes.Count) changes", "Update in PowerSchool")) {
-                        Write-Verbose "Updating student: $matchKey (DCID: $dcid) with $($changes.Count) changes"
-                        
-                        # Build update payload
-                        $payload = Build-UpdatePayload -Changes $changes -StudentDCID $dcid
-                        
-                        # Make API call to update student
-                        $result = Invoke-UpdateStudent -DCID $dcid -Payload $payload -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
-                        
-                        if ($result.Success) {
-                            $script:ApplyResults.UpdatedStudentsApplied++
-                            Write-Host "✓ Updated student: $matchKey (DCID: $dcid) - $($changes.Count) fields" -ForegroundColor Cyan
+                        if ($WhatIf) {
+                            Write-Host "`n=== WHATIF: Student Update ===" -ForegroundColor Cyan
+                            Write-Host "Student: $matchKey (DCID: $dcid)" -ForegroundColor Yellow
+                            Write-Host "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/v1/student" -ForegroundColor Gray
+                            Write-Host "Field Changes:" -ForegroundColor Gray
                             foreach ($change in $changes) {
-                                Write-Verbose "  $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
+                                Write-Host "  $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'" -ForegroundColor White
+                                if ($change.PowerSchoolAPIField) {
+                                    Write-Host "    (API Field: $($change.PowerSchoolAPIField))" -ForegroundColor DarkGray
+                                }
                             }
+                            Write-Host "API Payload:" -ForegroundColor Gray
+                            Write-Host ($payload | ConvertTo-Json -Depth 10) -ForegroundColor White
                         } else {
-                            throw $result.Error
+                            Write-Verbose "Updating student: $matchKey (DCID: $dcid) with $($changes.Count) changes"
+                            
+                            # Make API call to update student
+                            $result = Invoke-UpdateStudent -DCID $dcid -Payload $payload -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
+                            
+                            if ($result.Success) {
+                                $script:ApplyResults.UpdatedStudentsApplied++
+                                Write-Host "✓ Updated student: $matchKey (DCID: $dcid) - $($changes.Count) fields" -ForegroundColor Cyan
+                                foreach ($change in $changes) {
+                                    Write-Verbose "  $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
+                                }
+                            } else {
+                                throw $result.Error
+                            }
                         }
                     }
                 }
@@ -288,7 +317,10 @@ function Build-StudentPayload {
     # Build basic student object
     $payload = @{
         students = @{
-            student = @{}
+            student = @{
+                client_uid = $Student.StudentNumber  # Use StudentNumber as client_uid
+                action = "INSERT"
+            }
         }
     }
 
@@ -370,6 +402,8 @@ function Build-UpdatePayload {
     $payload = @{
         students = @{
             student = @{
+                client_uid = $StudentDCID.ToString()  # Use DCID as client_uid
+                action = "UPDATE"
                 id = $StudentDCID
             }
         }
@@ -488,13 +522,16 @@ function Invoke-CreateStudent {
         # Ensure connection is valid
         Test-PowerSchoolConnection
 
+        # Get access token
+        $accessToken = Get-PowerSchoolAccessToken
+        
         $headers = @{
-            'Authorization' = "Bearer $($script:PowerSchoolConnection.AccessToken)"
+            'Authorization' = "Bearer $accessToken"
             'Content-Type' = 'application/json'
             'Accept' = 'application/json'
         }
 
-        $uri = "$($script:PowerSchoolConnection.BaseUrl)/ws/v1/student"
+        $uri = "$script:PowerSchoolBaseUrl/ws/v1/student"
 
         Write-Verbose "POST $uri"
         
@@ -540,14 +577,17 @@ function Invoke-UpdateStudent {
         # Ensure connection is valid
         Test-PowerSchoolConnection
 
+        # Get access token
+        $accessToken = Get-PowerSchoolAccessToken
+        
         $headers = @{
-            'Authorization' = "Bearer $($script:PowerSchoolConnection.AccessToken)"
+            'Authorization' = "Bearer $accessToken"
             'Content-Type' = 'application/json'
             'Accept' = 'application/json'
         }
 
-        # PowerSchool uses POST to /ws/v1/student for updates (not PUT/PATCH)
-        $uri = "$($script:PowerSchoolConnection.BaseUrl)/ws/v1/student"
+        # PowerSchool uses POST to /ws/v1/student with action=UPDATE and id in payload
+        $uri = "$script:PowerSchoolBaseUrl/ws/v1/student"
 
         Write-Verbose "POST $uri (Update student DCID: $DCID)"
         
