@@ -50,8 +50,12 @@ function Get-PowerSchoolFieldMapping {
     }
 
     # Fallback to default field mappings for common student and contact fields
+    # NOTE: These defaults are for Student API (v1) which uses nested structures.
+    # Contact API templates should define their own ColumnMappings in TemplateMetadata
+    # using flat field names (firstName, middleName, lastName instead of name.first_name, etc.)
+    # These defaults are only used when TemplateMetadata is not provided or incomplete.
     $defaultFieldMapping = @{
-        # Student fields (use nested structure for v1 API)
+        # Student-specific fields (use nested structure for v1 API)
         'StudentNumber' = 'local_id'
         'SchoolID' = 'school_id'
         'GradeLevel' = 'grade_level'
@@ -71,15 +75,13 @@ function Get-PowerSchoolFieldMapping {
         'FamilyIdent' = 'family_ident'
         'TransferComment' = 'transfer_comment'
         
-        # Shared fields - context determines API structure
-        # For Student API (v1): these use name.first_name pattern
-        # For Contact API (contacts): these use firstName pattern (flat)
-        'FirstName' = 'name.first_name'  # Default to student pattern
+        # Shared name fields - defaults use Student API pattern (nested under 'name')
+        'FirstName' = 'name.first_name'
         'MiddleName' = 'name.middle_name'
         'LastName' = 'name.last_name'
         'Gender' = 'gender'
         
-        # Contact-specific fields (flat structure for Contact API)
+        # Contact-specific fields (flat structure)
         'Prefix' = 'prefix'
         'Suffix' = 'suffix'
         'Employer' = 'employer'

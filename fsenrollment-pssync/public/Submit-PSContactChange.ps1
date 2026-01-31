@@ -226,9 +226,9 @@ function Submit-PSContactChange {
                         foreach ($key in ($contactData.Keys | Where-Object { $_ -notin @('action') } | Sort-Object)) {
                             $value = $contactData[$key]
                             if ($null -ne $value -and $value -ne '') {
-                                # Format the field name for display
-                                $displayName = ($key -replace '_', ' ').ToUpper()
-                                $displayName = (Get-Culture).TextInfo.ToTitleCase($displayName.ToLower())
+                                # Format the field name for display (convert to title case)
+                                $uppercaseKey = ($key -replace '_', ' ').ToUpper()
+                                $displayName = (Get-Culture).TextInfo.ToTitleCase($uppercaseKey.ToLower())
                                 Write-Host "  ${displayName}: $value" -ForegroundColor White
                             }
                         }
@@ -309,7 +309,11 @@ function Submit-PSContactChange {
                     
                     # Build update payload (always build for detailed display)
                     $payload = Build-ContactUpdatePayload -Changes $changes -ContactID $contactId -PowerSchoolPerson $psPerson -TemplateMetadata $TemplateMetadata
-                    $updateMessage = "Contact: $matchKey (ContactID: $contactId) Name: $($psPerson.person_firstname) $($psPerson.person_middlename) $($psPerson.person_lastname) - $($changes.Count) changes Fields: $($changes.Field -join ', ')"
+                    
+                    # Build readable update message
+                    $contactName = "$($psPerson.person_firstname) $($psPerson.person_middlename) $($psPerson.person_lastname)".Trim()
+                    $changedFields = $changes.Field -join ', '
+                    $updateMessage = "Contact: $matchKey (ContactID: $contactId) Name: $contactName - $($changes.Count) changes Fields: $changedFields"
                     if ($WhatIfPreference) {
                         Write-Verbose "API Endpoint: PUT $($script:PowerSchoolBaseUrl)/ws/contacts/contact/$contactId/demographics"
                         Write-Verbose "Field Changes ($($changes.Count) total):"
