@@ -1,12 +1,12 @@
-# Apply-PSStudentChange Implementation Summary
+# Submit-PSStudentChange Implementation Summary
 
 ## Overview
-Successfully implemented the `Apply-PSStudentChange` function to apply student changes to PowerSchool database based on output from `Compare-PSStudent`.
+Successfully implemented the `Submit-PSStudentChange` function to apply student changes to PowerSchool database based on output from `Compare-PSStudent`.
 
 ## What Was Implemented
 
-### Main Function: Apply-PSStudentChange
-Located in: `fsenrollment-pssync/public/Apply-PSStudentChange.ps1`
+### Main Function: Submit-PSStudentChange
+Located in: `fsenrollment-pssync/public/Submit-PSStudentChange.ps1`
 
 **Key Features:**
 - ✅ Reads changes from memory object or JSON file
@@ -20,7 +20,7 @@ Located in: `fsenrollment-pssync/public/Apply-PSStudentChange.ps1`
 - ✅ Comprehensive result object with success/failure statistics
 
 ### Testing
-Located in: `fsenrollment-pssync/tests/Apply-PSStudentChange.Tests.ps1`
+Located in: `fsenrollment-pssync/tests/Submit-PSStudentChange.Tests.ps1`
 
 **Test Coverage:**
 - ✅ 23 comprehensive Pester tests
@@ -29,7 +29,7 @@ Located in: `fsenrollment-pssync/tests/Apply-PSStudentChange.Tests.ps1`
 - ✅ Tests cover success, failure, retry, limits, WhatIf, and error scenarios
 
 ### Documentation
-Located in: `docs/Apply-PSStudentChange-Usage.md`
+Located in: `docs/Submit-PSStudentChange-Usage.md`
 
 **Includes:**
 - Complete workflow examples
@@ -52,16 +52,16 @@ $changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psStudents
 $changes | ConvertTo-Json -Depth 10 | Out-File './data/pending_changes.json'
 
 # 4. Test with limited changes and WhatIf
-Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf
+Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf
 
 # 5. Apply test batch
-$result = Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5
+$result = Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5
 
 # 6. Review results
 Write-Host "Applied: $($result.Summary.TotalApplied), Failed: $($result.Summary.TotalFailed)"
 
 # 7. Apply all changes (after verifying test results)
-$fullResult = Apply-PSStudentChange -JsonPath './data/pending_changes.json'
+$fullResult = Submit-PSStudentChange -JsonPath './data/pending_changes.json'
 ```
 
 ## Testing with Live Data
@@ -74,10 +74,10 @@ $fullResult = Apply-PSStudentChange -JsonPath './data/pending_changes.json'
 
 ```powershell
 # Safe testing approach
-Apply-PSStudentChange -JsonPath './changes.json' -Limit 5 -WhatIf  # Preview
-$test = Apply-PSStudentChange -JsonPath './changes.json' -Limit 5  # Test batch
+Submit-PSStudentChange -JsonPath './changes.json' -Limit 5 -WhatIf  # Preview
+$test = Submit-PSStudentChange -JsonPath './changes.json' -Limit 5  # Test batch
 # Review $test results carefully
-$all = Apply-PSStudentChange -JsonPath './changes.json'  # Full run
+$all = Submit-PSStudentChange -JsonPath './changes.json'  # Full run
 ```
 
 ## Mock API for Unit Testing
@@ -97,7 +97,7 @@ This approach allows:
 - Fast test execution
 - No risk to live data
 
-See `Apply-PSStudentChange.Tests.ps1` for complete mock examples.
+See `Submit-PSStudentChange.Tests.ps1` for complete mock examples.
 
 ## Limitations & Future Work
 
@@ -117,7 +117,7 @@ See `Apply-PSStudentChange.Tests.ps1` for complete mock examples.
 The function continues processing after errors and returns details:
 
 ```powershell
-$result = Apply-PSStudentChange -Changes $changes
+$result = Submit-PSStudentChange -Changes $changes
 
 if ($result.FailedChanges.Count -gt 0) {
     # Export failed changes for investigation
@@ -138,7 +138,7 @@ if ($result.FailedChanges.Count -gt 0) {
 
 ## Next Steps for User
 
-1. **Review the Implementation**: Examine the code in `Apply-PSStudentChange.ps1`
+1. **Review the Implementation**: Examine the code in `Submit-PSStudentChange.ps1`
 2. **Test with Sample Data**: Use the mock tests as a reference
 3. **Test with Live Data**: Start with `-WhatIf` and `-Limit 5`
 4. **Provide Feedback**: Report any issues or suggested improvements
@@ -149,20 +149,20 @@ if ($result.FailedChanges.Count -gt 0) {
 ```
 fsenrollment-pssync/
 ├── public/
-│   └── Apply-PSStudentChange.ps1          (NEW - 665 lines)
+│   └── Submit-PSStudentChange.ps1          (NEW - 665 lines)
 ├── tests/
-│   ├── Apply-PSStudentChange.Tests.ps1    (NEW - 655 lines)
+│   ├── Submit-PSStudentChange.Tests.ps1    (NEW - 655 lines)
 │   └── Get-PowerSchoolStudent.Tests.ps1   (MODIFIED - test fix)
 ├── FSEnrollment-PSSync.psd1               (MODIFIED - added export)
 docs/
-└── Apply-PSStudentChange-Usage.md         (NEW - complete guide)
+└── Submit-PSStudentChange-Usage.md         (NEW - complete guide)
 ```
 
 ## Support
 
 For issues or questions:
-1. Check the usage documentation: `docs/Apply-PSStudentChange-Usage.md`
-2. Review test examples: `tests/Apply-PSStudentChange.Tests.ps1`
+1. Check the usage documentation: `docs/Submit-PSStudentChange-Usage.md`
+2. Review test examples: `tests/Submit-PSStudentChange.Tests.ps1`
 3. Enable verbose output: Add `-Verbose` parameter
 4. Check PowerSchool API logs for server-side issues
 

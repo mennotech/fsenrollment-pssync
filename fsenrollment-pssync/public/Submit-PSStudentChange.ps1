@@ -47,28 +47,28 @@
 .EXAMPLE
     # Apply all changes from a comparison result
     $changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psData
-    $result = Apply-PSStudentChange -Changes $changes
+    $result = Submit-PSStudentChange -Changes $changes
     Write-Host "Applied $($result.NewStudentsApplied) new and $($result.UpdatedStudentsApplied) updated students"
 
 .EXAMPLE
     # Apply changes from a JSON file with a limit for testing
-    $result = Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5
+    $result = Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5
     Write-Host "Test run: Applied $($result.Summary.TotalApplied) of 5 changes"
 
 .EXAMPLE
     # Dry run to preview changes without applying them
-    Apply-PSStudentChange -JsonPath './data/pending_changes.json' -WhatIf
+    Submit-PSStudentChange -JsonPath './data/pending_changes.json' -WhatIf
 
 .EXAMPLE
     # Apply changes with custom retry settings
-    Apply-PSStudentChange -Changes $changes -MaxRetries 5 -RetryDelaySeconds 10
+    Submit-PSStudentChange -Changes $changes -MaxRetries 5 -RetryDelaySeconds 10
 
 .NOTES
     Requires an active PowerSchool connection (Connect-PowerSchool must be called first).
     Uses the PowerSchool API v1 endpoints for creating and updating students.
     Only applies changes to student demographic fields, not contact information.
 #>
-function Apply-PSStudentChange {
+function Submit-PSStudentChange {
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Object')]
     param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Object', ValueFromPipeline = $true)]
@@ -90,7 +90,7 @@ function Apply-PSStudentChange {
     )
 
     begin {
-        Write-Verbose "Starting Apply-PSStudentChange"
+        Write-Verbose "Starting Submit-PSStudentChange"
         
         # Check if connected to PowerSchool (skip for WhatIf to allow preview without connection)
         if (-not $WhatIfPreference) {
@@ -300,7 +300,7 @@ function Apply-PSStudentChange {
             Write-Warning "`nSome changes failed. Check FailedChanges property for details."
         }
 
-        Write-Verbose "Apply-PSStudentChange completed"
+        Write-Verbose "Submit-PSStudentChange completed"
         
         return $result
     }

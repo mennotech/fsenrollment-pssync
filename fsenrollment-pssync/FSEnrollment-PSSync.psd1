@@ -52,7 +52,7 @@
         'Get-PowerSchoolStudent'
         'Compare-PSStudent'
         'Compare-PSContact'
-        'Apply-PSStudentChange'
+        'Submit-PSStudentChange'
         'Get-RequiredPowerSchoolFields'
         'Invoke-PowerQuery'
     )

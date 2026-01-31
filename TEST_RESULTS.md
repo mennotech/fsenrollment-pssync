@@ -2,7 +2,7 @@
 
 ## Test Run Summary - January 30, 2026
 
-### Apply-PSStudentChange Tests
+### Submit-PSStudentChange Tests
 **Status**: ✅ **ALL PASSING**  
 **Result**: 23 passed, 0 failed
 
@@ -56,7 +56,7 @@
 
 ### Other Test Files Status
 - ✅ Connect-PowerSchool.Tests.ps1: 11/11 passing
-- ⚠️ Compare-PSStudent.Tests.ps1: 0/15 passing (pre-existing failures, not related to Apply-PSStudentChange)
+- ⚠️ Compare-PSStudent.Tests.ps1: 0/15 passing (pre-existing failures, not related to Submit-PSStudentChange)
 
 ### Recommendations for Testing with Live Data
 
@@ -84,4 +84,4 @@ This allows testing without a live PowerSchool connection and ensures repeatable
 - Platform: Linux
 
 **Last Updated:** January 30, 2026  
-**Test Run Duration:** ~2 seconds for Apply-PSStudentChange tests
+**Test Run Duration:** ~2 seconds for Submit-PSStudentChange tests

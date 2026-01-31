@@ -1,6 +1,6 @@
 # PowerSchool Student API - Implementation Guide
 
-This document describes the actual implementation of the PowerSchool Student API integration based on the working code in `Apply-PSStudentChange`.
+This document describes the actual implementation of the PowerSchool Student API integration based on the working code in `Submit-PSStudentChange`.
 
 ## API Endpoint
 
@@ -201,7 +201,7 @@ The implementation includes automatic retry logic with exponential backoff:
 ### Configuration
 
 ```powershell
-Apply-PSStudentChange -Changes $changes `
+Submit-PSStudentChange -Changes $changes `
     -MaxRetries 5 `
     -RetryDelaySeconds 10
 ```
@@ -220,10 +220,10 @@ $psStudents = Get-PowerSchoolStudent -All
 $changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psStudents
 
 # 3. Preview changes (no connection required for WhatIf)
-Apply-PSStudentChange -Changes $changes -WhatIf
+Submit-PSStudentChange -Changes $changes -WhatIf
 
 # 4. Apply changes
-$result = Apply-PSStudentChange -Changes $changes
+$result = Submit-PSStudentChange -Changes $changes
 ```
 
 ### WhatIf Mode
@@ -231,7 +231,7 @@ $result = Apply-PSStudentChange -Changes $changes
 WhatIf mode shows the exact API calls that would be made without requiring a PowerSchool connection:
 
 ```powershell
-Apply-PSStudentChange -Changes $changes -WhatIf
+Submit-PSStudentChange -Changes $changes -WhatIf
 ```
 
 **Output Example**:
@@ -264,10 +264,10 @@ Test with a small batch before applying all changes:
 
 ```powershell
 # Test with first 5 changes
-Apply-PSStudentChange -Changes $changes -Limit 5
+Submit-PSStudentChange -Changes $changes -Limit 5
 
 # If successful, apply the rest
-Apply-PSStudentChange -Changes $changes
+Submit-PSStudentChange -Changes $changes
 ```
 
 ## Implementation Details
@@ -355,10 +355,10 @@ If you encounter HTTP 429 errors frequently:
 
 ```powershell
 # Increase retry delay
-Apply-PSStudentChange -Changes $changes -RetryDelaySeconds 10
+Submit-PSStudentChange -Changes $changes -RetryDelaySeconds 10
 
 # Process in smaller batches
-Apply-PSStudentChange -Changes $changes -Limit 10
+Submit-PSStudentChange -Changes $changes -Limit 10
 ```
 
 ### Validation Errors (HTTP 422)
@@ -366,7 +366,7 @@ Apply-PSStudentChange -Changes $changes -Limit 10
 Check the error details in the result object:
 
 ```powershell
-$result = Apply-PSStudentChange -Changes $changes
+$result = Submit-PSStudentChange -Changes $changes
 
 if ($result.FailedChanges.Count -gt 0) {
     $result.FailedChanges | ForEach-Object {
@@ -379,5 +379,5 @@ if ($result.FailedChanges.Count -gt 0) {
 ## References
 
 - PowerSchool API Documentation: Contact your PowerSchool administrator
-- Module Documentation: See `docs/Apply-PSStudentChange-Usage.md`
-- Test Examples: See `fsenrollment-pssync/tests/Apply-PSStudentChange.Tests.ps1`
+- Module Documentation: See `docs/Submit-PSStudentChange-Usage.md`
+- Test Examples: See `fsenrollment-pssync/tests/Submit-PSStudentChange.Tests.ps1`

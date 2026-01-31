@@ -1,6 +1,6 @@
-# Apply-PSStudentChange Usage Examples
+# Submit-PSStudentChange Usage Examples
 
-This document demonstrates how to use the `Apply-PSStudentChange` function to apply student changes detected by `Compare-PSStudent` to PowerSchool.
+This document demonstrates how to use the `Submit-PSStudentChange` function to apply student changes detected by `Compare-PSStudent` to PowerSchool.
 
 ## Prerequisites
 
@@ -36,7 +36,7 @@ $changes = Compare-PSStudent -CsvData $csvData -PowerSchoolData $psStudents
 Write-Host "Found $($changes.Summary.NewCount) new and $($changes.Summary.UpdatedCount) updated students"
 
 # Apply changes to PowerSchool
-$result = Apply-PSStudentChange -Changes $changes
+$result = Submit-PSStudentChange -Changes $changes
 
 # Review results
 Write-Host "Successfully applied $($result.Summary.TotalApplied) changes"
@@ -59,7 +59,7 @@ Write-Host "Changes exported to pending_changes.json for review"
 # Open and review ./data/pending_changes.json
 
 # Step 3: Apply changes after approval
-$result = Apply-PSStudentChange -JsonPath './data/pending_changes.json'
+$result = Submit-PSStudentChange -JsonPath './data/pending_changes.json'
 ```
 
 ### 3. Testing with Live Data (Limited Changes)
@@ -68,10 +68,10 @@ When first testing with live PowerSchool data, use the `-Limit` parameter to app
 
 ```powershell
 # Test with just 5 changes using WhatIf first
-Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf
+Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf
 
 # If WhatIf looks good, apply the test batch
-$testResult = Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5
+$testResult = Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5
 
 # Review the results carefully
 Write-Host "Test Results:"
@@ -83,9 +83,9 @@ Write-Host "  Failed: $($testResult.Summary.TotalFailed)"
 # (New students first, then Updates). Consider one of these approaches:
 
 # Option 1: Test with WhatIf, then apply all at once
-Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf
+Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Limit 5 -WhatIf
 # Review output, then apply all changes
-Apply-PSStudentChange -JsonPath './data/pending_changes.json'
+Submit-PSStudentChange -JsonPath './data/pending_changes.json'
 
 # Option 2: Export separate test and production change files
 # Process and review a subset, then process remaining separately
@@ -100,7 +100,7 @@ Use `-WhatIf` to preview what would be changed without actually making changes:
 
 ```powershell
 # Preview changes without applying them
-Apply-PSStudentChange -JsonPath './data/pending_changes.json' -WhatIf
+Submit-PSStudentChange -JsonPath './data/pending_changes.json' -WhatIf
 
 # Output will show what would be changed
 # Example: "What if: Performing the operation "Create in PowerSchool" on target "New Student: 123456 (John Doe)"."
@@ -114,7 +114,7 @@ For unreliable network connections or heavily loaded PowerSchool servers:
 
 ```powershell
 # Apply with increased retry attempts and longer delays
-$result = Apply-PSStudentChange -Changes $changes `
+$result = Submit-PSStudentChange -Changes $changes `
     -MaxRetries 5 `
     -RetryDelaySeconds 10
 ```
@@ -129,7 +129,7 @@ $newStudentsOnly = [PSCustomObject]@{
     Summary = $changes.Summary
 }
 
-$result = Apply-PSStudentChange -Changes $newStudentsOnly
+$result = Submit-PSStudentChange -Changes $newStudentsOnly
 Write-Host "Created $($result.NewStudentsApplied) new students"
 ```
 
@@ -143,7 +143,7 @@ $updatesOnly = [PSCustomObject]@{
     Summary = $changes.Summary
 }
 
-$result = Apply-PSStudentChange -Changes $updatesOnly
+$result = Submit-PSStudentChange -Changes $updatesOnly
 Write-Host "Updated $($result.UpdatedStudentsApplied) students"
 ```
 
@@ -164,7 +164,7 @@ $processed = 0
 while ($processed -lt ($totalNew + $totalUpdated)) {
     Write-Host "Processing batch starting at $processed..."
     
-    $result = Apply-PSStudentChange -Changes $allChanges -Limit $batchSize
+    $result = Submit-PSStudentChange -Changes $allChanges -Limit $batchSize
     $processed += $result.Summary.TotalApplied
     
     # Save checkpoint
@@ -186,7 +186,7 @@ while ($processed -lt ($totalNew + $totalUpdated)) {
 ### Review Failed Changes
 
 ```powershell
-$result = Apply-PSStudentChange -JsonPath './data/pending_changes.json'
+$result = Submit-PSStudentChange -JsonPath './data/pending_changes.json'
 
 if ($result.FailedChanges.Count -gt 0) {
     Write-Warning "Some changes failed to apply"
@@ -216,7 +216,7 @@ $retryChanges = [PSCustomObject]@{
 }
 
 # Retry with more aggressive retry settings
-$retryResult = Apply-PSStudentChange -Changes $retryChanges `
+$retryResult = Submit-PSStudentChange -Changes $retryChanges `
     -MaxRetries 5 `
     -RetryDelaySeconds 10
 ```
@@ -282,15 +282,15 @@ If you encounter rate limiting (HTTP 429 errors), the function will automaticall
 
 ```powershell
 # Reduce batch size
-Apply-PSStudentChange -Changes $changes -Limit 10
+Submit-PSStudentChange -Changes $changes -Limit 10
 
 # Increase retry settings
-Apply-PSStudentChange -Changes $changes -MaxRetries 5 -RetryDelaySeconds 10
+Submit-PSStudentChange -Changes $changes -MaxRetries 5 -RetryDelaySeconds 10
 ```
 
 ### Viewing Detailed Progress
 
 ```powershell
 # Enable verbose output for detailed progress
-Apply-PSStudentChange -JsonPath './data/pending_changes.json' -Verbose
+Submit-PSStudentChange -JsonPath './data/pending_changes.json' -Verbose
 ```

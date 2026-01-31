@@ -7,7 +7,7 @@ BeforeAll {
     Import-Module $ModulePath -Force
 }
 
-Describe 'Apply-PSStudentChange' {
+Describe 'Submit-PSStudentChange' {
     BeforeEach {
         # Mock the PowerSchool connection using the new variable names
         InModuleScope FSEnrollment-PSSync {
@@ -44,7 +44,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                { Apply-PSStudentChange -Changes $changes -WhatIf } | Should -Not -Throw
+                { Submit-PSStudentChange -Changes $changes -WhatIf } | Should -Not -Throw
             }
         }
 
@@ -59,7 +59,7 @@ Describe 'Apply-PSStudentChange' {
                 Mock Test-PowerSchoolConnection { }
                 Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
-                { Apply-PSStudentChange -JsonPath $TempFile.FullName -WhatIf } | Should -Not -Throw
+                { Submit-PSStudentChange -JsonPath $TempFile.FullName -WhatIf } | Should -Not -Throw
             }
             
             Remove-Item $tempFile.FullName
@@ -76,7 +76,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                { Apply-PSStudentChange -Changes $changes } | Should -Throw "*Not connected to PowerSchool*"
+                { Submit-PSStudentChange -Changes $changes } | Should -Throw "*Not connected to PowerSchool*"
             }
         }
         
@@ -91,7 +91,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                { Apply-PSStudentChange -Changes $changes -WhatIf } | Should -Not -Throw
+                { Submit-PSStudentChange -Changes $changes -WhatIf } | Should -Not -Throw
             }
         }
 
@@ -106,7 +106,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                { Apply-PSStudentChange -Changes $changes -Limit 5 -WhatIf } | Should -Not -Throw
+                { Submit-PSStudentChange -Changes $changes -Limit 5 -WhatIf } | Should -Not -Throw
             }
         }
     }
@@ -141,7 +141,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes
+                $result = Submit-PSStudentChange -Changes $changes
                 
                 $result.NewStudentsApplied | Should -Be 1
                 $result.UpdatedStudentsApplied | Should -Be 0
@@ -177,7 +177,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes
+                $result = Submit-PSStudentChange -Changes $changes
                 
                 $result.NewStudentsApplied | Should -Be 3
                 $result.Summary.TotalApplied | Should -Be 3
@@ -216,7 +216,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes -WarningAction SilentlyContinue
+                $result = Submit-PSStudentChange -Changes $changes -WarningAction SilentlyContinue
                 
                 $result.NewStudentsApplied | Should -Be 1
                 $result.FailedChanges.Count | Should -Be 1
@@ -263,7 +263,7 @@ Describe 'Apply-PSStudentChange' {
                     )
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes
+                $result = Submit-PSStudentChange -Changes $changes
                 
                 $result.UpdatedStudentsApplied | Should -Be 1
                 $result.NewStudentsApplied | Should -Be 0
@@ -313,7 +313,7 @@ Describe 'Apply-PSStudentChange' {
                     )
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes
+                $result = Submit-PSStudentChange -Changes $changes
                 
                 $result.UpdatedStudentsApplied | Should -Be 1
             }
@@ -359,7 +359,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = $updates
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes -WarningAction SilentlyContinue
+                $result = Submit-PSStudentChange -Changes $changes -WarningAction SilentlyContinue
                 
                 $result.UpdatedStudentsApplied | Should -Be 1
                 $result.FailedChanges.Count | Should -Be 1
@@ -392,7 +392,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes -Limit 3
+                $result = Submit-PSStudentChange -Changes $changes -Limit 3
                 
                 $result.Summary.TotalApplied | Should -Be 3
                 $result.NewStudentsApplied | Should -Be 3
@@ -425,7 +425,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = $updates
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes -Limit 2
+                $result = Submit-PSStudentChange -Changes $changes -Limit 2
                 
                 $result.Summary.TotalApplied | Should -Be 2
                 $result.UpdatedStudentsApplied | Should -Be 2
@@ -470,7 +470,7 @@ Describe 'Apply-PSStudentChange' {
                     )
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes -Limit 2
+                $result = Submit-PSStudentChange -Changes $changes -Limit 2
                 
                 $result.Summary.TotalApplied | Should -Be 2
                 # Should process both new students before any updates
@@ -504,7 +504,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                { Apply-PSStudentChange -Changes $changes -WhatIf } | Should -Not -Throw
+                { Submit-PSStudentChange -Changes $changes -WhatIf } | Should -Not -Throw
             }
         }
     }
@@ -539,7 +539,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                Apply-PSStudentChange -Changes $changes -MaxRetries 5 | Out-Null
+                Submit-PSStudentChange -Changes $changes -MaxRetries 5 | Out-Null
                 
                 $capturedMaxRetries | Should -Be 5
             }
@@ -574,7 +574,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                Apply-PSStudentChange -Changes $changes -RetryDelaySeconds 10 | Out-Null
+                Submit-PSStudentChange -Changes $changes -RetryDelaySeconds 10 | Out-Null
                 
                 $capturedRetryDelay | Should -Be 10
             }
@@ -610,7 +610,7 @@ Describe 'Apply-PSStudentChange' {
                 Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { return @{ id = 12345 } }
                 
-                $result = Apply-PSStudentChange -JsonPath $TempFile.FullName
+                $result = Submit-PSStudentChange -JsonPath $TempFile.FullName
                 
                 # JSON deserialization will succeed even though Student is not a PSStudent instance
                 # The function should handle it gracefully
@@ -633,7 +633,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes
+                $result = Submit-PSStudentChange -Changes $changes
                 
                 $result.PSObject.Properties['NewStudentsApplied'] | Should -Not -BeNullOrEmpty
                 $result.PSObject.Properties['UpdatedStudentsApplied'] | Should -Not -BeNullOrEmpty
@@ -668,7 +668,7 @@ Describe 'Apply-PSStudentChange' {
                     Updated = @()
                 }
                 
-                $result = Apply-PSStudentChange -Changes $changes -WarningAction SilentlyContinue
+                $result = Submit-PSStudentChange -Changes $changes -WarningAction SilentlyContinue
                 
                 $result.FailedChanges.Count | Should -Be 1
                 $result.FailedChanges[0].Type | Should -Be 'New'
@@ -679,7 +679,7 @@ Describe 'Apply-PSStudentChange' {
     }
 }
 
-Describe 'Apply-PSStudentChange Helper Functions' {
+Describe 'Submit-PSStudentChange Helper Functions' {
     Context 'Build-StudentPayload' {
         It 'Should build payload with name fields' {
             InModuleScope FSEnrollment-PSSync {
