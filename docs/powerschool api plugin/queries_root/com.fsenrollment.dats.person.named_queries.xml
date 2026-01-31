@@ -7,10 +7,10 @@
         <columns>
             <column column="person.dcid">person_dcid</column>
             <column column="person.id">person_id</column>
-            <column column="person.statecontactid">person_statecontactid</column>
-            <column column="person.firstname">person_firstname</column>
-            <column column="person.middlename">person_middlename</column>
-            <column column="person.lastname">person_lastname</column>
+            <column column="person.statecontactid">person_contactNumber</column>
+            <column column="person.firstname">person_firstName</column>
+            <column column="person.middlename">person_middleName</column>
+            <column column="person.lastname">person_lastName</column>
             <column column="person.employer">person_employer</column>
             <column column="person.whencreated">person_whencreated</column>
             <column column="person.whenmodified">person_whenmodified</column>
@@ -21,10 +21,10 @@
 SELECT DISTINCT
     person.dcid AS person_dcid,
     person.id AS person_id,
-    person.statecontactid AS person_statecontactid,
-    person.firstname AS person_firstname,
-    person.middlename AS person_middlename,
-    person.lastname AS person_lastname,
+    person.statecontactid AS person_contactNumber,
+    person.firstname AS person_firstName,
+    person.middlename AS person_middleName,
+    person.lastname AS person_lastName,
     person.employer AS person_employer,
     person.whencreated AS person_whencreated,
     person.whenmodified AS person_whenmodified,
@@ -53,7 +53,7 @@ ORDER BY person.dcid
             <column column="person.dcid">person_dcid</column>
             <column column="person.id">person_id</column>
             <column column="emailaddress.emailaddressid">emailaddress_id</column>
-            <column column="emailaddress.emailaddress">emailaddress_emailaddress</column>
+            <column column="emailaddress.emailaddress">emailaddress_emailAddress</column>
             <column column="emailaddress.whencreated">emailaddress_whencreated</column>
             <column column="emailaddress.whenmodified">emailaddress_whenmodified</column>
             <column column="personemailaddressassoc.emailaddresspriorityorder">emailaddress_order</column>
@@ -66,7 +66,7 @@ SELECT DISTINCT
     person.dcid AS person_dcid,
     person.id AS person_id,
     emailaddress.emailaddressid AS emailaddress_id,
-    emailaddress.emailaddress AS emailaddress_emailaddress,
+    emailaddress.emailaddress AS emailaddress_emailAddress,
     emailaddress.whencreated AS emailaddress_whencreated,
     emailaddress.whenmodified AS emailaddress_whenmodified,
     personemailaddressassoc.emailaddresspriorityorder AS emailaddress_order,
@@ -98,7 +98,7 @@ ORDER BY person.dcid, emailaddress.emailaddressid
             <column column="person.dcid">person_dcid</column>
             <column column="person.id">person_id</column>
             <column column="phonenumber.phonenumberid">phonenumber_id</column>
-            <column column="phonenumber.phonenumber">phonenumber_phonenumber</column>
+            <column column="phonenumber.phonenumber">phonenumber_phoneNumber</column>
             <column column="phonenumber.phonenumberext">phonenumber_extension</column>
             <column column="phonenumber.issms">phonenumber_issms</column>
             <column column="personphonenumberassoc.phonenumberpriorityorder">phonenumber_order</column>
@@ -111,7 +111,7 @@ SELECT DISTINCT
     person.dcid AS person_dcid,
     person.id AS person_id,
     phonenumber.phonenumberid AS phonenumber_id,
-    phonenumber.phonenumber AS phonenumber_phonenumber,
+    phonenumber.phonenumber AS phonenumber_phoneNumber,
     phonenumber.phonenumberext AS phonenumber_extension,
     phonenumber.issms AS phonenumber_issms,
     personphonenumberassoc.phonenumberpriorityorder AS phonenumber_order,
@@ -144,12 +144,12 @@ ORDER BY person.dcid, phonenumber.phonenumberid
             <column column="person.id">person_id</column>
             <column column="personaddress.personaddressid">address_id</column>
             <column column="personaddress.street">address_street</column>
-            <column column="personaddress.linetwo">address_linetwo</column>
+            <column column="personaddress.linetwo">address_lineTwo</column>
             <column column="personaddress.unit">address_unit</column>
             <column column="personaddress.city">address_city</column>
             <column column="codeset.code">address_state</column>
             <column column="codeset.code">address_country</column>
-            <column column="personaddress.postalcode">address_postalcode</column>
+            <column column="personaddress.postalcode">address_postalCode</column>
             <column column="personaddressassoc.addresspriorityorder">address_order</column>
             <column column="codeset.code">address_type</column>
         </columns>
@@ -160,12 +160,12 @@ SELECT DISTINCT
     person.id AS person_id,
     personaddress.personaddressid AS address_id,
     personaddress.street AS address_street,
-    personaddress.linetwo AS address_linetwo,
+    personaddress.linetwo AS address_lineTwo,
     personaddress.unit AS address_unit,
     personaddress.city AS address_city,
     statecode.code AS address_state,
     countrycode.code AS address_country,
-    personaddress.postalcode AS address_postalcode,
+    personaddress.postalcode AS address_postalCode,
     personaddressassoc.addresspriorityorder AS address_order,
     typecode.code AS address_type
     
@@ -198,12 +198,12 @@ ORDER BY person.dcid, personaddress.personaddressid
             <column column="students.student_number">student_student_number</column>
             <column column="students.dcid">student_dcid</column>
             <column column="studentcontactassoc.contactpriorityorder">relationship_priority_order</column>
-            <column column="studentcontactdetail.isactive">relationship_isactive</column>
-            <column column="studentcontactdetail.iscustodial">relationship_iscustodial</column>
-            <column column="studentcontactdetail.isemergency">relationship_isemergency</column>
-            <column column="studentcontactdetail.liveswithflg">relationship_liveswith</column>
-            <column column="studentcontactdetail.receivesmailflg">relationship_receivesmail</column>
-            <column column="studentcontactdetail.schoolpickupflg">relationship_schoolpickup</column>
+            <column column="studentcontactdetail.isactive">relationship_isActive</column>
+            <column column="studentcontactdetail.iscustodial">relationship_isCustodial</column>
+            <column column="studentcontactdetail.isemergency">relationship_isEmergency</column>
+            <column column="studentcontactdetail.liveswithflg">relationship_livesWith</column>
+            <column column="studentcontactdetail.receivesmailflg">relationship_receivesMail</column>
+            <column column="studentcontactdetail.schoolpickupflg">relationship_schoolPickup</column>
             <column column="codeset.code">relationship_relationship_code</column>
             <column column="studentcontactdetail.relationshipnote">relationship_relationship_note</column>
         </columns>
@@ -215,12 +215,12 @@ SELECT DISTINCT
     students.student_number AS student_student_number,
     students.dcid AS student_dcid,
     studentcontactassoc.contactpriorityorder AS relationship_priority_order,
-    studentcontactdetail.isactive AS relationship_isactive,
-    studentcontactdetail.iscustodial AS relationship_iscustodial,
-    studentcontactdetail.isemergency AS relationship_isemergency,
-    studentcontactdetail.liveswithflg AS relationship_liveswith,
-    studentcontactdetail.receivesmailflg AS relationship_receivesmail,
-    studentcontactdetail.schoolpickupflg AS relationship_schoolpickup,
+    studentcontactdetail.isactive AS relationship_isActive,
+    studentcontactdetail.iscustodial AS relationship_isCustodial,
+    studentcontactdetail.isemergency AS relationship_isEmergency,
+    studentcontactdetail.liveswithflg AS relationship_livesWith,
+    studentcontactdetail.receivesmailflg AS relationship_receivesMail,
+    studentcontactdetail.schoolpickupflg AS relationship_schoolPickup,
     codeset.code AS relationship_relationship_code,
     studentcontactdetail.relationshipnote AS relationship_relationship_note
     

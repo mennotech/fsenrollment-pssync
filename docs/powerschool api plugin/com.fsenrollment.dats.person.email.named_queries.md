@@ -45,7 +45,7 @@ Each record in the `Records` array contains the following fields:
 | Field Name | Type | Description | Example |
 |------------|------|-------------|---------|
 | `emailaddress_id` | integer | Unique email address ID | `98765` |
-| `emailaddress_emailaddress` | string | The email address | `"john.doe@example.com"` |
+| `emailaddress_emailAddress` | string | The email address | `"john.doe@example.com"` |
 | `emailaddress_type` | string | Type of email address | `"Home"`, `"Work"`, `"Other"` |
 | `emailaddress_order` | integer | Priority order (1 = highest priority) | `1` |
 | `emailaddress_isprimary` | integer | Whether this is the primary email (1=yes, 0=no) | `1` |
@@ -68,7 +68,7 @@ Each record in the `Records` array contains the following fields:
       "person_id": 12345,
       "person_dcid": 12400,
       "emailaddress_id": 98765,
-      "emailaddress_emailaddress": "john.doe@example.com",
+      "emailaddress_emailAddress": "john.doe@example.com",
       "emailaddress_type": "Home",
       "emailaddress_order": 1,
       "emailaddress_isprimary": 1,
@@ -81,7 +81,7 @@ Each record in the `Records` array contains the following fields:
       "person_id": 12345,
       "person_dcid": 12400,
       "emailaddress_id": 98766,
-      "emailaddress_emailaddress": "jdoe@work.com",
+      "emailaddress_emailAddress": "jdoe@work.com",
       "emailaddress_type": "Work",
       "emailaddress_order": 2,
       "emailaddress_isprimary": 0,
@@ -102,7 +102,7 @@ Each record in the `Records` array contains the following fields:
 - `person_id`
 - `person_dcid`
 - `emailaddress_id`
-- `emailaddress_emailaddress`
+- `emailaddress_emailAddress`
 - `emailaddress_whencreated`
 - `emailaddress_whenmodified`
 

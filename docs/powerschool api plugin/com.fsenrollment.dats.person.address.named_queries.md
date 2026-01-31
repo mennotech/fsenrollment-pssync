@@ -48,12 +48,12 @@ Each record in the `Records` array contains the following fields:
 |------------|------|-------------|---------|
 | `address_id` | integer | Unique address ID | `67890` |
 | `address_street` | string | Street address line 1 | `"123 Main Street"` |
-| `address_linetwo` | string | Street address line 2 (optional, omitted if null) | `"Apt 4B"` |
+| `address_lineTwo` | string | Street address line 2 (optional, omitted if null) | `"Apt 4B"` |
 | `address_unit` | string | Unit/suite number (optional, omitted if null) | `"Suite 100"` |
 | `address_city` | string | City name | `"Springfield"` |
 | `address_state` | string | State/province code | `"CA"`, `"ON"` |
 | `address_country` | string | Country code (optional) | `"US"`, `"CA"` |
-| `address_postalcode` | string | ZIP/postal code | `"12345"`, `"M5V 3A8"` |
+| `address_postalCode` | string | ZIP/postal code | `"12345"`, `"M5V 3A8"` |
 | `address_type` | string | Type of address | `"Home"`, `"Work"`, `"Mailing"` |
 | `address_order` | integer | Priority order (1 = highest priority) | `1` |
 
@@ -66,7 +66,7 @@ Each record in the `Records` array contains the following fields:
   "Records": [
     {
       "_name": "PersonAddress",
-      "address_postalcode": "12345",
+      "address_postalCode": "12345",
       "address_type": "Home",
       "address_country": "US",
       "address_id": 53,
@@ -82,11 +82,11 @@ Each record in the `Records` array contains the following fields:
       "_name": "PersonAddress", 
       "address_id": 67891,
       "address_street": "456 Oak Avenue",
-      "address_linetwo": "Suite 200",
+      "address_lineTwo": "Suite 200",
       "address_city": "Los Angeles",
       "address_state": "CA",
       "address_country": "US",
-      "address_postalcode": "90001",
+      "address_postalCode": "90001",
       "address_type": "Work",
       "address_order": 2,
       "_id": 12345,
@@ -113,10 +113,10 @@ Each record in the `Records` array contains the following fields:
 - `address_type` (should always be present)
 - `address_order` (defaults to system-assigned value)
 - `address_state` (present for most addresses)
-- `address_postalcode` (present for most addresses)
+- `address_postalCode` (present for most addresses)
 
 **Optional Fields:**
-- `address_linetwo` (only when specified)
+- `address_lineTwo` (only when specified)
 - `address_unit` (only when specified)
 - `address_country` (may be null if not specified)
 
@@ -184,9 +184,9 @@ $allAddresses.Records | Export-Csv -Path "addresses_export.csv" -NoTypeInformati
 $addresses = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords
 $addresses.Records | ForEach-Object {
     $fullAddress = $_.address_street
-    if ($_.address_linetwo) { $fullAddress += ", " + $_.address_linetwo }
+    if ($_.address_lineTwo) { $fullAddress += ", " + $_.address_lineTwo }
     if ($_.address_unit) { $fullAddress += ", " + $_.address_unit }
-    $fullAddress += ", " + $_.address_city + ", " + $_.address_state + " " + $_.address_postalcode
+    $fullAddress += ", " + $_.address_city + ", " + $_.address_state + " " + $_.address_postalCode
     [PSCustomObject]@{
         PersonId = $_.person_id
         FullAddress = $fullAddress

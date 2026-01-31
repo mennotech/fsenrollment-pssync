@@ -46,15 +46,15 @@ Each record in the `Records` array contains the following fields:
 #### Personal Information
 | Field Name | Type | Description | Example |
 |------------|------|-------------|---------|
-| `person_firstname` | string | Person's first name | `"John"` |
-| `person_lastname` | string | Person's last name | `"Doe"` |
-| `person_middlename` | string | Person's middle name (optional) | `"William"` |
+| `person_firstName` | string | Person's first name | `"John"` |
+| `person_lastName` | string | Person's last name | `"Doe"` |
+| `person_middleName` | string | Person's middle name (optional) | `"William"` |
 | `person_gender_code` | string | Gender code (M/F) | `"M"` |
 
 #### State Integration
 | Field Name | Type | Description | Example |
-|------------|------|-------------|---------|
-| `person_statecontactid` | string | State contact identifier (optional) | `"12345678-abcd-1234-efgh-123456789012"` |
+|------------|------|-------------|---------||
+| `person_contactNumber` | string | State contact identifier (optional) | `"12345678-abcd-1234-efgh-123456789012"` |
 
 #### Employment Information
 | Field Name | Type | Description | Example |
@@ -79,8 +79,8 @@ Each record in the `Records` array contains the following fields:
       "person_dcid": 12400,
       "_id": 12345,
       "_name": "Person",
-      "person_firstname": "John",
-      "person_lastname": "Doe",
+      "person_firstName": "John",
+      "person_lastName": "Doe",
       "person_gender_code": "M",
       "person_whencreated": "2025-04-25 10:17:37.24",
       "person_whenmodified": "2025-04-25 14:17:37.0"
@@ -90,11 +90,11 @@ Each record in the `Records` array contains the following fields:
       "person_dcid": 12401,
       "_id": 12346,
       "_name": "Person",
-      "person_firstname": "Jane",
-      "person_lastname": "Smith",
+      "person_firstName": "Jane",
+      "person_lastName": "Smith",
       "person_gender_code": "F",
       "person_employer": "Example Corp",
-      "person_statecontactid": "12345678-abcd-1234-efgh-123456789012",
+      "person_contactNumber": "12345678-abcd-1234-efgh-123456789012",
       "person_whencreated": "2025-07-28 12:58:22.158",
       "person_whenmodified": "2025-07-28 17:58:22.0"
     }
@@ -112,8 +112,8 @@ Each record in the `Records` array contains the following fields:
 - `person_dcid` 
 - `_id`
 - `_name`
-- `person_firstname`
-- `person_lastname`
+- `person_firstName`
+- `person_lastName`
 - `person_whencreated`
 - `person_whenmodified`
 
@@ -121,9 +121,9 @@ Each record in the `Records` array contains the following fields:
 - `person_gender_code` (most records)
 
 **Optional Fields:**
-- `person_middlename` (only when specified)
+- `person_middleName` (only when specified)
 - `person_employer` (only when specified)
-- `person_statecontactid` (only for state-integrated records)
+- `person_contactNumber` (only for state-integrated records)
 
 ### Data Type Details
 
@@ -154,7 +154,7 @@ These extensions provide additional metadata about the query structure and avail
 ### Basic Person Lookup
 ```powershell
 $persons = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person'
-$persons.Records | Where-Object { $_.person_lastname -eq "Smith" }
+$persons.Records | Where-Object { $_.person_lastName -eq "Smith" }
 ```
 
 ### Finding Recently Modified Records
@@ -170,7 +170,7 @@ $recentlyModified = $persons.Records | Where-Object {
 ```powershell
 $persons = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords
 $stateIntegrated = $persons.Records | Where-Object { 
-    $_.person_statecontactid -ne $null 
+    $_.person_contactNumber -ne $null 
 }
 Write-Output "State-integrated persons: $($stateIntegrated.Count)"
 ```
