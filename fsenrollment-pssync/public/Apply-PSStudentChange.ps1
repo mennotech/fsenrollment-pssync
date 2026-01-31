@@ -93,7 +93,7 @@ function Apply-PSStudentChange {
         Write-Verbose "Starting Apply-PSStudentChange"
         
         # Check if connected to PowerSchool (skip for WhatIf to allow preview without connection)
-        if (-not $WhatIf) {
+        if (-not $WhatIfPreference) {
             if (-not $script:PowerSchoolToken -or -not $script:PowerSchoolBaseUrl) {
                 throw "Not connected to PowerSchool. Please run Connect-PowerSchool first."
             }
@@ -129,7 +129,7 @@ function Apply-PSStudentChange {
             Write-Verbose "Total changes available: $totalChanges (New: $($Changes.New.Count), Updated: $($Changes.Updated.Count))"
             Write-Verbose "Changes to apply (with limit): $changesToApply"
 
-            if ($WhatIf) {
+            if ($WhatIfPreference) {
                 Write-Host "WhatIf: Would apply $changesToApply of $totalChanges changes" -ForegroundColor Yellow
             }
 
@@ -155,7 +155,7 @@ function Apply-PSStudentChange {
                     $payload = Build-StudentPayload -Student $student
                     
                     if ($PSCmdlet.ShouldProcess("New Student: $matchKey ($($student.FirstName) $($student.LastName))", "Create in PowerSchool")) {
-                        if ($WhatIf) {
+                        if ($WhatIfPreference) {
                             Write-Host "`n=== WHATIF: New Student Creation ===" -ForegroundColor Cyan
                             Write-Host "Student: $matchKey ($($student.FirstName) $($student.LastName))" -ForegroundColor Yellow
                             Write-Host "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/v1/student" -ForegroundColor Gray
@@ -220,7 +220,7 @@ function Apply-PSStudentChange {
                     $payload = Build-UpdatePayload -Changes $changes -StudentDCID $dcid
                     
                     if ($PSCmdlet.ShouldProcess("Student: $matchKey (DCID: $dcid) - $($changes.Count) changes", "Update in PowerSchool")) {
-                        if ($WhatIf) {
+                        if ($WhatIfPreference) {
                             Write-Host "`n=== WHATIF: Student Update ===" -ForegroundColor Cyan
                             Write-Host "Student: $matchKey (DCID: $dcid)" -ForegroundColor Yellow
                             Write-Host "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/v1/student" -ForegroundColor Gray

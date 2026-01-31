@@ -9,13 +9,11 @@ BeforeAll {
 
 Describe 'Apply-PSStudentChange' {
     BeforeEach {
-        # Mock the PowerSchool connection
+        # Mock the PowerSchool connection using the new variable names
         InModuleScope FSEnrollment-PSSync {
-            $script:PowerSchoolConnection = [PSCustomObject]@{
-                BaseUrl = 'https://test.powerschool.com'
-                AccessToken = 'test-token-12345'
-                TokenExpiry = (Get-Date).AddHours(1)
-            }
+            $script:PowerSchoolToken = ConvertTo-SecureString -String 'test-token-12345' -AsPlainText -Force
+            $script:PowerSchoolBaseUrl = 'https://test.powerschool.com'
+            $script:PowerSchoolTokenExpiry = (Get-Date).AddHours(1)
         }
 
         # Create sample change data
@@ -39,6 +37,7 @@ Describe 'Apply-PSStudentChange' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Invoke-PowerSchoolApiRequest { return @{ id = 12345 } }
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
                 $changes = [PSCustomObject]@{
                     New = @()
@@ -58,6 +57,7 @@ Describe 'Apply-PSStudentChange' {
                 param($TempFile)
                 Mock Invoke-PowerSchoolApiRequest { return @{ id = 12345 } }
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
                 { Apply-PSStudentChange -JsonPath $TempFile.FullName -WhatIf } | Should -Not -Throw
             }
@@ -67,8 +67,9 @@ Describe 'Apply-PSStudentChange' {
 
         It 'Should throw error if not connected to PowerSchool' {
             InModuleScope FSEnrollment-PSSync {
-                # Clear connection
-                $script:PowerSchoolConnection = $null
+                # Clear connection variables
+                $script:PowerSchoolToken = $null
+                $script:PowerSchoolBaseUrl = $null
                 
                 $changes = [PSCustomObject]@{
                     New = @()
@@ -78,11 +79,27 @@ Describe 'Apply-PSStudentChange' {
                 { Apply-PSStudentChange -Changes $changes } | Should -Throw "*Not connected to PowerSchool*"
             }
         }
+        
+        It 'Should NOT throw error in WhatIf mode when not connected' {
+            InModuleScope FSEnrollment-PSSync {
+                # Clear connection variables
+                $script:PowerSchoolToken = $null
+                $script:PowerSchoolBaseUrl = $null
+                
+                $changes = [PSCustomObject]@{
+                    New = @()
+                    Updated = @()
+                }
+                
+                { Apply-PSStudentChange -Changes $changes -WhatIf } | Should -Not -Throw
+            }
+        }
 
         It 'Should accept Limit parameter' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Invoke-PowerSchoolApiRequest { return @{ id = 12345 } }
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
                 $changes = [PSCustomObject]@{
                     New = @()
@@ -98,6 +115,8 @@ Describe 'Apply-PSStudentChange' {
         It 'Should create a new student successfully' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { 
                     return @{ 
                         id = 12345
@@ -134,6 +153,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should create multiple new students' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { 
                     return @{ id = Get-Random -Minimum 1000 -Maximum 9999 }
                 }
@@ -167,6 +187,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should handle creation failure and continue with remaining' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
                 $callCount = 0
                 Mock Invoke-PowerSchoolApiRequest { 
@@ -208,6 +229,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should update a student successfully' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { 
                     return @{ 
                         id = 12345
@@ -252,6 +274,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should update multiple fields in a student' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { 
                     return @{ id = 12345 }
                 }
@@ -299,6 +322,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should handle update failure and continue' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
                 # Use module scope variable for call tracking
                 Set-Variable -Name 'testCallCount' -Value 0 -Scope Script
@@ -348,6 +372,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should respect the Limit parameter for new students' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { return @{ id = 12345 } }
                 
                 $newStudents = 1..5 | ForEach-Object {
@@ -377,6 +402,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should respect the Limit parameter for updates' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { return @{ id = 12345 } }
                 
                 $updates = 1..5 | ForEach-Object {
@@ -409,6 +435,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should respect the Limit parameter for mixed new and updated' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { return @{ id = 12345 } }
                 
                 $newStudent = [PSStudent]::new()
@@ -457,6 +484,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should not make changes in WhatIf mode' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { 
                     throw "Should not be called in WhatIf mode"
                 }
@@ -485,6 +513,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should pass MaxRetries parameter to API call' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
                 # Use module scope variable to capture parameter
                 Set-Variable -Name 'capturedMaxRetries' -Value $null -Scope Script
@@ -519,6 +548,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should pass RetryDelaySeconds parameter to API call' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
                 # Use module scope variable to capture parameter
                 Set-Variable -Name 'capturedRetryDelay' -Value $null -Scope Script
@@ -577,6 +607,7 @@ Describe 'Apply-PSStudentChange' {
             InModuleScope FSEnrollment-PSSync -Parameters @{ TempFile = $tempFile } {
                 param($TempFile)
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { return @{ id = 12345 } }
                 
                 $result = Apply-PSStudentChange -JsonPath $TempFile.FullName
@@ -594,6 +625,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should return proper result structure' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest { return @{ id = 12345 } }
                 
                 $changes = [PSCustomObject]@{
@@ -616,6 +648,7 @@ Describe 'Apply-PSStudentChange' {
         It 'Should include failed changes details' {
             InModuleScope FSEnrollment-PSSync {
                 Mock Test-PowerSchoolConnection { }
+                Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 Mock Invoke-PowerSchoolApiRequest {
                     throw "Test API Error"
                 }
