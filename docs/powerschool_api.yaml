@@ -132,27 +132,137 @@ paths:
   /ws/v1/student:
     parameters: []
     post:
-      summary: Update Student Information
+      summary: Create or Update Student Information
+      description: >-
+        Creates a new student or updates an existing student in PowerSchool.
+        Uses the same endpoint for both operations, differentiated by the 'action' field.
+        For INSERT: Use client_uid with student number. For UPDATE: Use client_uid with DCID and include id field.
       tags: *ref_0
       parameters:
         - name: Authorization
           in: header
-          required: false
+          required: true
           example: Bearer {{access_token}}
           schema:
+            type: string
             deprecated: false
         - name: Content-Type
           in: header
-          required: false
+          required: true
           example: application/json
           schema:
+            type: string
             deprecated: false
         - name: Accept
           in: header
-          required: false
+          required: true
           example: application/json
           schema:
+            type: string
             deprecated: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                students:
+                  type: object
+                  properties:
+                    student:
+                      type: object
+                      properties:
+                        client_uid:
+                          type: string
+                          description: For INSERT - use student number. For UPDATE - use DCID as string.
+                          example: "123456"
+                        action:
+                          type: string
+                          enum: [INSERT, UPDATE]
+                          description: Operation type - INSERT for new students, UPDATE for existing students
+                          example: "INSERT"
+                        id:
+                          type: integer
+                          description: Required for UPDATE operations - the PowerSchool DCID
+                          example: 12345
+                        local_id:
+                          type: string
+                          description: Student number (for new student creation)
+                          example: "123456"
+                        school_id:
+                          type: string
+                          description: School identifier
+                          example: "100"
+                        grade_level:
+                          type: integer
+                          description: Student grade level
+                          example: 9
+                        name:
+                          type: object
+                          description: Student name fields (nested object)
+                          properties:
+                            first_name:
+                              type: string
+                              example: "John"
+                            middle_name:
+                              type: string
+                              example: "Q"
+                            last_name:
+                              type: string
+                              example: "Doe"
+                        gender:
+                          type: string
+                          example: "M"
+                        dob:
+                          type: string
+                          format: date
+                          description: Date of birth in YYYY-MM-DD format
+                          example: "2005-06-15"
+                        street:
+                          type: string
+                          example: "123 Main St"
+                        city:
+                          type: string
+                          example: "Springfield"
+                        state:
+                          type: string
+                          example: "IL"
+                        zip:
+                          type: string
+                          example: "62701"
+            examples:
+              insertStudent:
+                summary: Create new student (INSERT)
+                value:
+                  students:
+                    student:
+                      client_uid: "123456"
+                      action: "INSERT"
+                      local_id: "123456"
+                      school_id: "100"
+                      grade_level: 9
+                      name:
+                        first_name: "John"
+                        middle_name: "Q"
+                        last_name: "Doe"
+                      gender: "M"
+                      dob: "2005-06-15"
+                      street: "123 Main St"
+                      city: "Springfield"
+                      state: "IL"
+                      zip: "62701"
+              updateStudent:
+                summary: Update existing student (UPDATE)
+                value:
+                  students:
+                    student:
+                      client_uid: "12345"
+                      action: "UPDATE"
+                      id: 12345
+                      name:
+                        first_name: "Jonathan"
+                      grade_level: 10
       responses:
         '200':
           headers:
@@ -160,7 +270,33 @@ paths:
               schema:
                 type: string
               example: application/json
-          description: Update Student Information
+          description: Student created or updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: "SUCCESS"
+                      client_uid:
+                        type: string
+                        example: "123456"
+                      action_performed:
+                        type: string
+                        example: "INSERT"
+                      student_dcid:
+                        type: integer
+                        example: 12345
+        '400':
+          description: Bad request - invalid data format
+        '401':
+          description: Unauthorized - invalid or expired access token
+        '422':
+          description: Unprocessable entity - data validation failed
   /ws/contacts/student/{studentdcid}:
     parameters:
       - name: studentdcid
