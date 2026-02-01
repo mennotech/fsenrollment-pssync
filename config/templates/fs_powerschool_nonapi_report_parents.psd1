@@ -11,7 +11,7 @@
     # Key field for matching records between CSV and PowerSchool
     KeyField = 'ContactIdentifier'
     # PowerSchool API field that corresponds to the key field
-    PowerSchoolKeyField = 'person_statecontactid'
+    PowerSchoolKeyField = 'person_contactNumber'
     # PowerSchool API key field data type (for proper type conversion during matching)
     PowerSchoolKeyDataType = 'string'
     # Optional: CSV column name for excluding contacts from import (omit if not used in your CSV)

@@ -14,6 +14,7 @@
             <column column="person.employer">person_employer</column>
             <column column="person.whencreated">person_whencreated</column>
             <column column="person.whenmodified">person_whenmodified</column>
+            <column column="person.isactive">person_isActive</column>
             <column column="codeset.code">person_gender_code</column>
         </columns>
         <sql>
@@ -28,16 +29,11 @@ SELECT DISTINCT
     person.employer AS person_employer,
     person.whencreated AS person_whencreated,
     person.whenmodified AS person_whenmodified,
+    person.isactive AS person_isActive,
     codeset.code AS person_gender_code
 
 FROM person
-    INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
-    INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
     INNER JOIN codeset ON codeset.codesetid = person.gendercodesetid
-
-WHERE students.enroll_status = 0
-    AND person.id IS NOT NULL
-    AND studentcontactassoc.personid IS NOT NULL
 
 ORDER BY person.dcid
             ]]>
@@ -74,15 +70,9 @@ SELECT DISTINCT
     codeset.code AS emailaddress_type
     
 FROM person
-    INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
-    INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
     INNER JOIN personemailaddressassoc ON personemailaddressassoc.personid = person.id
     INNER JOIN emailaddress ON emailaddress.emailaddressid = personemailaddressassoc.emailaddressid
     INNER JOIN codeset ON personemailaddressassoc.emailtypecodesetid = codeset.codesetid
-
-WHERE students.enroll_status = 0
-    AND person.id IS NOT NULL
-    AND studentcontactassoc.personid IS NOT NULL
 
 ORDER BY person.dcid, emailaddress.emailaddressid
             ]]>
@@ -119,15 +109,9 @@ SELECT DISTINCT
     codeset.code AS phonenumber_type
     
 FROM person
-    INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
-    INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
     INNER JOIN personphonenumberassoc ON personphonenumberassoc.personid = person.id
     INNER JOIN phonenumber ON phonenumber.phonenumberid = personphonenumberassoc.phonenumberid
     INNER JOIN codeset ON personphonenumberassoc.phonetypecodesetid = codeset.codesetid
-
-WHERE students.enroll_status = 0
-    AND person.id IS NOT NULL
-    AND studentcontactassoc.personid IS NOT NULL
 
 ORDER BY person.dcid, phonenumber.phonenumberid
             ]]>
@@ -170,17 +154,11 @@ SELECT DISTINCT
     typecode.code AS address_type
     
 FROM person
-    INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
-    INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
     INNER JOIN personaddressassoc ON personaddressassoc.personid = person.id
     INNER JOIN personaddress ON personaddress.personaddressid = personaddressassoc.personaddressid
     LEFT OUTER JOIN codeset statecode ON personaddress.statescodesetid = statecode.codesetid
     LEFT OUTER JOIN codeset countrycode ON personaddress.countrycodesetid = countrycode.codesetid
     INNER JOIN codeset typecode ON personaddressassoc.addresstypecodesetid = typecode.codesetid
-
-WHERE students.enroll_status = 0
-    AND person.id IS NOT NULL
-    AND studentcontactassoc.personid IS NOT NULL
 
 ORDER BY person.dcid, personaddress.personaddressid
             ]]>
@@ -197,6 +175,7 @@ ORDER BY person.dcid, personaddress.personaddressid
             <column column="person.id">person_id</column>
             <column column="students.student_number">student_student_number</column>
             <column column="students.dcid">student_dcid</column>
+            <column column="students.enroll_status">student_enroll_status</column>
             <column column="studentcontactassoc.contactpriorityorder">relationship_priority_order</column>
             <column column="studentcontactdetail.isactive">relationship_isActive</column>
             <column column="studentcontactdetail.iscustodial">relationship_isCustodial</column>
@@ -214,6 +193,7 @@ SELECT DISTINCT
     person.id AS person_id,
     students.student_number AS student_student_number,
     students.dcid AS student_dcid,
+    students.enroll_status AS student_enroll_status,
     studentcontactassoc.contactpriorityorder AS relationship_priority_order,
     studentcontactdetail.isactive AS relationship_isActive,
     studentcontactdetail.iscustodial AS relationship_isCustodial,
@@ -232,11 +212,6 @@ FROM person
     INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
     INNER JOIN codeset ON codeset.codesetid = studentcontactdetail.relationshiptypecodesetid
     
-
-WHERE students.enroll_status = 0
-    AND person.id IS NOT NULL
-    AND studentcontactassoc.personid IS NOT NULL
-
 ORDER BY person.dcid, students.dcid
             ]]>
         </sql>
