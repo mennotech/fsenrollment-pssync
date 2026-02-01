@@ -43,8 +43,10 @@
         }
     }
     # Column mappings for each entity type (EntityType is inferred from hashtable key via EntityTypeMap)
-    # PowerSSchoolAPIField specifies the corresponding field in PowerSchool API/PowerQuery NOTE: the field names here are for PowerQuery (flat structure)
-    # However, the Update API calls drop the "person_" prefix when updating contact records, the API uses flat field names (firstName, middleName, lastName, etc.) which are case sensitive.
+    # IMPORTANT: PowerSchoolAPIField specifies the PowerQuery field name (e.g., 'person_firstName', 'emailaddress_emailAddress')
+    # These are the flat field names returned by PowerQuery Data Access API (com.fsenrollment.dats.person, etc.)
+    # This is NOT the same as REST API field names used for updates (e.g., 'firstName' without 'person_' prefix)
+    # The Submit-PSContactChange function handles converting PowerQuery field names to REST API field names when submitting updates
     ColumnMappings = @{
         Contact = @(
             @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string'; PowerSchoolAPIField = 'person_contactNumber' }
