@@ -220,11 +220,10 @@ function Submit-PSContactChange {
                         
                         # Show field details for new contact - iterate dynamically
                         Write-Host "Contact Fields to Create:" -ForegroundColor Gray
-                        $contactData = $payload.contact
                         
-                        # Display contact fields
-                        foreach ($key in ($contactData.Keys | Where-Object { $_ -notin @('action') } | Sort-Object)) {
-                            $value = $contactData[$key]
+                        # Display contact fields (payload is flat structure for Contact API)
+                        foreach ($key in ($payload.Keys | Sort-Object)) {
+                            $value = $payload[$key]
                             if ($null -ne $value -and $value -ne '') {
                                 # Format the field name for display (convert to title case)
                                 $uppercaseKey = ($key -replace '_', ' ').ToUpper()
@@ -242,11 +241,10 @@ function Submit-PSContactChange {
                             Write-Verbose "Creating new contact: $matchKey"
                             Write-Verbose "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/contacts/contact"
                             Write-Verbose "Contact fields being created:"
-                            $contactData = $payload.contact
                             
-                            # Display contact fields
-                            foreach ($key in ($contactData.Keys | Where-Object { $_ -notin @('action') } | Sort-Object)) {
-                                $value = $contactData[$key]
+                            # Display contact fields (payload is flat structure for Contact API)
+                            foreach ($key in ($payload.Keys | Sort-Object)) {
+                                $value = $payload[$key]
                                 if ($null -ne $value -and $value -ne '') {
                                     Write-Verbose "  ${key}: $value"
                                 }
@@ -424,6 +422,25 @@ function Submit-PSContactChange {
     }
 }
 
+# Private helper function to strip table prefix from PowerSchool API field name
+# Contact API field names are in format table_fieldname (e.g., person_firstname, emailaddress_emailaddress)
+# but the API expects just the field name without the table prefix (e.g., firstName, emailAddress)
+function Remove-TablePrefix {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FieldName
+    )
+
+    # Strip table prefix (everything before and including the first underscore)
+    if ($FieldName -match '^[^_]+_(.+)$') {
+        return $Matches[1]
+    }
+    
+    # No prefix found, return as-is
+    return $FieldName
+}
+
 # Private helper function to build contact payload for creation
 function Build-ContactPayload {
     [CmdletBinding()]
@@ -436,20 +453,11 @@ function Build-ContactPayload {
     )
 
     # Build basic contact object for POST /ws/contacts/contact
-    # Contact API uses flat structure (no nested objects like student API)
-    $payload = @{
-        contact = @{
-            action = "INSERT"
-        }
-    }
+    # Contact API uses flat structure (no nested objects or wrappers like student API)
+    # Example working payload: {"lastName":"Smith","gender":"M","middleName":"John","firstName":"Bob","prefix":"Mr."}
+    $payload = @{}
 
-    $contactData = $payload.contact
-
-    # Phase 1: Demographics fields only (firstName, lastName, middleName, prefix, suffix, gender, employer)
-    # Map PSContact properties to PowerSchool Contact API fields
-    $demographicFields = @('FirstName', 'MiddleName', 'LastName', 'Prefix', 'Suffix', 'Gender', 'Employer')
-    
-    foreach ($fieldName in $demographicFields) {
+    foreach ($fieldName in $Contact.PSObject.Properties.Name) {
         # Get the CSV value
         $fieldValue = $Contact.$fieldName
         
@@ -462,8 +470,11 @@ function Build-ContactPayload {
         $psFieldPath = Get-PowerSchoolFieldMapping -EntityProperty $fieldName -TemplateMetadata $TemplateMetadata
         
         if ($psFieldPath) {
+            # Strip table prefix (e.g., person_ from person_firstname -> firstName)
+            $apiFieldName = Remove-TablePrefix -FieldName $psFieldPath
+            
             # Apply the value - Contact API uses flat structure
-            $contactData[$psFieldPath] = $fieldValue
+            $payload[$apiFieldName] = $fieldValue
         } else {
             Write-Verbose "No PowerSchool API field mapping found for property: $fieldName (skipping)"
         }
@@ -510,13 +521,16 @@ function Build-ContactUpdatePayload {
             continue
         }
 
+        # Strip table prefix (e.g., person_ from person_firstname -> firstName)
+        $apiFieldName = Remove-TablePrefix -FieldName $psFieldPath
+
         # Apply the value - Contact API uses flat structure (no nested objects)
         # Handle date formatting if needed
         if ($newValue -is [DateTime]) {
             # Format dates as ISO string for PowerSchool API
-            $payload[$psFieldPath] = $newValue.ToString('yyyy-MM-dd')
+            $payload[$apiFieldName] = $newValue.ToString('yyyy-MM-dd')
         } else {
-            $payload[$psFieldPath] = $newValue
+            $payload[$apiFieldName] = $newValue
         }
     }
 

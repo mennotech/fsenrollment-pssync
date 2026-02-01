@@ -471,19 +471,16 @@ Describe 'Compare-PSContact' {
                 # PowerSchool email data (empty)
                 $psEmailData = @()
                 
-                $templateConfig = @{
+                # Set TemplateMetadata on CsvData
+                $script:CsvData.TemplateMetadata = @{
                     KeyField = 'ContactID'
                     PowerSchoolKeyField = 'person_id'
-                    EntityTypeMap = @{
-                        Contact = @{
-                            CheckForChanges = @('FirstName', 'LastName')
-                        }
-                    }
+                    CheckForChanges = @('FirstName', 'LastName')
                 }
+                
                 $result = Compare-PSContact -CsvData $script:CsvData `
                     -PowerSchoolData $script:PowerSchoolData `
-                    -PowerSchoolEmailData $psEmailData `
-                    -TemplateConfig $templateConfig
+                    -PowerSchoolEmailData $psEmailData
                 
                 $result.Updated.Count | Should -Be 1
                 $result.Updated[0].EmailChanges | Should -Not -BeNullOrEmpty

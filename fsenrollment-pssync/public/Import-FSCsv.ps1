@@ -94,18 +94,7 @@ function Import-FSCsv {
             else {
                 # Use standard template-based parsing with ConvertFrom-CsvRow
                 Write-Verbose "Using standard template-based parsing"
-                $normalizedData = [PSNormalizedData]::new()
-                
-                # Store template metadata for use in comparison functions
-                $normalizedData.TemplateMetadata = @{
-                    TemplateName = $templateConfig.TemplateName
-                    EntityType = $templateConfig.EntityType
-                    KeyField = $templateConfig.KeyField
-                    PowerSchoolKeyField = $templateConfig.PowerSchoolKeyField
-                    PowerSchoolKeyDataType = $templateConfig.PowerSchoolKeyDataType
-                    CheckForChanges = $templateConfig.CheckForChanges
-                    ColumnMappings = $templateConfig.ColumnMappings
-                }
+                $normalizedData = [PSNormalizedData]::new()                
                 
                 # Determine the target collection based on EntityType
                 $entityType = $templateConfig.EntityType
@@ -141,6 +130,24 @@ function Import-FSCsv {
                 Write-Verbose "Successfully imported: $($summary -join ', ')"
             }
             
+
+
+            # Add TemplateMetadata for downstream use
+            $normalizedData.TemplateMetadata = @{
+                TemplateName = $templateConfig.TemplateName
+                EntityType = $templateConfig.EntityType
+                KeyField = $templateConfig.KeyField
+                PowerSchoolKeyField = $templateConfig.PowerSchoolKeyField
+                PowerSchoolKeyDataType = $templateConfig.PowerSchoolKeyDataType
+                CheckForChanges = $templateConfig.EntityTypeMap.Contact.CheckForChanges
+                ColumnMappings = $templateConfig.ColumnMappings.Contact
+            }
+            
+            # Add RelationshipCheckForChanges if EntityTypeMap.Relationship is defined
+            if ($templateConfig.EntityTypeMap -and $templateConfig.EntityTypeMap.Relationship -and $templateConfig.EntityTypeMap.Relationship.CheckForChanges) {
+                $normalizedData.TemplateMetadata.RelationshipCheckForChanges = $templateConfig.EntityTypeMap.Relationship.CheckForChanges
+            }
+
             return $normalizedData
         }
         catch {

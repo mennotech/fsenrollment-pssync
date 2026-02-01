@@ -96,7 +96,7 @@ function Compare-ContactFields {
         if ($csvValueNormalized -ne $psValueNormalized) {
             $changes.Add([PSCustomObject]@{
                 Field = $fieldName
-                PowerSchoolField = $psFieldName
+                PowerSchoolAPIField = $psFieldName
                 OldValue = $psValueNormalized
                 NewValue = $csvValueNormalized
             })

@@ -264,26 +264,27 @@ Describe 'Submit-PSContactChange' {
                     PowerSchoolKeyField = 'person_id'
                     CheckForChanges = @('FirstName', 'LastName', 'Gender')
                     ColumnMappings = @(
-                        @{ CSVColumn = 'Prefix'; EntityProperty = 'Prefix'; EntityType = 'Contact'; PowerSchoolAPIField = 'prefix' }
-                        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; EntityType = 'Contact'; PowerSchoolAPIField = 'firstName' }
-                        @{ CSVColumn = 'Middle_Name'; EntityProperty = 'MiddleName'; EntityType = 'Contact'; PowerSchoolAPIField = 'middleName' }
-                        @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; EntityType = 'Contact'; PowerSchoolAPIField = 'lastName' }
-                        @{ CSVColumn = 'Suffix'; EntityProperty = 'Suffix'; EntityType = 'Contact'; PowerSchoolAPIField = 'suffix' }
-                        @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; EntityType = 'Contact'; PowerSchoolAPIField = 'gender' }
-                        @{ CSVColumn = 'Employer'; EntityProperty = 'Employer'; EntityType = 'Contact'; PowerSchoolAPIField = 'employer' }
+                        @{ CSVColumn = 'Prefix'; EntityProperty = 'Prefix'; EntityType = 'Contact'; PowerSchoolAPIField = 'person_prefix' }
+                        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; EntityType = 'Contact'; PowerSchoolAPIField = 'person_firstname' }
+                        @{ CSVColumn = 'Middle_Name'; EntityProperty = 'MiddleName'; EntityType = 'Contact'; PowerSchoolAPIField = 'person_middlename' }
+                        @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; EntityType = 'Contact'; PowerSchoolAPIField = 'person_lastname' }
+                        @{ CSVColumn = 'Suffix'; EntityProperty = 'Suffix'; EntityType = 'Contact'; PowerSchoolAPIField = 'person_suffix' }
+                        @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; EntityType = 'Contact'; PowerSchoolAPIField = 'person_gender' }
+                        @{ CSVColumn = 'Employer'; EntityProperty = 'Employer'; EntityType = 'Contact'; PowerSchoolAPIField = 'person_employer' }
                     )
                 }
                 
                 $payload = Build-ContactPayload -Contact $newContact -TemplateMetadata $templateMetadata
                 
-                $payload.contact.action | Should -Be 'INSERT'
-                $payload.contact.prefix | Should -Be 'Dr.'
-                $payload.contact.firstName | Should -Be 'Jane'
-                $payload.contact.middleName | Should -Be 'Marie'
-                $payload.contact.lastName | Should -Be 'Smith'
-                $payload.contact.suffix | Should -Be 'Ph.D.'
-                $payload.contact.gender | Should -Be 'F'
-                $payload.contact.employer | Should -Be 'Acme Corp'
+                # Contact API uses flat payload structure (no nested objects)
+                # Table prefix is stripped by Remove-TablePrefix helper function
+                $payload.prefix | Should -Be 'Dr.'
+                $payload.firstname | Should -Be 'Jane'
+                $payload.middlename | Should -Be 'Marie'
+                $payload.lastname | Should -Be 'Smith'
+                $payload.suffix | Should -Be 'Ph.D.'
+                $payload.gender | Should -Be 'F'
+                $payload.employer | Should -Be 'Acme Corp'
             }
         }
     }

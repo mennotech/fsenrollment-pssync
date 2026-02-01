@@ -43,7 +43,19 @@ function Get-PowerSchoolFieldMapping {
 
     # Try to get mapping from template metadata first
     if ($TemplateMetadata -and $TemplateMetadata.ColumnMappings) {
-        $mapping = $TemplateMetadata.ColumnMappings | Where-Object { $_.EntityProperty -eq $EntityProperty } | Select-Object -First 1
+        # Handle both single entity and multi-entity templates
+        $allMappings = @()
+        if ($TemplateMetadata.ColumnMappings -is [hashtable]) {
+            # Multi-entity template (e.g., Contact, EmailAddress, PhoneNumber)
+            foreach ($entityMappings in $TemplateMetadata.ColumnMappings.Values) {
+                $allMappings += $entityMappings
+            }
+        } else {
+            # Single entity template (e.g., Student)
+            $allMappings = $TemplateMetadata.ColumnMappings
+        }
+        
+        $mapping = $allMappings | Where-Object { $_.EntityProperty -eq $EntityProperty } | Select-Object -First 1
         if ($mapping -and $mapping.PowerSchoolAPIField) {
             return $mapping.PowerSchoolAPIField
         }
@@ -51,8 +63,8 @@ function Get-PowerSchoolFieldMapping {
 
     # Fallback to default field mappings for common student and contact fields
     # NOTE: These defaults are for Student API (v1) which uses nested structures.
-    # Contact API templates should define their own ColumnMappings in TemplateMetadata
-    # using flat field names (firstName, middleName, lastName instead of name.first_name, etc.)
+    # Contact API uses flat field names (firstName, middleName, lastName).
+    # Templates should define their own ColumnMappings in TemplateMetadata for proper mapping.
     # These defaults are only used when TemplateMetadata is not provided or incomplete.
     $defaultFieldMapping = @{
         # Student-specific fields (use nested structure for v1 API)
@@ -76,12 +88,13 @@ function Get-PowerSchoolFieldMapping {
         'TransferComment' = 'transfer_comment'
         
         # Shared name fields - defaults use Student API pattern (nested under 'name')
+        # Contact API overrides these with flat names in template
         'FirstName' = 'name.first_name'
         'MiddleName' = 'name.middle_name'
         'LastName' = 'name.last_name'
         'Gender' = 'gender'
         
-        # Contact-specific fields (flat structure)
+        # Contact-specific fields (flat structure) - should be defined in template
         'Prefix' = 'prefix'
         'Suffix' = 'suffix'
         'Employer' = 'employer'
