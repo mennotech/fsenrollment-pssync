@@ -452,20 +452,16 @@ $phoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.pho
 $addressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords
 $relationshipData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords
 
-# Step 3: Load template configuration
-$templateConfig = Import-PowerShellDataFile './config/templates/fs_powerschool_nonapi_report_parents.psd1'
-
-# Step 4: Compare with all data types
+# Step 3: Compare with all data types (TemplateMetadata from $csvData is used automatically)
 $contactChanges = Compare-PSContact -CsvData $csvData `
     -PowerSchoolData $personData.Records `
     -PowerSchoolEmailData $emailData.Records `
     -PowerSchoolPhoneData $phoneData.Records `
     -PowerSchoolAddressData $addressData.Records `
     -PowerSchoolRelationshipData $relationshipData.Records `
-    -TemplateConfig $templateConfig `
     -Verbose
 
-# Step 5: Display comprehensive results
+# Step 4: Display comprehensive results
 Write-Host "`nContact Change Summary:" -ForegroundColor Yellow
 Write-Host "  Total in CSV: $($contactChanges.Summary.TotalInCsv)"
 Write-Host "  Total in PowerSchool: $($contactChanges.Summary.TotalInPowerSchool)"
