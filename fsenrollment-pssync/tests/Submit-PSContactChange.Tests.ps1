@@ -306,7 +306,7 @@ Describe 'Submit-PSContactChange' {
                     person_firstname = 'Jane'
                     person_middlename = 'Marie'
                     person_lastname = 'Smith'
-                    person_gender_code = 'F'
+                    person_gender = 'F'
                 }
                 
                 $changes = [PSCustomObject]@{
@@ -354,7 +354,7 @@ Describe 'Submit-PSContactChange' {
                     person_id = 12345
                     person_firstname = 'Jane'
                     person_lastname = 'Smith'
-                    person_gender_code = 'F'
+                    person_gender = 'F'
                 }
                 
                 $changes = @(

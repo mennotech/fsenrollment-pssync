@@ -24,7 +24,7 @@
     Array of column mapping objects from the template containing PowerSchoolAPIField mappings.
 
 .OUTPUTS
-    Array of PSCustomObjects with properties: Field, PowerSchoolField, OldValue, NewValue
+    Array of PSCustomObjects with properties: Field, PowerSchoolAPIField, OldValue, NewValue
     
     Only includes changes to fields specified in CheckForChanges array.
 
@@ -55,7 +55,7 @@ function Compare-ContactFields {
         'FirstName' = 'person_firstname'
         'MiddleName' = 'person_middlename'
         'LastName' = 'person_lastname'
-        'Gender' = 'person_gender_code'
+        'Gender' = 'person_gender'
         'Employer' = 'person_employer'
     }
 

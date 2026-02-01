@@ -318,7 +318,7 @@ The `Compare-PSContact` function checks the following data:
 - **FirstName** (maps to `person_firstname`)
 - **MiddleName** (maps to `person_middlename`)
 - **LastName** (maps to `person_lastname`)
-- **Gender** (maps to `person_gender_code`)
+- **Gender** (maps to `person_gender`)
 - **Employer** (maps to `person_employer`)
 
 **Email Addresses** (optional - checked if PowerSchoolEmailData is provided):

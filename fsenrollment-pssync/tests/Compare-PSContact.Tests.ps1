@@ -74,7 +74,7 @@ Describe 'Compare-PSContact' {
                     person_id = 12345
                     person_firstname = 'John'
                     person_lastname = 'Doe'
-                    person_gender_code = 'F'
+                    person_gender = 'F'
                 }
                 $script:PowerSchoolData = @($psPerson)
                 
@@ -89,7 +89,7 @@ Describe 'Compare-PSContact' {
                 $firstNameChange | Should -Not -BeNullOrEmpty
                 $firstNameChange.OldValue | Should -Be 'John'
                 $firstNameChange.NewValue | Should -Be 'Jane'
-                $firstNameChange.PowerSchoolField | Should -Be 'person_firstname'
+                $firstNameChange.PowerSchoolAPIField | Should -Be 'person_firstname'
             }
         }
 
@@ -109,7 +109,7 @@ Describe 'Compare-PSContact' {
                     person_id = 12345
                     person_firstname = 'John'
                     person_lastname = 'Doe'
-                    person_gender_code = 'M'
+                    person_gender = 'M'
                     person_employer = 'Widget Inc'
                 }
                 $script:PowerSchoolData = @($psPerson)
@@ -201,7 +201,7 @@ Describe 'Compare-PSContact' {
                     person_id = 12345
                     person_firstname = 'John'
                     person_lastname = 'Doe'
-                    person_gender_code = 'M'
+                    person_gender = 'M'
                 }
                 $script:PowerSchoolData = @($psPerson)
                 
@@ -429,7 +429,7 @@ Describe 'Compare-PSContact' {
                     person_id = 12345
                     person_firstname = 'Alex'
                     person_lastname = 'Smith'
-                    person_gender_code = 'M'
+                    person_gender = 'M'
                 }
                 $script:PowerSchoolData = @($psPerson)
                 

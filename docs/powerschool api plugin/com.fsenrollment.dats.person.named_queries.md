@@ -49,7 +49,7 @@ Each record in the `Records` array contains the following fields:
 | `person_firstName` | string | Person's first name | `"John"` |
 | `person_lastName` | string | Person's last name | `"Doe"` |
 | `person_middleName` | string | Person's middle name (optional) | `"William"` |
-| `person_gender_code` | string | Gender code (M/F) | `"M"` |
+| `person_gender` | string | Gender code (M/F) | `"M"` |
 
 #### State Integration
 | Field Name | Type | Description | Example |
@@ -81,7 +81,7 @@ Each record in the `Records` array contains the following fields:
       "_name": "Person",
       "person_firstName": "John",
       "person_lastName": "Doe",
-      "person_gender_code": "M",
+      "person_gender": "M",
       "person_whencreated": "2025-04-25 10:17:37.24",
       "person_whenmodified": "2025-04-25 14:17:37.0"
     },
@@ -92,7 +92,7 @@ Each record in the `Records` array contains the following fields:
       "_name": "Person",
       "person_firstName": "Jane",
       "person_lastName": "Smith",
-      "person_gender_code": "F",
+      "person_gender": "F",
       "person_employer": "Example Corp",
       "person_contactNumber": "12345678-abcd-1234-efgh-123456789012",
       "person_whencreated": "2025-07-28 12:58:22.158",
@@ -118,7 +118,7 @@ Each record in the `Records` array contains the following fields:
 - `person_whenmodified`
 
 **Commonly Present:**
-- `person_gender_code` (most records)
+- `person_gender` (most records)
 
 **Optional Fields:**
 - `person_middleName` (only when specified)
