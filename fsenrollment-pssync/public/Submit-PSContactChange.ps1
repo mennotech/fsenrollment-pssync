@@ -155,30 +155,8 @@ function Submit-PSContactChange {
                 throw "TemplateMetadata not found in Changes object. Ensure you're passing output from Compare-PSContact which includes template metadata."
             }
             
-            # Convert TemplateMetadata from PSCustomObject to Hashtable if needed (happens when loading from JSON)
-            if ($Changes.TemplateMetadata -is [PSCustomObject]) {
-                $TemplateMetadata = @{}
-                foreach ($property in $Changes.TemplateMetadata.PSObject.Properties) {
-                    if ($property.Value -is [Array]) {
-                        # Convert array items if they're PSCustomObjects
-                        $TemplateMetadata[$property.Name] = @($property.Value | ForEach-Object {
-                            if ($_ -is [PSCustomObject]) {
-                                $ht = @{}
-                                foreach ($prop in $_.PSObject.Properties) {
-                                    $ht[$prop.Name] = $prop.Value
-                                }
-                                $ht
-                            } else {
-                                $_
-                            }
-                        })
-                    } else {
-                        $TemplateMetadata[$property.Name] = $property.Value
-                    }
-                }
-            } else {
-                $TemplateMetadata = $Changes.TemplateMetadata
-            }
+            # Use TemplateMetadata directly
+            $TemplateMetadata = $Changes.TemplateMetadata
             Write-Verbose "Using TemplateMetadata from Changes object (Template: $($TemplateMetadata.TemplateName))"
 
             # Calculate total changes to apply
@@ -210,8 +188,19 @@ function Submit-PSContactChange {
                     $contact = $newContact.Contact
                     $matchKey = $newContact.MatchKey
                     
+                    # Get related entities from the new contact record
+                    $emailAddresses = if ($newContact.PSObject.Properties['EmailAddresses']) { $newContact.EmailAddresses } else { @() }
+                    $phoneNumbers = if ($newContact.PSObject.Properties['PhoneNumbers']) { $newContact.PhoneNumbers } else { @() }
+                    $addresses = if ($newContact.PSObject.Properties['Addresses']) { $newContact.Addresses } else { @() }
+                    $relationships = if ($newContact.PSObject.Properties['Relationships']) { $newContact.Relationships } else { @() }
+                    
                     # Build contact payload for API (always build for detailed display)
-                    $payload = Build-ContactPayload -Contact $contact -TemplateMetadata $TemplateMetadata
+                    $payload = Build-ContactPayload -Contact $contact `
+                        -TemplateMetadata $TemplateMetadata `
+                        -EmailAddresses $emailAddresses `
+                        -PhoneNumbers $phoneNumbers `
+                        -Addresses $addresses `
+                        -Relationships $relationships
                     
                     if ($WhatIfPreference) {
                         Write-Host "`n=== WHATIF: New Contact Creation ===" -ForegroundColor Cyan
@@ -449,14 +438,26 @@ function Build-ContactPayload {
         [PSContact]$Contact,
         
         [Parameter(Mandatory = $false)]
-        [hashtable]$TemplateMetadata
+        $TemplateMetadata,
+        
+        [Parameter(Mandatory = $false)]
+        [array]$EmailAddresses = @(),
+        
+        [Parameter(Mandatory = $false)]
+        [array]$PhoneNumbers = @(),
+        
+        [Parameter(Mandatory = $false)]
+        [array]$Addresses = @(),
+        
+        [Parameter(Mandatory = $false)]
+        [array]$Relationships = @()
     )
 
-    # Build basic contact object for POST /ws/contacts/contact
-    # Contact API uses flat structure (no nested objects or wrappers like student API)
-    # Example working payload: {"lastName":"Smith","gender":"M","middleName":"John","firstName":"Bob","prefix":"Mr."}
+    # Build contact object for POST /ws/contacts/contact
+    # Includes demographics, emails, phones, addresses, and contactStudents (relationships)
     $payload = @{}
 
+    # Add contact demographics fields
     foreach ($fieldName in $Contact.PSObject.Properties.Name) {
         # Get the CSV value
         $fieldValue = $Contact.$fieldName
@@ -473,14 +474,265 @@ function Build-ContactPayload {
             # Strip table prefix (e.g., person_ from person_firstname -> firstName)
             $apiFieldName = Remove-TablePrefix -FieldName $psFieldPath
             
-            # Apply the value - Contact API uses flat structure
+            # Apply the value
             $payload[$apiFieldName] = $fieldValue
         } else {
             Write-Verbose "No PowerSchool API field mapping found for property: $fieldName (skipping)"
         }
     }
 
+    # Add emails array if provided
+    if ($EmailAddresses.Count -gt 0) {
+        $payload['emails'] = @($EmailAddresses | ForEach-Object {
+            Build-EmailPayload -Email $_ -TemplateMetadata $TemplateMetadata
+        })
+        Write-Verbose "Added $($EmailAddresses.Count) email(s) to payload"
+    }
+
+    # Add phones array if provided
+    if ($PhoneNumbers.Count -gt 0) {
+        $payload['phones'] = @($PhoneNumbers | ForEach-Object {
+            Build-PhonePayload -Phone $_ -TemplateMetadata $TemplateMetadata
+        })
+        Write-Verbose "Added $($PhoneNumbers.Count) phone(s) to payload"
+    }
+
+    # Add addresses array if provided
+    if ($Addresses.Count -gt 0) {
+        $payload['addresses'] = @($Addresses | ForEach-Object {
+            Build-AddressPayload -Address $_ -TemplateMetadata $TemplateMetadata
+        })
+        Write-Verbose "Added $($Addresses.Count) address(es) to payload"
+    }
+
+    # Add contactStudents array (relationships) if provided
+    if ($Relationships.Count -gt 0) {
+        $relationshipPayloads = @($Relationships | ForEach-Object {
+            Build-RelationshipPayload -Relationship $_ -TemplateMetadata $TemplateMetadata
+        } | Where-Object { $null -ne $_ })
+        
+        if ($relationshipPayloads.Count -gt 0) {
+            $payload['contactStudents'] = $relationshipPayloads
+            Write-Verbose "Added $($relationshipPayloads.Count) relationship(s) to payload"
+        } else {
+            Write-Verbose "No valid relationships to add (all lookups failed)"
+        }
+    }
+
     return $payload
+}
+
+# Private helper function to build email payload
+function Build-EmailPayload {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [PSEmailAddress]$Email,
+        
+        [Parameter(Mandatory = $false)]
+        $TemplateMetadata
+    )
+
+    $emailPayload = @{
+        deleted = $false
+        address = $Email.EmailAddress
+    }
+
+    # Add primary status
+    if ($null -ne $Email.IsPrimary) {
+        $emailPayload['primary'] = [bool]$Email.IsPrimary
+    }
+
+    return $emailPayload
+}
+
+# Private helper function to build phone payload
+function Build-PhonePayload {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [PSPhoneNumber]$Phone,
+        
+        [Parameter(Mandatory = $false)]
+        $TemplateMetadata
+    )
+
+    $phonePayload = @{
+        deleted = $false
+        phoneNumber = $Phone.PhoneNumber
+    }
+
+    # Add phone type
+    if (-not [string]::IsNullOrWhiteSpace($Phone.PhoneType)) {
+        $phonePayload['phoneType'] = $Phone.PhoneType
+    }
+
+    # Add sequence (priority order)
+    if ($null -ne $Phone.PriorityOrder) {
+        $phonePayload['sequence'] = [int]$Phone.PriorityOrder
+    }
+
+    # Add preferred status
+    if ($null -ne $Phone.IsPreferred) {
+        $phonePayload['preferred'] = [bool]$Phone.IsPreferred
+    }
+
+    # Add SMS capability
+    if ($null -ne $Phone.IsSMS) {
+        $phonePayload['sms'] = [bool]$Phone.IsSMS
+    }
+
+    return $phonePayload
+}
+
+# Private helper function to build address payload
+function Build-AddressPayload {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [PSAddress]$Address,
+        
+        [Parameter(Mandatory = $false)]
+        $TemplateMetadata
+    )
+
+    $addressPayload = @{
+        deleted = $false
+    }
+
+    # Add address fields if available
+    if (-not [string]::IsNullOrWhiteSpace($Address.Street)) {
+        $addressPayload['street'] = $Address.Street
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($Address.LineTwo)) {
+        $addressPayload['linetwo'] = $Address.LineTwo
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($Address.Unit)) {
+        $addressPayload['unit'] = $Address.Unit
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($Address.City)) {
+        $addressPayload['city'] = $Address.City
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($Address.State)) {
+        $addressPayload['state'] = $Address.State
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($Address.PostalCode)) {
+        $addressPayload['postalcode'] = $Address.PostalCode
+    }
+
+    # Add address type
+    if (-not [string]::IsNullOrWhiteSpace($Address.AddressType)) {
+        $addressPayload['addressType'] = $Address.AddressType
+    }
+
+    # Add sequence (priority order)
+    if ($null -ne $Address.PriorityOrder) {
+        $addressPayload['sequence'] = [int]$Address.PriorityOrder
+    }
+
+    return $addressPayload
+}
+
+# Private helper function to build relationship (contactStudent) payload
+function Build-RelationshipPayload {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [PSStudentContactRelationship]$Relationship,
+        
+        [Parameter(Mandatory = $false)]
+        $TemplateMetadata
+    )
+
+    # Look up student DCID from StudentNumber using PowerSchool API
+    $studentDcid = $null
+    try {
+        Write-Verbose "Looking up DCID for student number: $($Relationship.StudentNumber)"
+        $student = Get-PowerSchoolStudent -StudentNumber $Relationship.StudentNumber
+        if ($student) {
+            $studentDcid = $student.id
+            Write-Verbose "Found student DCID: $studentDcid for student number $($Relationship.StudentNumber)"
+        } else {
+            Write-Warning "Could not find student with number $($Relationship.StudentNumber). Relationship will be skipped."
+            return $null
+        }
+    }
+    catch {
+        Write-Warning "Failed to lookup student $($Relationship.StudentNumber): $_. Relationship will be skipped."
+        return $null
+    }
+
+    $relationshipPayload = @{
+        deleted = $false
+        studentNumber = $Relationship.StudentNumber
+        dcid = [int]$studentDcid
+        studentDetails = @()
+    }
+
+    # Add sequence (contact priority order)
+    if ($null -ne $Relationship.ContactPriorityOrder) {
+        $relationshipPayload['sequence'] = [int]$Relationship.ContactPriorityOrder
+    }
+
+    # Build student details (relationship details)
+    $studentDetail = @{
+        deleted = $false
+        active = $true  # PowerSchool requires exactly one detail to be active
+    }
+
+    # Add relationship type with validation
+    if (-not [string]::IsNullOrWhiteSpace($Relationship.RelationshipType)) {
+        # Validate relationship type using template configuration
+        if ($TemplateMetadata -and $TemplateMetadata.ValidationRules -and $TemplateMetadata.ValidationRules.ValidRelationshipTypes) {
+            $validRelationships = $TemplateMetadata.ValidationRules.ValidRelationshipTypes
+            
+            # Check if relationship type is in the allowed list
+            if ($Relationship.RelationshipType -notin $validRelationships) {
+                Write-Warning "Invalid relationship type '$($Relationship.RelationshipType)' for student $($Relationship.StudentNumber)."
+                Write-Warning "Allowed values: $($validRelationships -join ', ')"
+                Write-Warning "See docs/PowerSchool-Relationship-Codes.md for more information."
+                return $null
+            }
+        }
+        
+        $studentDetail['relationship'] = $Relationship.RelationshipType
+    }
+
+    # Add relationship note
+    if (-not [string]::IsNullOrWhiteSpace($Relationship.RelationshipNote)) {
+        $studentDetail['relationshipNote'] = $Relationship.RelationshipNote
+    }
+
+    # Add boolean flags
+    if ($null -ne $Relationship.HasCustody) {
+        $studentDetail['custodial'] = [bool]$Relationship.HasCustody
+    }
+
+    if ($null -ne $Relationship.IsEmergencyContact) {
+        $studentDetail['emergency'] = [bool]$Relationship.IsEmergencyContact
+    }
+
+    if ($null -ne $Relationship.LivesWith) {
+        $studentDetail['livesWith'] = [bool]$Relationship.LivesWith
+    }
+
+    if ($null -ne $Relationship.AllowSchoolPickup) {
+        $studentDetail['schoolPickup'] = [bool]$Relationship.AllowSchoolPickup
+    }
+
+    if ($null -ne $Relationship.ReceivesMail) {
+        $studentDetail['receivesMail'] = [bool]$Relationship.ReceivesMail
+    }
+
+    # Add the student detail to the relationship
+    $relationshipPayload['studentDetails'] = @($studentDetail)
+
+    return $relationshipPayload
 }
 
 # Private helper function to build update payload from changes
@@ -497,7 +749,7 @@ function Build-ContactUpdatePayload {
         [PSCustomObject]$PowerSchoolPerson,
         
         [Parameter(Mandatory = $false)]
-        [hashtable]$TemplateMetadata
+        $TemplateMetadata
     )
 
     # Build update object for PUT /ws/contacts/contact/{contactId}/demographics
@@ -582,7 +834,30 @@ function Invoke-CreateContact {
         Write-Verbose "API call successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
 
         # Check if PowerSchool reported an error in the response
-        # Contact API uses _error_message, _warning_message, _success_message pattern
+        # Contact API can return status "ERROR" even with HTTP 200
+        if ($response.status -eq 'ERROR' -or $response.error_message) {
+            # Parse and format the error message for better readability
+            $errorDetails = @()
+            
+            if ($response.error_message.error) {
+                foreach ($err in $response.error_message.error) {
+                    $errorDetails += "Field '$($err.field)': $($err.error_description) (Code: $($err.error_code))"
+                }
+            }
+            
+            $errorMessage = if ($errorDetails.Count -gt 0) {
+                "PowerSchool API validation errors:`n  " + ($errorDetails -join "`n  ")
+            } else {
+                "PowerSchool API error: $($response.error_message | ConvertTo-Json -Compress)"
+            }
+            
+            # Include the full response for debugging
+            Write-Verbose "Full error response: $($response | ConvertTo-Json -Depth 10)"
+            
+            throw $errorMessage
+        }
+
+        # Also check legacy _error_message field
         if ($response._error_message) {
             throw "PowerSchool API error: $($response._error_message)"
         }
@@ -668,3 +943,4 @@ function Invoke-UpdateContact {
         }
     }
 }
+

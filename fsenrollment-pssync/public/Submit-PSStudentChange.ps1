@@ -148,30 +148,8 @@ function Submit-PSStudentChange {
                 throw "TemplateMetadata not found in Changes object. Ensure you're passing output from Compare-PSStudent which includes template metadata."
             }
             
-            # Convert TemplateMetadata from PSCustomObject to Hashtable if needed (happens when loading from JSON)
-            if ($Changes.TemplateMetadata -is [PSCustomObject]) {
-                $TemplateMetadata = @{}
-                foreach ($property in $Changes.TemplateMetadata.PSObject.Properties) {
-                    if ($property.Value -is [Array]) {
-                        # Convert array items if they're PSCustomObjects
-                        $TemplateMetadata[$property.Name] = @($property.Value | ForEach-Object {
-                            if ($_ -is [PSCustomObject]) {
-                                $ht = @{}
-                                foreach ($prop in $_.PSObject.Properties) {
-                                    $ht[$prop.Name] = $prop.Value
-                                }
-                                $ht
-                            } else {
-                                $_
-                            }
-                        })
-                    } else {
-                        $TemplateMetadata[$property.Name] = $property.Value
-                    }
-                }
-            } else {
-                $TemplateMetadata = $Changes.TemplateMetadata
-            }
+            # Use TemplateMetadata directly (works with both hashtable and PSCustomObject)
+            $TemplateMetadata = $Changes.TemplateMetadata
             Write-Verbose "Using TemplateMetadata from Changes object (Template: $($TemplateMetadata.TemplateName))"
 
             # Calculate total changes to apply
@@ -449,7 +427,7 @@ function Build-StudentPayload {
         [PSStudent]$Student,
         
         [Parameter(Mandatory = $false)]
-        [hashtable]$TemplateMetadata
+        $TemplateMetadata
     )
 
     # Build basic student object
@@ -679,7 +657,7 @@ function Build-UpdatePayload {
         [PSCustomObject]$PowerSchoolStudent,
         
         [Parameter(Mandatory = $false)]
-        [hashtable]$TemplateMetadata
+        $TemplateMetadata
     )
 
     # Build update object
@@ -951,3 +929,4 @@ function Invoke-UpdateStudent {
         }
     }
 }
+

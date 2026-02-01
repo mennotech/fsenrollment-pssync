@@ -18,7 +18,10 @@
     config/templates/ directory (e.g., 'fs_powerschool_nonapi_report_students').
 
 .OUTPUTS
-    PSNormalizedData object containing normalized entities as specified by the template.
+    PSNormalizedData object containing normalized entities and template metadata.
+    The TemplateMetadata property contains the ENTIRE template configuration object
+    from the .psd1 file, including: TemplateName, Description, FieldMappings, 
+    EntityTypeMap, ValidationRules, DateTimeFormat, KeyField, and all other properties.
 
 .EXAMPLE
     $data = Import-FSCsv -Path './data/students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
@@ -131,22 +134,16 @@ function Import-FSCsv {
             }
             
 
-
             # Add TemplateMetadata for downstream use
-            $normalizedData.TemplateMetadata = @{
-                TemplateName = $templateConfig.TemplateName
-                EntityType = $templateConfig.EntityType
-                KeyField = $templateConfig.KeyField
-                PowerSchoolKeyField = $templateConfig.PowerSchoolKeyField
-                PowerSchoolKeyDataType = $templateConfig.PowerSchoolKeyDataType
-                CheckForChanges = $templateConfig.EntityTypeMap.Contact.CheckForChanges
-                ColumnMappings = $templateConfig.ColumnMappings.Contact
-            }
-            
-            # Add RelationshipCheckForChanges if EntityTypeMap.Relationship is defined
-            if ($templateConfig.EntityTypeMap -and $templateConfig.EntityTypeMap.Relationship -and $templateConfig.EntityTypeMap.Relationship.CheckForChanges) {
-                $normalizedData.TemplateMetadata.RelationshipCheckForChanges = $templateConfig.EntityTypeMap.Relationship.CheckForChanges
-            }
+            # IMPORTANT: Pass the entire template configuration object rather than selectively
+            # copying properties. This ensures ALL template configuration (including ValidationRules,
+            # DateTimeFormat, custom properties, etc.) flows through to downstream functions.
+            #
+            # Normalize TemplateMetadata through JSON round-trip to ensure consistent type handling.
+            # This converts hashtables to PSCustomObject, which matches the type when loading from
+            # saved JSON files. All downstream code can then assume PSCustomObject type only.
+            Write-Verbose "Attaching template configuration as metadata (normalized via JSON)"
+            $normalizedData.TemplateMetadata = $templateConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
 
             return $normalizedData
         }

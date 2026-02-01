@@ -366,12 +366,34 @@ function Compare-PSContact {
                     }
                 } else {
                     # Contact is new (not in PowerSchool)
-                    $newContacts.Add([PSCustomObject]@{
+                    # Collect related entities for this contact from CsvData
+                    $csvEmails = $CsvData.EmailAddresses | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                    $csvPhones = $CsvData.PhoneNumbers | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                    $csvAddresses = $CsvData.Addresses | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                    $csvRelationships = $CsvData.Relationships | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                    
+                    $newRecord = [PSCustomObject]@{
                         MatchKey = $matchKey
                         MatchField = $keyField
                         Contact = $csvContact
-                    })
-                    Write-Verbose "Contact $matchKey is new (not in PowerSchool)"
+                    }
+                    
+                    # Add related entities if they exist
+                    if ($csvEmails.Count -gt 0) {
+                        $newRecord | Add-Member -NotePropertyName 'EmailAddresses' -NotePropertyValue @($csvEmails)
+                    }
+                    if ($csvPhones.Count -gt 0) {
+                        $newRecord | Add-Member -NotePropertyName 'PhoneNumbers' -NotePropertyValue @($csvPhones)
+                    }
+                    if ($csvAddresses.Count -gt 0) {
+                        $newRecord | Add-Member -NotePropertyName 'Addresses' -NotePropertyValue @($csvAddresses)
+                    }
+                    if ($csvRelationships.Count -gt 0) {
+                        $newRecord | Add-Member -NotePropertyName 'Relationships' -NotePropertyValue @($csvRelationships)
+                    }
+                    
+                    $newContacts.Add($newRecord)
+                    Write-Verbose "Contact $matchKey is new (not in PowerSchool) - Emails: $($csvEmails.Count), Phones: $($csvPhones.Count), Addresses: $($csvAddresses.Count), Relationships: $($csvRelationships.Count)"
                 }
             }
             

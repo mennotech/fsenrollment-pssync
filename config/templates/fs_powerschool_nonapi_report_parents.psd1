@@ -16,6 +16,14 @@
     PowerSchoolKeyDataType = 'string'
     # Optional: CSV column name for excluding contacts from import (omit if not used in your CSV)
     ExcludeColumnName = 'Exclude from PowerSchool Export'
+    
+    # Validation rules for relationship types
+    # ValidRelationshipTypes: Array of allowed relationship values (whitelist)
+    # This list matches the Relationship codeset from PowerSchool (System > System Settings > Code Sets)
+    ValidationRules = @{
+        ValidRelationshipTypes = @('Aunt', 'Brother', 'Doctor', 'Father', 'FosterFather', 'FosterMother', 'Friend', 'Grandfather', 'Grandmother', 'Legal Guardian', 'Mother', 'Neighbor', 'Other', 'Sister', 'Step-Father', 'Step-Mother', 'Uncle')
+    }
+    
     # Entity type mappings for hashtable keys (used by custom parser to infer EntityType)
     # Each entity maps to its PowerSchool class, PowerQuery for data retrieval, and fields to check for changes
     EntityTypeMap = @{

@@ -16,7 +16,7 @@ Describe 'Submit-PSStudentChange' {
             $script:PowerSchoolTokenExpiry = (Get-Date).AddHours(1)
         }
 
-        # Create sample change data with TemplateMetadata
+        # Create sample change data with TemplateMetadata as PSCustomObject
         $script:SampleChanges = [PSCustomObject]@{
             New = @()
             Updated = @()
@@ -29,16 +29,16 @@ Describe 'Submit-PSStudentChange' {
                 UnchangedCount = 0
                 MatchField = 'StudentNumber'
             }
-            TemplateMetadata = @{
+            TemplateMetadata = [PSCustomObject]@{
                 TemplateName = 'test_template'
                 KeyField = 'StudentNumber'
                 PowerSchoolKeyField = 'local_id'
                 PowerSchoolKeyDataType = 'int'
                 CheckForChanges = @('FirstName', 'LastName')
                 ColumnMappings = @(
-                    @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
-                    @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
-                    @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                    [PSCustomObject]@{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                    [PSCustomObject]@{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                    [PSCustomObject]@{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
                 )
             }
         }
@@ -100,16 +100,16 @@ Describe 'Submit-PSStudentChange' {
                 $changes = [PSCustomObject]@{
                     New = @()
                     Updated = @()
-                    TemplateMetadata = @{
+                    TemplateMetadata = [PSCustomObject]@{
                         TemplateName = 'test_template'
                         KeyField = 'StudentNumber'
                         PowerSchoolKeyField = 'local_id'
                         PowerSchoolKeyDataType = 'int'
                         CheckForChanges = @('FirstName', 'LastName')
                         ColumnMappings = @(
-                            @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
-                            @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
-                            @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                            [PSCustomObject]@{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                            [PSCustomObject]@{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                            [PSCustomObject]@{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
                         )
                     }
                 }
@@ -124,16 +124,16 @@ Describe 'Submit-PSStudentChange' {
                 $script:PowerSchoolToken = $null
                 $script:PowerSchoolBaseUrl = $null
                 
-                $templateMetadata = @{
+                $templateMetadata = [PSCustomObject]@{
                     TemplateName = 'test_template'
                     KeyField = 'StudentNumber'
                     PowerSchoolKeyField = 'local_id'
                     PowerSchoolKeyDataType = 'int'
                     CheckForChanges = @('FirstName', 'LastName')
                     ColumnMappings = @(
-                        @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
-                        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
-                        @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        [PSCustomObject]@{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                        [PSCustomObject]@{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                        [PSCustomObject]@{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
                     )
                 }
                 
@@ -153,16 +153,16 @@ Describe 'Submit-PSStudentChange' {
                 Mock Test-PowerSchoolConnection { }
                 Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
-                $templateMetadata = @{
+                $templateMetadata = [PSCustomObject]@{
                     TemplateName = 'test_template'
                     KeyField = 'StudentNumber'
                     PowerSchoolKeyField = 'local_id'
                     PowerSchoolKeyDataType = 'int'
                     CheckForChanges = @('FirstName', 'LastName')
                     ColumnMappings = @(
-                        @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
-                        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
-                        @{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
+                        [PSCustomObject]@{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; PowerSchoolAPIField = 'local_id' }
+                        [PSCustomObject]@{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; PowerSchoolAPIField = 'name.first_name' }
+                        [PSCustomObject]@{ CSVColumn = 'Last_Name'; EntityProperty = 'LastName'; PowerSchoolAPIField = 'name.last_name' }
                     )
                 }
                 

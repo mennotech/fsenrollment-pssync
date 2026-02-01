@@ -13,7 +13,7 @@
     The name of the entity property to get the PowerSchool API field for (e.g., 'FirstName', 'MiddleName').
 
 .PARAMETER TemplateMetadata
-    Optional template metadata hashtable containing ColumnMappings with PowerSchoolAPIField mappings.
+    Optional template metadata containing ColumnMappings with PowerSchoolAPIField mappings.
 
 .OUTPUTS
     String representing the PowerSchool API field name, or $null if no mapping found.
@@ -28,7 +28,7 @@
     # Returns: 'name.first_name'
 
 .NOTES
-    This is a private helper function used by Submit-PSStudentChange and other functions.
+    Private helper function for Submit-PSStudentChange and Submit-PSContactChange.
     Maintains consistency with template-driven field mapping throughout the system.
 #>
 function Get-PowerSchoolFieldMapping {
@@ -38,21 +38,24 @@ function Get-PowerSchoolFieldMapping {
         [string]$EntityProperty,
 
         [Parameter(Mandatory = $false)]
-        [hashtable]$TemplateMetadata
+        [PSCustomObject]$TemplateMetadata
     )
 
     # Try to get mapping from template metadata first
-    if ($TemplateMetadata -and $TemplateMetadata.ColumnMappings) {
+    if ($TemplateMetadata -and $TemplateMetadata.PSObject.Properties['ColumnMappings']) {
+        $columnMappings = $TemplateMetadata.ColumnMappings
+        
         # Handle both single entity and multi-entity templates
         $allMappings = @()
-        if ($TemplateMetadata.ColumnMappings -is [hashtable]) {
-            # Multi-entity template (e.g., Contact, EmailAddress, PhoneNumber)
-            foreach ($entityMappings in $TemplateMetadata.ColumnMappings.Values) {
-                $allMappings += $entityMappings
+        
+        if ($columnMappings -is [PSCustomObject]) {
+            # Multi-entity template: ColumnMappings has entity names as properties
+            foreach ($prop in $columnMappings.PSObject.Properties) {
+                $allMappings += $prop.Value
             }
         } else {
-            # Single entity template (e.g., Student)
-            $allMappings = $TemplateMetadata.ColumnMappings
+            # Single entity template (e.g., Student) - ColumnMappings is directly an array
+            $allMappings = $columnMappings
         }
         
         $mapping = $allMappings | Where-Object { $_.EntityProperty -eq $EntityProperty } | Select-Object -First 1
