@@ -26,6 +26,11 @@
     Path where the contact change report JSON file will be saved. 
     Default: './data/pending/[date]-contact-changes.json'
 
+.PARAMETER UseCache
+    When specified, saves PowerSchool API query results to a cache file and reuses 
+    cached data on subsequent runs instead of querying the API. Useful for testing 
+    and development to avoid repeated API calls.
+
 .EXAMPLE
     .\Example-ContactChangeDetection.ps1 -CsvPath './data/contacts.csv'
     
@@ -52,11 +57,17 @@ param(
     [string]$TemplateName = 'fs_powerschool_nonapi_report_parents',
     
     [Parameter(Mandatory = $false)]
-    [string]$OutputPath = "./data/pending/$(Get-Date -Format 'yyyy-MM-dd-HHmm')-contact-changes.json"
+    [string]$OutputPath = "./data/pending/$(Get-Date -Format 'yyyy-MM-dd-HHmm')-contact-changes.json",
+    
+    [Parameter(Mandatory = $false)]
+    [switch]$UseCache
 )
 
 # Import the module
 Import-Module (Join-Path $PSScriptRoot '../fsenrollment-pssync/FSEnrollment-PSSync.psd1') -Force
+
+# Define cache file path
+$cacheFilePath = Join-Path $PSScriptRoot '../data/powerschool-contact-cache.json'
 
 try {
     Write-Host "=== PowerSchool Contact Change Detection ===" -ForegroundColor Cyan
@@ -72,16 +83,6 @@ try {
     Write-Host "[2/8] Importing contact data from CSV..." -ForegroundColor Yellow
     Write-Host "  CSV Path: $CsvPath" -ForegroundColor Gray
     Write-Host "  Template: $TemplateName" -ForegroundColor Gray
-    
-    # Load template configuration for comparison settings
-    $configRoot = Join-Path $PSScriptRoot '../config'
-    $templatePath = Join-Path $configRoot "templates/$TemplateName.psd1"
-    
-    if (-not (Test-Path $templatePath)) {
-        throw "Template configuration not found: $templatePath"
-    }
-    
-    $templateConfig = Import-PowerShellDataFile -Path $templatePath
     
     $csvData = Import-FSCsv -Path $CsvPath -TemplateName $TemplateName -Verbose:$VerbosePreference
     
@@ -104,82 +105,171 @@ try {
     Write-Host "[3/8] Fetching person data from PowerSchool..." -ForegroundColor Yellow
     Write-Host "  PowerQuery: com.fsenrollment.dats.person" -ForegroundColor Gray
     
-    $personData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords -Verbose:$VerbosePreference
-    
-    Write-Host "  ✓ Retrieved $($personData.RecordCount) person records from PowerSchool" -ForegroundColor Green
-    Write-Host ""
-    
-    # Step 4: Fetch email data if CSV has emails
+    # Check if using cached data
+    $personData = $null
     $emailData = $null
-    if ($csvData.EmailAddresses.Count -gt 0) {
-        Write-Host "[4/8] Fetching email data from PowerSchool..." -ForegroundColor Yellow
-        Write-Host "  PowerQuery: com.fsenrollment.dats.person.email" -ForegroundColor Gray
-        
-        $emailData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.email' -AllRecords -Verbose:$VerbosePreference
-        
-        Write-Host "  ✓ Retrieved $($emailData.RecordCount) email records from PowerSchool" -ForegroundColor Green
-        Write-Host ""
-    } else {
-        Write-Host "[4/8] Skipping email data (no emails in CSV)" -ForegroundColor Gray
-        Write-Host ""
-    }
-    
-    # Step 5: Fetch phone data if CSV has phones
     $phoneData = $null
-    if ($csvData.PhoneNumbers.Count -gt 0) {
-        Write-Host "[5/8] Fetching phone data from PowerSchool..." -ForegroundColor Yellow
-        Write-Host "  PowerQuery: com.fsenrollment.dats.person.phone" -ForegroundColor Gray
-        
-        $phoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.phone' -AllRecords -Verbose:$VerbosePreference
-        
-        Write-Host "  ✓ Retrieved $($phoneData.RecordCount) phone records from PowerSchool" -ForegroundColor Green
-        Write-Host ""
-    } else {
-        Write-Host "[5/8] Skipping phone data (no phones in CSV)" -ForegroundColor Gray
-        Write-Host ""
-    }
-    
-    # Step 6: Fetch address data if CSV has addresses
     $addressData = $null
-    if ($csvData.Addresses.Count -gt 0) {
-        Write-Host "[6/8] Fetching address data from PowerSchool..." -ForegroundColor Yellow
-        Write-Host "  PowerQuery: com.fsenrollment.dats.person.address" -ForegroundColor Gray
+    $relationshipData = $null
+    
+    if ($UseCache -and (Test-Path $cacheFilePath)) {
+        Write-Host "  ℹ Using cached PowerSchool data from: $cacheFilePath" -ForegroundColor Magenta
         
-        $addressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords -Verbose:$VerbosePreference
+        $cachedData = Get-Content -Path $cacheFilePath -Raw | ConvertFrom-Json
         
-        Write-Host "  ✓ Retrieved $($addressData.RecordCount) address records from PowerSchool" -ForegroundColor Green
+        # Reconstruct the data objects
+        $personData = @{
+            RecordCount = $cachedData.PersonData.RecordCount
+            Records = $cachedData.PersonData.Records
+        }
+        
+        if ($cachedData.EmailData) {
+            $emailData = @{
+                RecordCount = $cachedData.EmailData.RecordCount
+                Records = $cachedData.EmailData.Records
+            }
+        }
+        
+        if ($cachedData.PhoneData) {
+            $phoneData = @{
+                RecordCount = $cachedData.PhoneData.RecordCount
+                Records = $cachedData.PhoneData.Records
+            }
+        }
+        
+        if ($cachedData.AddressData) {
+            $addressData = @{
+                RecordCount = $cachedData.AddressData.RecordCount
+                Records = $cachedData.AddressData.Records
+            }
+        }
+        
+        if ($cachedData.RelationshipData) {
+            $relationshipData = @{
+                RecordCount = $cachedData.RelationshipData.RecordCount
+                Records = $cachedData.RelationshipData.Records
+            }
+        }
+        
+        Write-Host "  ✓ Loaded $($personData.RecordCount) person records from cache" -ForegroundColor Green
+        if ($emailData) {
+            Write-Host "  ✓ Loaded $($emailData.RecordCount) email records from cache" -ForegroundColor Green
+        }
+        if ($phoneData) {
+            Write-Host "  ✓ Loaded $($phoneData.RecordCount) phone records from cache" -ForegroundColor Green
+        }
+        if ($addressData) {
+            Write-Host "  ✓ Loaded $($addressData.RecordCount) address records from cache" -ForegroundColor Green
+        }
+        if ($relationshipData) {
+            Write-Host "  ✓ Loaded $($relationshipData.RecordCount) relationship records from cache" -ForegroundColor Green
+        }
         Write-Host ""
-    } else {
-        Write-Host "[6/8] Skipping address data (no addresses in CSV)" -ForegroundColor Gray
+        
+        # Skip to Step 8 (comparison)
+        Write-Host "[4/8] Skipping API queries (using cached data)" -ForegroundColor Gray
+        Write-Host "[5/8] Skipping API queries (using cached data)" -ForegroundColor Gray
+        Write-Host "[6/8] Skipping API queries (using cached data)" -ForegroundColor Gray
+        Write-Host "[7/8] Skipping API queries (using cached data)" -ForegroundColor Gray
         Write-Host ""
     }
-    
-    # Step 7: Fetch relationship data if CSV has relationships
-    $relationshipData = $null
-    if ($csvData.Relationships.Count -gt 0) {
-        Write-Host "[7/8] Fetching relationship data from PowerSchool..." -ForegroundColor Yellow
-        Write-Host "  PowerQuery: com.fsenrollment.dats.person.relationship" -ForegroundColor Gray
+    else {
+        # Query PowerSchool API as usual
+        $personData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords -Verbose:$VerbosePreference
         
-        $relationshipData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords -Verbose:$VerbosePreference
+        Write-Host "  ✓ Retrieved $($personData.RecordCount) person records from PowerSchool" -ForegroundColor Green
+        Write-Host ""
         
-        Write-Host "  ✓ Retrieved $($relationshipData.RecordCount) relationship records from PowerSchool" -ForegroundColor Green
-        Write-Host ""
-    } else {
-        Write-Host "[7/8] Skipping relationship data (no relationships in CSV)" -ForegroundColor Gray
-        Write-Host ""
+        # Step 4: Fetch email data if CSV has emails
+        if ($csvData.EmailAddresses.Count -gt 0) {
+            Write-Host "[4/8] Fetching email data from PowerSchool..." -ForegroundColor Yellow
+            Write-Host "  PowerQuery: com.fsenrollment.dats.person.email" -ForegroundColor Gray
+            
+            $emailData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.email' -AllRecords -Verbose:$VerbosePreference
+            
+            Write-Host "  ✓ Retrieved $($emailData.RecordCount) email records from PowerSchool" -ForegroundColor Green
+            Write-Host ""
+        } else {
+            Write-Host "[4/8] Skipping email data (no emails in CSV)" -ForegroundColor Gray
+            Write-Host ""
+        }
+        
+        # Step 5: Fetch phone data if CSV has phones
+        if ($csvData.PhoneNumbers.Count -gt 0) {
+            Write-Host "[5/8] Fetching phone data from PowerSchool..." -ForegroundColor Yellow
+            Write-Host "  PowerQuery: com.fsenrollment.dats.person.phone" -ForegroundColor Gray
+            
+            $phoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.phone' -AllRecords -Verbose:$VerbosePreference
+            
+            Write-Host "  ✓ Retrieved $($phoneData.RecordCount) phone records from PowerSchool" -ForegroundColor Green
+            Write-Host ""
+        } else {
+            Write-Host "[5/8] Skipping phone data (no phones in CSV)" -ForegroundColor Gray
+            Write-Host ""
+        }
+        
+        # Step 6: Fetch address data if CSV has addresses
+        if ($csvData.Addresses.Count -gt 0) {
+            Write-Host "[6/8] Fetching address data from PowerSchool..." -ForegroundColor Yellow
+            Write-Host "  PowerQuery: com.fsenrollment.dats.person.address" -ForegroundColor Gray
+            
+            $addressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords -Verbose:$VerbosePreference
+            
+            Write-Host "  ✓ Retrieved $($addressData.RecordCount) address records from PowerSchool" -ForegroundColor Green
+            Write-Host ""
+        } else {
+            Write-Host "[6/8] Skipping address data (no addresses in CSV)" -ForegroundColor Gray
+            Write-Host ""
+        }
+        
+        # Step 7: Fetch relationship data if CSV has relationships
+        if ($csvData.Relationships.Count -gt 0) {
+            Write-Host "[7/8] Fetching relationship data from PowerSchool..." -ForegroundColor Yellow
+            Write-Host "  PowerQuery: com.fsenrollment.dats.person.relationship" -ForegroundColor Gray
+            
+            $relationshipData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords -Verbose:$VerbosePreference
+            
+            Write-Host "  ✓ Retrieved $($relationshipData.RecordCount) relationship records from PowerSchool" -ForegroundColor Green
+            Write-Host ""
+        } else {
+            Write-Host "[7/8] Skipping relationship data (no relationships in CSV)" -ForegroundColor Gray
+            Write-Host ""
+        }
+        
+        # Save to cache if UseCache is specified
+        if ($UseCache) {
+            Write-Host "Saving PowerSchool data to cache..." -ForegroundColor Yellow
+            
+            $cacheData = @{
+                CacheDate = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+                PersonData = $personData
+                EmailData = $emailData
+                PhoneData = $phoneData
+                AddressData = $addressData
+                RelationshipData = $relationshipData
+            }
+            
+            $cacheDir = Split-Path $cacheFilePath -Parent
+            if ($cacheDir -and -not (Test-Path $cacheDir)) {
+                New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null
+            }
+            
+            $cacheData | ConvertTo-Json -Depth 10 | Out-File -FilePath $cacheFilePath -Encoding UTF8
+            Write-Host "  ✓ Cached PowerSchool data to: $cacheFilePath" -ForegroundColor Green
+            Write-Host ""
+        }
     }
     
     # Step 8: Compare and detect changes
     Write-Host "[8/8] Comparing contact data..." -ForegroundColor Yellow
-    $fieldsToCheck = $templateConfig.EntityTypeMap.Contact.CheckForChanges -join ', '
+    $fieldsToCheck = $csvData.TemplateMetadata.CheckForChanges -join ', '
     Write-Host "  Comparing: $fieldsToCheck" -ForegroundColor Gray
-    Write-Host "  Key Field: $($templateConfig.KeyField) -> $($templateConfig.PowerSchoolKeyField)" -ForegroundColor Gray
+    Write-Host "  Key Field: $($csvData.TemplateMetadata.KeyField) -> $($csvData.TemplateMetadata.PowerSchoolKeyField)" -ForegroundColor Gray
     
     # Build comparison parameters
     $compareParams = @{
         CsvData = $csvData
         PowerSchoolData = $personData.Records
-        TemplateConfig = $templateConfig
         Verbose = $VerbosePreference
     }
     
