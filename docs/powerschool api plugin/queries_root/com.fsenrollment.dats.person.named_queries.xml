@@ -14,8 +14,8 @@
             <column column="person.employer">person_employer</column>
             <column column="person.whencreated">person_whencreated</column>
             <column column="person.whenmodified">person_whenmodified</column>
-            <column column="person.isactive">person_isActive</column>
-            <column column="codeset.code">person_gender_code</column>
+            <column column="person.isactive">person_active</column>
+            <column column="codeset.code">person_gender</column>
         </columns>
         <sql>
             <![CDATA[
@@ -29,11 +29,13 @@ SELECT DISTINCT
     person.employer AS person_employer,
     person.whencreated AS person_whencreated,
     person.whenmodified AS person_whenmodified,
-    person.isactive AS person_isActive,
-    codeset.code AS person_gender_code
+    person.isactive AS person_active,
+    codeset.code AS person_gender
 
 FROM person
-    INNER JOIN codeset ON codeset.codesetid = person.gendercodesetid
+    LEFT JOIN codeset ON codeset.codesetid = person.gendercodesetid
+
+WHERE person.statecontactid IS NOT NULL
 
 ORDER BY person.dcid
             ]]>
@@ -72,7 +74,9 @@ SELECT DISTINCT
 FROM person
     INNER JOIN personemailaddressassoc ON personemailaddressassoc.personid = person.id
     INNER JOIN emailaddress ON emailaddress.emailaddressid = personemailaddressassoc.emailaddressid
-    INNER JOIN codeset ON personemailaddressassoc.emailtypecodesetid = codeset.codesetid
+    LEFT JOIN codeset ON personemailaddressassoc.emailtypecodesetid = codeset.codesetid
+
+WHERE person.statecontactid IS NOT NULL
 
 ORDER BY person.dcid, emailaddress.emailaddressid
             ]]>
@@ -111,7 +115,9 @@ SELECT DISTINCT
 FROM person
     INNER JOIN personphonenumberassoc ON personphonenumberassoc.personid = person.id
     INNER JOIN phonenumber ON phonenumber.phonenumberid = personphonenumberassoc.phonenumberid
-    INNER JOIN codeset ON personphonenumberassoc.phonetypecodesetid = codeset.codesetid
+    LEFT JOIN codeset ON personphonenumberassoc.phonetypecodesetid = codeset.codesetid
+
+WHERE person.statecontactid IS NOT NULL
 
 ORDER BY person.dcid, phonenumber.phonenumberid
             ]]>
@@ -158,7 +164,9 @@ FROM person
     INNER JOIN personaddress ON personaddress.personaddressid = personaddressassoc.personaddressid
     LEFT OUTER JOIN codeset statecode ON personaddress.statescodesetid = statecode.codesetid
     LEFT OUTER JOIN codeset countrycode ON personaddress.countrycodesetid = countrycode.codesetid
-    INNER JOIN codeset typecode ON personaddressassoc.addresstypecodesetid = typecode.codesetid
+    LEFT OUTER JOIN codeset typecode ON personaddressassoc.addresstypecodesetid = typecode.codesetid
+
+WHERE person.statecontactid IS NOT NULL
 
 ORDER BY person.dcid, personaddress.personaddressid
             ]]>
@@ -210,8 +218,10 @@ FROM person
     INNER JOIN studentcontactassoc ON studentcontactassoc.personid = person.id
     INNER JOIN studentcontactdetail ON studentcontactdetail.studentcontactassocid = studentcontactassoc.studentcontactassocid
     INNER JOIN students ON studentcontactassoc.studentdcid = students.dcid
-    INNER JOIN codeset ON codeset.codesetid = studentcontactdetail.relationshiptypecodesetid
+    LEFT JOIN codeset ON codeset.codesetid = studentcontactdetail.relationshiptypecodesetid
     
+WHERE person.statecontactid IS NOT NULL
+
 ORDER BY person.dcid, students.dcid
             ]]>
         </sql>

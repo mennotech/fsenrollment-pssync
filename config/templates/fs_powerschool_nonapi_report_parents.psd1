@@ -54,9 +54,9 @@
             @{ CSVColumn = 'Middle Name'; EntityProperty = 'MiddleName'; DataType = 'string'; PowerSchoolAPIField = 'person_middleName' }
             @{ CSVColumn = 'Last Name'; EntityProperty = 'LastName'; DataType = 'string'; PowerSchoolAPIField = 'person_lastName' }
             @{ CSVColumn = 'Suffix'; EntityProperty = 'Suffix'; DataType = 'string' }
-            @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string'; PowerSchoolAPIField = 'person_gender_code' }
+            @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string'; PowerSchoolAPIField = 'person_gender' }
             @{ CSVColumn = 'Employer'; EntityProperty = 'Employer'; DataType = 'string'; PowerSchoolAPIField = 'person_employer' }
-            @{ CSVColumn = 'Is Active'; EntityProperty = 'IsActive'; DataType = 'bool' }
+            @{ CSVColumn = 'Is Active'; EntityProperty = 'IsActive'; DataType = 'bool'; PowerSchoolAPIField = 'person_active' }
             @{ CSVColumn = 'Exclude from PowerSchool Export'; EntityProperty = 'ExcludeFromExport'; DataType = 'bool' }
         )
         EmailAddress = @(
