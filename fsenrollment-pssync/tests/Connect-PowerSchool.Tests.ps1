@@ -131,6 +131,11 @@ Describe 'Connect-PowerSchool' {
 
     Context 'Environment Variable Support' {
         BeforeEach {
+            # Mock Import-EnvironmentCredentials to return null so environment variables are used
+            Mock -ModuleName FSEnrollment-PSSync Import-EnvironmentCredentials {
+                return $null
+            }
+
             Mock -ModuleName FSEnrollment-PSSync Invoke-RestMethod {
                 return @{
                     access_token = 'test-token-123'
@@ -148,6 +153,76 @@ Describe 'Connect-PowerSchool' {
                 Connect-PowerSchool
                 Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-RestMethod -Times 1 -ParameterFilter {
                     $Uri -match 'env\.powerschool\.com'
+                }
+            }
+            finally {
+                Remove-Item Env:\PowerSchool_BaseUrl -ErrorAction SilentlyContinue
+                Remove-Item Env:\PowerSchool_ClientID -ErrorAction SilentlyContinue
+                Remove-Item Env:\PowerSchool_ClientSecret -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
+    Context '.env File Credential Loading' {
+        BeforeEach {
+            Mock -ModuleName FSEnrollment-PSSync Invoke-RestMethod {
+                return @{
+                    access_token = 'test-token-from-env-file'
+                    expires_in = 3600
+                }
+            }
+        }
+
+        It 'Should use credentials from .env file when available' {
+            # Mock Import-EnvironmentCredentials to return test credentials
+            Mock -ModuleName FSEnrollment-PSSync Import-EnvironmentCredentials {
+                return [PSCustomObject]@{
+                    PowerSchoolUrl = 'https://dotenv.powerschool.com'
+                    PowerSchoolClientId = ConvertTo-SecureString -String 'dotenv-client-id' -AsPlainText -Force
+                    PowerSchoolClientSecret = ConvertTo-SecureString -String 'dotenv-secret' -AsPlainText -Force
+                }
+            }
+
+            Connect-PowerSchool
+            
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-RestMethod -Times 1 -ParameterFilter {
+                $Uri -match 'dotenv\.powerschool\.com'
+            }
+        }
+
+        It 'Should prioritize explicit parameters over .env file' {
+            # Mock Import-EnvironmentCredentials to return test credentials
+            Mock -ModuleName FSEnrollment-PSSync Import-EnvironmentCredentials {
+                return [PSCustomObject]@{
+                    PowerSchoolUrl = 'https://dotenv.powerschool.com'
+                    PowerSchoolClientId = ConvertTo-SecureString -String 'dotenv-client-id' -AsPlainText -Force
+                    PowerSchoolClientSecret = ConvertTo-SecureString -String 'dotenv-secret' -AsPlainText -Force
+                }
+            }
+
+            $testSecret = ConvertTo-SecureString -String 'explicit-secret' -AsPlainText -Force
+            Connect-PowerSchool -BaseUrl 'https://explicit.powerschool.com' -ClientId 'explicit-client' -ClientSecret $testSecret
+            
+            Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-RestMethod -Times 1 -ParameterFilter {
+                $Uri -match 'explicit\.powerschool\.com'
+            }
+        }
+
+        It 'Should fallback to environment variables if .env file not available' {
+            # Mock Import-EnvironmentCredentials to return null
+            Mock -ModuleName FSEnrollment-PSSync Import-EnvironmentCredentials {
+                return $null
+            }
+
+            $env:PowerSchool_BaseUrl = 'https://fallback.powerschool.com'
+            $env:PowerSchool_ClientID = 'fallback-client-id'
+            $env:PowerSchool_ClientSecret = 'fallback-secret'
+
+            try {
+                Connect-PowerSchool
+                
+                Should -Invoke -ModuleName FSEnrollment-PSSync Invoke-RestMethod -Times 1 -ParameterFilter {
+                    $Uri -match 'fallback\.powerschool\.com'
                 }
             }
             finally {

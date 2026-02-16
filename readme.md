@@ -80,6 +80,7 @@ Write-Host "Removed: $($changes.Summary.RemovedCount)"
 
 ## Documentation
 
+- **[Secure Credential Management](docs/Secure-Credential-Management.md)** - 🔒 Comprehensive guide to secure credential handling
 - **[PowerSchool Change Detection Usage Guide](docs/PowerSchool-ChangeDetection-Usage.md)** - Detailed usage examples for student and contact change detection
 - **[Documentation Overview](docs/readme.md)** - Full documentation structure
 - **[CSV Parsing Examples](docs/CSV-Parsing-Examples.md)** - CSV import examples
@@ -97,7 +98,32 @@ Write-Host "Removed: $($changes.Summary.RemovedCount)"
 
 ## Configuration
 
-### Environment Variables (Recommended)
+### Secure Credential Management (Recommended)
+
+Use the secure credential system to prevent credential leaks. `Connect-PowerSchool` now automatically loads credentials from the `.env` file:
+
+```powershell
+# 1. Create .env file from template
+Copy-Item config\.env.example config\.env
+# Edit config\.env with your actual credentials
+
+# 2. Import the module and connect (credentials loaded automatically from .env)
+Import-Module ./fsenrollment-pssync/FSEnrollment-PSSync.psd1
+Connect-PowerSchool  # No parameters needed - uses .env file!
+
+# Alternative: Manually import credentials for other uses
+$credentials = Import-EnvironmentCredentials -ClearEnvironmentVariables
+```
+
+**Credential Loading Priority:**
+1. Explicit parameters (highest priority)
+2. `.env` file credentials
+3. Environment variables  
+4. Interactive prompts (lowest priority)
+
+See **[Secure Credential Management](docs/Secure-Credential-Management.md)** for complete details.
+
+### Environment Variables (Alternative)
 
 ```powershell
 $env:PowerSchool_BaseUrl = 'https://your-instance.powerschool.com'
@@ -105,17 +131,22 @@ $env:PowerSchool_ClientID = 'your-client-id'
 $env:PowerSchool_ClientSecret = 'your-client-secret'
 ```
 
-### Configuration File
+### Configuration File (Legacy)
 
 Copy `config/config.example.psd1` to `config/config.psd1` and customize settings.
 
 ## Security
 
-- Credentials stored as `SecureString` in memory
-- Supports environment variables and interactive secure prompts
-- Never commit credentials to version control
-- Token automatically refreshed before expiration
-- Implements retry logic with exponential backoff
+- **SecureString encryption** - Credentials stored as SecureStrings in memory
+- **Environment variable clearing** - Automatically clear environment variables after loading to minimize exposure
+- **Automated security testing** - Pester tests scan for credential leaks before commits
+- **Git hooks** - Pre-commit hooks prevent accidental credential commits
+- **Cross-platform** - Secure credential handling on both Linux and Windows
+- **Production-ready** - VM boot scripts can load and encrypt credentials, then clear environment variables
+- **Token management** - OAuth tokens automatically refreshed before expiration
+- **Retry logic** - Implements exponential backoff for API calls
+
+See **[Secure Credential Management](docs/Secure-Credential-Management.md)** for complete security documentation.
 
 ## Development Roadmap
 
@@ -143,7 +174,21 @@ Invoke-Pester -Path ./fsenrollment-pssync/tests/
 
 # Run specific test file
 Invoke-Pester -Path ./fsenrollment-pssync/tests/Connect-PowerSchool.Tests.ps1 -Output Detailed
+
+# Run security tests to check for credential leaks
+Invoke-Pester -Path ./fsenrollment-pssync/tests/Security.CredentialLeak.Tests.ps1
 ```
+
+### Enable Pre-commit Hooks
+
+Automatically run security tests before each commit:
+
+```powershell
+# Configure git to use the hooks directory
+git config core.hooksPath .githooks
+```
+
+See [.githooks/README.md](.githooks/README.md) for more information.
 
 ## Contributing
 

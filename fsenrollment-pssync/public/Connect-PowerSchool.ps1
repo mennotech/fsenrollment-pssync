@@ -7,21 +7,28 @@
 .DESCRIPTION
     Establishes an authenticated session with the PowerSchool API using OAuth 2.0.
     The access token is stored securely in a script-scoped variable and automatically
-    renewed when it expires. ClientID and ClientSecret can be provided via environment
-    variables (PowerSchool_ClientID and PowerSchool_ClientSecret) or will be securely
-    requested if not found.
+    renewed when it expires. 
+    
+    Credentials are loaded in the following priority order:
+    1. Explicit parameters (BaseUrl, ClientId, ClientSecret)
+    2. .env file (via Import-EnvironmentCredentials)
+    3. Environment variables (PowerSchool_BaseUrl, PowerSchool_ClientID, PowerSchool_ClientSecret)
+    4. Interactive prompts (if none of the above are available)
 
 .PARAMETER BaseUrl
     The base URL for your PowerSchool instance (e.g., 'https://your-instance.powerschool.com').
-    If not provided, will attempt to read from PowerSchool_BaseUrl environment variable.
+    If not provided, will attempt to read from .env file, then PowerSchool_BaseUrl environment 
+    variable, or prompt if neither is available.
 
 .PARAMETER ClientId
     OAuth Client ID for PowerSchool API access. If not provided, will attempt to read
-    from PowerSchool_ClientID environment variable or prompt securely.
+    from .env file, then PowerSchool_ClientID environment variable, or prompt if neither 
+    is available.
 
 .PARAMETER ClientSecret
     OAuth Client Secret for PowerSchool API access. If not provided, will attempt to
-    read from PowerSchool_ClientSecret environment variable or prompt securely.
+    read from .env file, then PowerSchool_ClientSecret environment variable, or prompt 
+    if neither is available.
 
 .PARAMETER Force
     Force re-authentication even if already connected.
@@ -30,14 +37,19 @@
     None. Sets script-level variables for the authenticated session.
 
 .EXAMPLE
+    Connect-PowerSchool
+    
+    Connects to PowerSchool using credentials from .env file (preferred for local development).
+
+.EXAMPLE
     Connect-PowerSchool -BaseUrl 'https://ps.example.com'
     
-    Connects to PowerSchool using credentials from environment variables or prompts.
+    Connects to PowerSchool using the specified URL and credentials from .env file or environment variables.
 
 .EXAMPLE
     Connect-PowerSchool -BaseUrl 'https://ps.example.com' -ClientId 'abc123' -ClientSecret (Read-Host -AsSecureString -Prompt 'Secret')
     
-    Connects to PowerSchool with explicit credentials.
+    Connects to PowerSchool with explicit credentials, bypassing .env file and environment variables.
 
 .NOTES
     This function stores the access token in script-scoped variables:
@@ -46,6 +58,11 @@
     - $script:PowerSchoolBaseUrl (String)
     - $script:PowerSchoolClientId (String)
     - $script:PowerSchoolClientSecret (SecureString)
+    
+    For local development, create a config/.env file with your credentials:
+    - POWERSCHOOL_URL=https://your-instance.powerschool.com
+    - POWERSCHOOL_CLIENT_ID=your-client-id
+    - POWERSCHOOL_CLIENT_SECRET=your-client-secret
 #>
 function Connect-PowerSchool {
     [CmdletBinding()]
@@ -76,11 +93,36 @@ function Connect-PowerSchool {
 
     process {
         try {
-            # Get BaseUrl from parameter, environment variable, or prompt
+            # Try to load credentials from .env file if not provided via parameters
+            $envCredentials = $null
+            if ([string]::IsNullOrWhiteSpace($BaseUrl) -or 
+                [string]::IsNullOrWhiteSpace($ClientId) -or 
+                $null -eq $ClientSecret) {
+                
+                try {
+                    Write-Verbose "Attempting to load credentials from .env file"
+                    $envCredentials = Import-EnvironmentCredentials -ErrorAction SilentlyContinue
+                    
+                    if ($envCredentials) {
+                        Write-Verbose "Successfully loaded credentials from .env file"
+                    }
+                }
+                catch {
+                    Write-Debug "Could not load .env credentials: $_"
+                }
+            }
+
+            # Get BaseUrl from parameter, .env file, environment variable, or prompt
             if ([string]::IsNullOrWhiteSpace($BaseUrl)) {
-                $BaseUrl = $env:PowerSchool_BaseUrl
-                if ([string]::IsNullOrWhiteSpace($BaseUrl)) {
-                    $BaseUrl = Read-Host -Prompt "Enter PowerSchool Base URL (e.g., https://ps.example.com)"
+                if ($envCredentials -and $envCredentials.PowerSchoolUrl) {
+                    $BaseUrl = $envCredentials.PowerSchoolUrl
+                    Write-Verbose "Using PowerSchool URL from .env file"
+                }
+                else {
+                    $BaseUrl = $env:PowerSchool_BaseUrl
+                    if ([string]::IsNullOrWhiteSpace($BaseUrl)) {
+                        $BaseUrl = Read-Host -Prompt "Enter PowerSchool Base URL (e.g., https://ps.example.com)"
+                    }
                 }
             }
 
@@ -90,11 +132,24 @@ function Connect-PowerSchool {
             }
             $BaseUrl = $BaseUrl.TrimEnd('/')
 
-            # Get ClientId from parameter, environment variable, or prompt
+            # Get ClientId from parameter, .env file, environment variable, or prompt
             if ([string]::IsNullOrWhiteSpace($ClientId)) {
-                $ClientId = $env:PowerSchool_ClientID
-                if ([string]::IsNullOrWhiteSpace($ClientId)) {
-                    $ClientId = Read-Host -Prompt "Enter PowerSchool Client ID"
+                if ($envCredentials -and $envCredentials.PowerSchoolClientId) {
+                    # Convert SecureString to plain text
+                    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($envCredentials.PowerSchoolClientId)
+                    try {
+                        $ClientId = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+                        Write-Verbose "Using PowerSchool Client ID from .env file"
+                    }
+                    finally {
+                        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+                    }
+                }
+                else {
+                    $ClientId = $env:PowerSchool_ClientID
+                    if ([string]::IsNullOrWhiteSpace($ClientId)) {
+                        $ClientId = Read-Host -Prompt "Enter PowerSchool Client ID"
+                    }
                 }
             }
 
@@ -102,13 +157,19 @@ function Connect-PowerSchool {
                 throw "PowerSchool Client ID is required"
             }
 
-            # Get ClientSecret from parameter, environment variable, or prompt
+            # Get ClientSecret from parameter, .env file, environment variable, or prompt
             if ($null -eq $ClientSecret) {
-                $envSecret = $env:PowerSchool_ClientSecret
-                if (-not [string]::IsNullOrWhiteSpace($envSecret)) {
-                    $ClientSecret = ConvertTo-SecureString -String $envSecret -AsPlainText -Force
-                } else {
-                    $ClientSecret = Read-Host -Prompt "Enter PowerSchool Client Secret" -AsSecureString
+                if ($envCredentials -and $envCredentials.PowerSchoolClientSecret) {
+                    $ClientSecret = $envCredentials.PowerSchoolClientSecret
+                    Write-Verbose "Using PowerSchool Client Secret from .env file"
+                }
+                else {
+                    $envSecret = $env:PowerSchool_ClientSecret
+                    if (-not [string]::IsNullOrWhiteSpace($envSecret)) {
+                        $ClientSecret = ConvertTo-SecureString -String $envSecret -AsPlainText -Force
+                    } else {
+                        $ClientSecret = Read-Host -Prompt "Enter PowerSchool Client Secret" -AsSecureString
+                    }
                 }
             }
 

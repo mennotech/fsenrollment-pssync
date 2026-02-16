@@ -1,0 +1,48 @@
+#!/usr/bin/env pwsh
+#
+# Git pre-commit hook to prevent credential leaks
+# 
+# Installation:
+#   Windows (PowerShell):
+#     Copy-Item .githooks\pre-commit .git\hooks\pre-commit
+#     # Or configure git to use this hooks directory:
+#     git config core.hooksPath .githooks
+#
+#   Linux/Mac:
+#     cp .githooks/pre-commit .git/hooks/pre-commit
+#     chmod +x .git/hooks/pre-commit
+#     # Or configure git to use this hooks directory:
+#     git config core.hooksPath .githooks
+
+Write-Host ""
+Write-Host "Running security credential leak tests..." -ForegroundColor Cyan
+
+# Run security tests
+$pesterParams = @{
+    Path   = Join-Path $PSScriptRoot '..' 'fsenrollment-pssync' 'tests' 'Security.CredentialLeak.Tests.ps1'
+    Output = 'Detailed'
+    CI     = $true
+}
+
+$result = Invoke-Pester @pesterParams -PassThru
+
+Write-Host ""
+
+if ($result.FailedCount -gt 0) {
+    Write-Host "❌ Security tests FAILED! Commit blocked." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Please fix the following issues before committing:" -ForegroundColor Yellow
+    Write-Host "  • Remove any credentials from your changes" -ForegroundColor Yellow
+    Write-Host "  • Use placeholder values in example files" -ForegroundColor Yellow
+    Write-Host "  • Ensure .env files are not tracked by git" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Review the test output above for details." -ForegroundColor Yellow
+    Write-Host ""
+    
+    exit 1
+}
+
+Write-Host "✅ Security tests passed - credentials safe to commit" -ForegroundColor Green
+Write-Host ""
+
+exit 0
