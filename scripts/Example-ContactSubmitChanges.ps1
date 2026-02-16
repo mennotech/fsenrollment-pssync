@@ -26,12 +26,27 @@
     Maximum number of changes to process in this run. Default: All changes
     Useful for testing with small batches.
 
+.PARAMETER Skip
+    Number of changes to skip before starting to process. Default: 0
+    Useful for batch processing large change files or resuming from a specific point.
+    Works in combination with -Limit for batch processing.
+
 .EXAMPLE
     .\Example-ContactSubmitChanges.ps1 -ChangeFilePath './data/pending/2026-01-31-1234-contact-changes.json'
 
 .EXAMPLE
     # Process only first 5 changes for testing
     .\Example-ContactSubmitChanges.ps1 -ChangeFilePath './data/pending/2026-01-31-1234-contact-changes.json' -Limit 5
+
+.EXAMPLE
+    # Skip first 10 changes and process next 5
+    .\Example-ContactSubmitChanges.ps1 -ChangeFilePath './data/pending/2026-01-31-1234-contact-changes.json' -Skip 10 -Limit 5
+
+.EXAMPLE
+    # Batch processing - process in batches of 25
+    .\Example-ContactSubmitChanges.ps1 -ChangeFilePath './data/pending/2026-01-31-1234-contact-changes.json' -Skip 0 -Limit 25   # First batch
+    .\Example-ContactSubmitChanges.ps1 -ChangeFilePath './data/pending/2026-01-31-1234-contact-changes.json' -Skip 25 -Limit 25  # Second batch
+    .\Example-ContactSubmitChanges.ps1 -ChangeFilePath './data/pending/2026-01-31-1234-contact-changes.json' -Skip 50 -Limit 25  # Third batch
 
 .EXAMPLE
     # Preview changes without applying (WhatIf mode)
@@ -56,7 +71,11 @@ param(
     
     [Parameter(Mandatory = $false)]
     [ValidateRange(1, [int]::MaxValue)]
-    [int]$Limit = [int]::MaxValue
+    [int]$Limit = [int]::MaxValue,
+    
+    [Parameter(Mandatory = $false)]
+    [ValidateRange(0, [int]::MaxValue)]
+    [int]$Skip = 0
 )
 
 # Import the module
@@ -76,13 +95,16 @@ try {
     Write-Host "[2/2] Submitting changes to PowerSchool..." -ForegroundColor Yellow
     Write-Host "  Change file: $ChangeFilePath" -ForegroundColor Gray
     Write-Host "  Max retries: $MaxRetries" -ForegroundColor Gray
+    if ($Skip -gt 0) {
+        Write-Host "  Skip: $Skip changes" -ForegroundColor Gray
+    }
     if ($Limit -lt [int]::MaxValue) {
         Write-Host "  Limit: $Limit changes" -ForegroundColor Gray
     }
     Write-Host ""
     
     # Call Submit-PSContactChange with the change file
-    Submit-PSContactChange -JsonPath $ChangeFilePath -MaxRetries $MaxRetries -Limit $Limit -Verbose:$VerbosePreference
+    Submit-PSContactChange -JsonPath $ChangeFilePath -MaxRetries $MaxRetries -Skip $Skip -Limit $Limit -Verbose:$VerbosePreference
     
     Write-Host ""
     Write-Host "Done!" -ForegroundColor Green

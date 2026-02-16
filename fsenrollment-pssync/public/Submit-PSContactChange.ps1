@@ -30,6 +30,12 @@
     Maximum number of changes to apply. Useful for testing with live data.
     Default is unlimited (applies all changes).
 
+.PARAMETER Skip
+    Number of changes to skip before starting to apply changes.
+    Useful for resuming processing or batch processing large change files.
+    Default is 0 (start from beginning).
+    Works in combination with -Limit for batch processing.
+
 .PARAMETER WhatIf
     Performs a dry run without making actual changes to PowerSchool.
     Displays detailed preview of what would be changed, including:
@@ -65,6 +71,15 @@
     Write-Host "Test run: Applied $($result.Summary.TotalApplied) of 5 changes"
 
 .EXAMPLE
+    # Skip first 10 changes and apply next 5 (useful for batch processing)
+    $result = Submit-PSContactChange -JsonPath './data/pending/contact-changes.json' -Skip 10 -Limit 5
+    Write-Host "Batch run: Applied changes 11-15"
+
+.EXAMPLE
+    # Resume processing from where you left off
+    Submit-PSContactChange -JsonPath './data/pending/contact-changes.json' -Skip 50 -Limit 25
+
+.EXAMPLE
     # Dry run to preview changes without applying them (use with -Verbose for full details)
     Submit-PSContactChange -JsonPath './data/pending/contact-changes.json' -WhatIf -Verbose
     
@@ -92,7 +107,7 @@
     
     API Endpoints:
     - POST /ws/contacts/contact - Create new contact
-    - PUT /ws/contacts/contact/{contactId}/demographics - Update contact demographics
+    - PUT /ws/contacts/{contactId}/demographics - Update contact demographics
 #>
 function Submit-PSContactChange {
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Object')]
@@ -107,6 +122,10 @@ function Submit-PSContactChange {
         [Parameter(Mandatory = $false)]
         [ValidateRange(1, [int]::MaxValue)]
         [int]$Limit = [int]::MaxValue,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]$Skip = 0,
 
         [Parameter(Mandatory = $false)]
         [ValidateRange(1, 10)]
@@ -161,19 +180,38 @@ function Submit-PSContactChange {
 
             # Calculate total changes to apply
             $totalChanges = $Changes.New.Count + $Changes.Updated.Count
-            $changesToApply = [Math]::Min($totalChanges, $Limit)
+            $availableChanges = [Math]::Max(0, $totalChanges - $Skip)
+            $changesToApply = [Math]::Min($availableChanges, $Limit)
             
             Write-Verbose "Total changes available: $totalChanges (New: $($Changes.New.Count), Updated: $($Changes.Updated.Count))"
+            if ($Skip -gt 0) {
+                Write-Verbose "Skipping first $Skip changes"
+                Write-Verbose "Remaining changes after skip: $availableChanges"
+            }
             Write-Verbose "Changes to apply (with limit): $changesToApply"
 
             if ($WhatIfPreference) {
-                Write-Host "WhatIf: Would apply $changesToApply of $totalChanges changes" -ForegroundColor Yellow
+                if ($Skip -gt 0) {
+                    Write-Host "WhatIf: Would skip $Skip changes and apply $changesToApply of remaining $availableChanges changes" -ForegroundColor Yellow
+                } else {
+                    Write-Host "WhatIf: Would apply $changesToApply of $totalChanges changes" -ForegroundColor Yellow
+                }
             }
 
             $changeNumber = 0
+            $processedNumber = 0
+            $processedNumber = 0
 
             # Process new contacts
             foreach ($newContact in $Changes.New) {
+                $processedNumber++
+                
+                # Skip if we haven't reached the skip threshold yet
+                if ($processedNumber -le $Skip) {
+                    Write-Verbose "Skipping new contact $processedNumber (skip threshold: $Skip)"
+                    continue
+                }
+                
                 if ($changeNumber -ge $Limit) {
                     Write-Verbose "Reached limit of $Limit changes, stopping"
                     break
@@ -269,9 +307,26 @@ function Submit-PSContactChange {
 
             # Process updated contacts
             foreach ($updatedContact in $Changes.Updated) {
+                $processedNumber++
+                
+                # Skip if we haven't reached the skip threshold yet
+                if ($processedNumber -le $Skip) {
+                    Write-Verbose "Skipping updated contact $processedNumber (skip threshold: $Skip)"
+                    continue
+                }
+                
                 if ($changeNumber -ge $Limit) {
                     Write-Verbose "Reached limit of $Limit changes, stopping"
                     break
+                }
+                
+                # Skip contacts with no demographic changes (Changes is null or empty)
+                # Phase 1 only handles demographic changes - email/phone/address/relationship changes will be added in Phase 2
+                $matchKey = $updatedContact.MatchKey
+                $changes = $updatedContact.Changes
+                if (-not $changes -or ($changes -is [array] -and $changes.Count -eq 0)) {
+                    Write-Verbose "Skipping contact $matchKey - no demographic changes (Phase 1 only applies demographic changes)"
+                    continue
                 }
                 
                 $changeNumber++
@@ -280,8 +335,6 @@ function Submit-PSContactChange {
                     -PercentComplete (($changeNumber / $changesToApply) * 100)
 
                 try {
-                    $matchKey = $updatedContact.MatchKey
-                    $changes = $updatedContact.Changes
                     # Handle both single change object and array of changes
                     if ($changes -and -not ($changes -is [array])) {
                         $changes = @($changes)
@@ -302,7 +355,7 @@ function Submit-PSContactChange {
                     $changedFields = $changes.Field -join ', '
                     $updateMessage = "Contact: $matchKey (ContactID: $contactId) Name: $contactName - $($changes.Count) changes Fields: $changedFields"
                     if ($WhatIfPreference) {
-                        Write-Verbose "API Endpoint: PUT $($script:PowerSchoolBaseUrl)/ws/contacts/contact/$contactId/demographics"
+                        Write-Verbose "API Endpoint: PUT $($script:PowerSchoolBaseUrl)/ws/contacts/$contactId/demographics"
                         Write-Verbose "Field Changes ($($changes.Count) total):"
                         foreach ($change in $changes) {
                             Write-Verbose "  $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
@@ -324,7 +377,7 @@ function Submit-PSContactChange {
                     if ($PSCmdlet.ShouldProcess($updateMessage, "Update in PowerSchool")) {
                         if (-not $WhatIfPreference) {
                             Write-Verbose "Updating contact: $matchKey (ContactID: $contactId) with $($changes.Count) changes"
-                            Write-Verbose "API Endpoint: PUT $($script:PowerSchoolBaseUrl)/ws/contacts/contact/$contactId/demographics"
+                            Write-Verbose "API Endpoint: PUT $($script:PowerSchoolBaseUrl)/ws/contacts/$contactId/demographics"
                             Write-Verbose "Changes being applied:"
                             foreach ($change in $changes) {
                                 Write-Verbose "  $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
@@ -752,7 +805,7 @@ function Build-ContactUpdatePayload {
         $TemplateMetadata
     )
 
-    # Build update object for PUT /ws/contacts/contact/{contactId}/demographics
+    # Build update object for PUT /ws/contacts/{contactId}/demographics
     # Contact demographics API expects a flat structure with just the fields being updated
     $payload = @{}
 
@@ -906,8 +959,8 @@ function Invoke-UpdateContact {
             'Accept' = 'application/json'
         }
 
-        # Contact demographics update uses PUT /ws/contacts/contact/{contactId}/demographics
-        $uri = "$script:PowerSchoolBaseUrl/ws/contacts/contact/$ContactID/demographics"
+        # Contact demographics update uses PUT /ws/contacts/{contactId}/demographics
+        $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/demographics"
 
         Write-Verbose "Making API call to update contact ContactID: $ContactID"
         Write-Verbose "URI: PUT $uri"
