@@ -5,6 +5,21 @@ BeforeAll {
     # Import the module
     $ModulePath = Join-Path $PSScriptRoot '../FSEnrollment-PSSync.psd1'
     Import-Module $ModulePath -Force
+    
+    # Define test helper function in both test scope and module scope
+    # This mimics the JSON normalization performed in Import-FSCsv
+    function global:New-MockTemplateMetadata {
+        param([hashtable]$Config)
+        return $Config | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+    }
+    
+    # Also make it available in module scope for InModuleScope blocks
+    InModuleScope FSEnrollment-PSSync {
+        function New-MockTemplateMetadata {
+            param([hashtable]$Config)
+            return $Config | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+        }
+    }
 }
 
 Describe 'Submit-PSContactChange' {
@@ -29,7 +44,7 @@ Describe 'Submit-PSContactChange' {
                 UnchangedCount = 0
                 MatchField = 'ContactID'
             }
-            TemplateMetadata = @{
+            TemplateMetadata = New-MockTemplateMetadata @{
                 TemplateName = 'test_contact_template'
                 KeyField = 'ContactID'
                 PowerSchoolKeyField = 'person_id'
@@ -105,7 +120,7 @@ Describe 'Submit-PSContactChange' {
                 $changes = [PSCustomObject]@{
                     New = @()
                     Updated = @()
-                    TemplateMetadata = @{
+                    TemplateMetadata = New-MockTemplateMetadata @{
                         TemplateName = 'test_contact_template'
                         KeyField = 'ContactID'
                         PowerSchoolKeyField = 'person_id'
@@ -129,7 +144,7 @@ Describe 'Submit-PSContactChange' {
                 $script:PowerSchoolToken = $null
                 $script:PowerSchoolBaseUrl = $null
                 
-                $templateMetadata = @{
+                $templateMetadata = New-MockTemplateMetadata @{
                     TemplateName = 'test_contact_template'
                     KeyField = 'ContactID'
                     PowerSchoolKeyField = 'person_id'
@@ -158,7 +173,7 @@ Describe 'Submit-PSContactChange' {
                 Mock Test-PowerSchoolConnection { }
                 Mock Get-PowerSchoolAccessToken { return (ConvertTo-SecureString -String 'test-token' -AsPlainText -Force) }
                 
-                $templateMetadata = @{
+                $templateMetadata = New-MockTemplateMetadata @{
                     TemplateName = 'test_contact_template'
                     KeyField = 'ContactID'
                     PowerSchoolKeyField = 'person_id'
@@ -224,7 +239,7 @@ Describe 'Submit-PSContactChange' {
                         }
                     )
                     Updated = @()
-                    TemplateMetadata = @{
+                    TemplateMetadata = New-MockTemplateMetadata @{
                         TemplateName = 'test_contact_template'
                         KeyField = 'ContactID'
                         PowerSchoolKeyField = 'person_id'
@@ -258,7 +273,7 @@ Describe 'Submit-PSContactChange' {
                 $newContact.Gender = 'F'
                 $newContact.Employer = 'Acme Corp'
                 
-                $templateMetadata = @{
+                $templateMetadata = New-MockTemplateMetadata @{
                     TemplateName = 'test_contact_template'
                     KeyField = 'ContactID'
                     PowerSchoolKeyField = 'person_id'
@@ -327,7 +342,7 @@ Describe 'Submit-PSContactChange' {
                             )
                         }
                     )
-                    TemplateMetadata = @{
+                    TemplateMetadata = New-MockTemplateMetadata @{
                         TemplateName = 'test_contact_template'
                         KeyField = 'ContactID'
                         PowerSchoolKeyField = 'person_id'
@@ -372,7 +387,7 @@ Describe 'Submit-PSContactChange' {
                     }
                 )
                 
-                $templateMetadata = @{
+                $templateMetadata = New-MockTemplateMetadata @{
                     TemplateName = 'test_contact_template'
                     KeyField = 'ContactID'
                     PowerSchoolKeyField = 'person_id'
@@ -412,7 +427,7 @@ Describe 'Submit-PSContactChange' {
                         }
                     )
                     Updated = @()
-                    TemplateMetadata = @{
+                    TemplateMetadata = New-MockTemplateMetadata @{
                         TemplateName = 'test_contact_template'
                         KeyField = 'ContactID'
                         PowerSchoolKeyField = 'person_id'
@@ -444,7 +459,7 @@ Describe 'Submit-PSContactChange' {
                         }
                     )
                     Updated = @()
-                    TemplateMetadata = @{
+                    TemplateMetadata = New-MockTemplateMetadata @{
                         TemplateName = 'test_contact_template'
                         KeyField = 'ContactID'
                         PowerSchoolKeyField = 'person_id'
@@ -488,7 +503,7 @@ Describe 'Submit-PSContactChange' {
                         }
                     )
                     Updated = @()
-                    TemplateMetadata = @{
+                    TemplateMetadata = New-MockTemplateMetadata @{
                         TemplateName = 'test_contact_template'
                         KeyField = 'ContactID'
                         PowerSchoolKeyField = 'person_id'
@@ -556,7 +571,7 @@ Describe 'Submit-PSContactChange' {
                         }
                     )
                     Updated = @()
-                    TemplateMetadata = @{
+                    TemplateMetadata = New-MockTemplateMetadata @{
                         TemplateName = 'test_contact_template'
                         KeyField = 'ContactID'
                         PowerSchoolKeyField = 'person_id'

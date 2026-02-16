@@ -55,6 +55,8 @@ This is the most common pattern for change detection workflows:
 
 ```powershell
 # Step 1: Import CSV data
+# The TemplateMetadata property contains the ENTIRE template configuration
+# from the .psd1 file (FieldMappings, ValidationRules, EntityTypeMap, etc.)
 $csvData = Import-FSCsv -Path './data/students.csv' -TemplateName 'fs_powerschool_nonapi_report_students'
 
 # Step 2: Fetch PowerSchool data with automatic field detection

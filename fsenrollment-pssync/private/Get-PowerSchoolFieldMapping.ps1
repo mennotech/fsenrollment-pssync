@@ -58,8 +58,15 @@ function Get-PowerSchoolFieldMapping {
             $allMappings = $columnMappings
         }
         
-        $mapping = $allMappings | Where-Object { $_.EntityProperty -eq $EntityProperty } | Select-Object -First 1
-        if ($mapping -and $mapping.PowerSchoolAPIField) {
+        # Find mapping with PowerSchoolAPIField defined (skip mappings without API field)
+        # This is important for fields that appear in multiple entities (e.g., ContactIdentifier)
+        # where only one entity has the PowerSchoolAPIField defined
+        $mapping = $allMappings | Where-Object { 
+            $_.EntityProperty -eq $EntityProperty -and 
+            $_.PowerSchoolAPIField 
+        } | Select-Object -First 1
+        
+        if ($mapping) {
             return $mapping.PowerSchoolAPIField
         }
     }
