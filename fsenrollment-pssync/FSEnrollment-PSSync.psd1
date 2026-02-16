@@ -59,6 +59,7 @@
         'Invoke-PSRequest'
         'ConvertFrom-SecureCredential'
         'Import-EnvironmentCredentials'
+        'ConvertTo-ContactChangesCsv'
     )
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry
