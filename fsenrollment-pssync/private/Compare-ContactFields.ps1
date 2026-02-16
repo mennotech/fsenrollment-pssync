@@ -60,9 +60,9 @@ function Compare-ContactFields {
 
     # Default mapping of PSContact properties to PowerQuery person fields (fallback)
     $defaultFieldMapping = @{
-        'FirstName' = 'person_firstname'
-        'MiddleName' = 'person_middlename'
-        'LastName' = 'person_lastname'
+        'FirstName' = 'person_firstName'
+        'MiddleName' = 'person_middleName'
+        'LastName' = 'person_lastName'
         'Gender' = 'person_gender'
         'Employer' = 'person_employer'
     }

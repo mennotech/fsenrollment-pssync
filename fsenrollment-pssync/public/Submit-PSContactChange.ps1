@@ -307,6 +307,16 @@ function Submit-PSContactChange {
 
             # Process updated contacts
             foreach ($updatedContact in $Changes.Updated) {
+                # Skip contacts with no demographic changes (Changes is null or empty)
+                # Phase 1 only handles demographic changes - email/phone/address/relationship changes will be added in Phase 2
+                $matchKey = $updatedContact.MatchKey
+                $changes = $updatedContact.Changes
+                if (-not $changes -or ($changes -is [array] -and $changes.Count -eq 0)) {
+                    Write-Verbose "Skipping contact $matchKey - no demographic changes (Phase 1 only applies demographic changes)"
+                    continue
+                }
+                
+                
                 $processedNumber++
                 
                 # Skip if we haven't reached the skip threshold yet
@@ -320,14 +330,6 @@ function Submit-PSContactChange {
                     break
                 }
                 
-                # Skip contacts with no demographic changes (Changes is null or empty)
-                # Phase 1 only handles demographic changes - email/phone/address/relationship changes will be added in Phase 2
-                $matchKey = $updatedContact.MatchKey
-                $changes = $updatedContact.Changes
-                if (-not $changes -or ($changes -is [array] -and $changes.Count -eq 0)) {
-                    Write-Verbose "Skipping contact $matchKey - no demographic changes (Phase 1 only applies demographic changes)"
-                    continue
-                }
                 
                 $changeNumber++
                 Write-Progress -Activity "Applying Contact Changes" `

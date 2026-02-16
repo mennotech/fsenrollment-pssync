@@ -107,12 +107,15 @@ function ConvertTo-ContactChangesCsv {
                 LastName = $lastName
             }
             
-            # Contact field changes
-            if ($item.ContactChanges) {
-                foreach ($change in $item.ContactChanges) {
+            # Contact demographic field changes (firstName, lastName, employer, etc.)
+            if ($item.Changes) {
+                # Handle both single change object and array of changes
+                $changes = if ($item.Changes -is [array]) { $item.Changes } else { @($item.Changes) }
+                
+                foreach ($change in $changes) {
                     $csvData.Add((New-CsvRow -BaseData $baseData -ChangeData @{
                         ChangeCategory = 'Updated'
-                        ChangeType = 'ContactField'
+                        ChangeType = 'DemographicChanged'
                         Field = $change.Field
                         OldValue = $change.OldValue
                         NewValue = $change.NewValue
@@ -302,6 +305,7 @@ function Format-PhoneDisplay {
 function Add-EntityChanges {
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
         [System.Collections.Generic.List[PSCustomObject]]$CsvData,
         
         [Parameter(Mandatory = $true)]
