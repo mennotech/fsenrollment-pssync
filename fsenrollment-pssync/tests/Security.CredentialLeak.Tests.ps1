@@ -49,6 +49,7 @@ Describe "Credential Security Tests" -Tag 'Security' {
                 '*.md'              # Documentation files often contain examples
                 '*.Tests.ps1'       # Test files may contain example patterns
                 '*.example.*'       # Example configuration files
+                '*.example'         # Example files without extension (e.g., .env.example)
                 'LICENSE'           # License file
                 '.gitignore'        # Git ignore file
                 '*.yaml'            # API documentation
@@ -287,6 +288,15 @@ Describe "Credential Security Tests" -Tag 'Security' {
             )
         }
         
+        AfterEach {
+            # Clean up any test files created during the test
+            # This ensures cleanup even if test fails
+            if (Test-Path $script:TestDir) {
+                Get-ChildItem -Path $script:TestDir -File -ErrorAction SilentlyContinue | 
+                    Remove-Item -Force -ErrorAction SilentlyContinue
+            }
+        }
+        
         AfterAll {
             # Clean up test directory
             if (Test-Path $script:TestDir) {
@@ -297,9 +307,9 @@ Describe "Credential Security Tests" -Tag 'Security' {
         It "Should detect API key in PowerShell script" {
             $testFile = Join-Path $script:TestDir 'test-apikey.ps1'
             $offendingContent = @'
-# This is a test file
-$apiKey = "sk_" + "live_" + "51234567890abcdefghijklmnopqrstuvwxyz"
-$response = Invoke-RestMethod -Uri $url -Headers @{ Authorization = "Bearer $apiKey" }
+# This is a test file with a leaked API key
+$apiKey = "test_api_key_abcdefghij1234567890xyz"
+$response = Invoke-RestMethod -Uri $url -Headers @{ "X-API-Key" = $apiKey }
 '@
             Set-Content -Path $testFile -Value $offendingContent
             

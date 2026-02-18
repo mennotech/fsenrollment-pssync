@@ -886,13 +886,16 @@ Describe 'Compare-PSContact' {
                 # Should have phone changes
                 $contact.PhoneChanges | Should -Not -BeNullOrEmpty
                 
-                # Work entry should be in Unchanged (exact match)
-                $contact.PhoneChanges.Unchanged.Count | Should -Be 1
+                # First duplicate (Mobile) is kept and compared to CSV (Work type)
+                # Since type and preferred differ, it should be Modified
+                $contact.PhoneChanges.Modified.Count | Should -Be 1
+                $contact.PhoneChanges.Modified[0].NewPhone.PhoneType | Should -Be 'Work'
+                $contact.PhoneChanges.Modified[0].Changes.Count | Should -BeGreaterThan 0
                 
-                # Should mark Mobile and Home for removal
+                # Should mark Work and Home duplicates for removal (keeping first occurrence)
                 $contact.PhoneChanges.Removed.Count | Should -Be 2
                 $removedTypes = $contact.PhoneChanges.Removed | ForEach-Object { $_.Phone.phonenumber_type }
-                $removedTypes | Should -Contain 'Mobile'
+                $removedTypes | Should -Contain 'Work'
                 $removedTypes | Should -Contain 'Home'
             }
         }
