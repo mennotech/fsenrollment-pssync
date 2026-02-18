@@ -190,7 +190,9 @@ ORDER BY person.dcid, personaddress.personaddressid
             <column column="students.student_number">student_student_number</column>
             <column column="students.dcid">student_dcid</column>
             <column column="students.enroll_status">student_enroll_status</column>
+            <column column="studentcontactassoc.studentcontactassocid">relationship_contactStudentId</column>
             <column column="studentcontactassoc.contactpriorityorder">relationship_priority_order</column>
+            <column column="studentcontactdetail.studentcontactdetailid">relationship_contactStudentDetailId</column>
             <column column="studentcontactdetail.isactive">relationship_isActive</column>
             <column column="studentcontactdetail.iscustodial">relationship_isCustodial</column>
             <column column="studentcontactdetail.isemergency">relationship_isEmergency</column>
@@ -208,7 +210,9 @@ SELECT DISTINCT
     students.student_number AS student_student_number,
     students.dcid AS student_dcid,
     students.enroll_status AS student_enroll_status,
+    studentcontactassoc.studentcontactassocid AS relationship_contactStudentId,
     studentcontactassoc.contactpriorityorder AS relationship_priority_order,
+    studentcontactdetail.studentcontactdetailid AS relationship_contactStudentDetailId,
     studentcontactdetail.isactive AS relationship_isActive,
     studentcontactdetail.iscustodial AS relationship_isCustodial,
     studentcontactdetail.isemergency AS relationship_isEmergency,
