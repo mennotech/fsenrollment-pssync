@@ -78,6 +78,18 @@ For simple CSV formats with one entity per row, use column mappings with EntityT
 
 **Common pitfall**: Don't confuse PowerQuery field names (`person_firstName`) with REST API field names (`firstName`). The template always uses PowerQuery format for contacts, and the code handles conversion during updates.
 
+**Important - Association IDs for Emails, Phones, and Addresses:**
+
+The Contact API requires **association IDs** (not entity IDs) for PUT and DELETE operations. These are mapped using `CSVColumn = '* PowerQuery *'` since they come from PowerQuery, not the CSV:
+
+- **EmailAddress**: `ContactEmailID` (from `emailaddress_contactEmailId`) - required for email PUT/DELETE
+- **PhoneNumber**: `ContactPhoneID` (from `phonenumber_contactPhoneId`) - required for phone PUT/DELETE  
+- **Address**: `ContactAddressID` (from `address_contactAddressId`) - required for address PUT/DELETE
+
+PowerSchool uses dual IDs: the **entity ID** (e.g., `emailaddressid`) references the email record, while the **association ID** (e.g., `personemailaddressassocid`) references the person-to-email link. The Contact API operations require the association ID.
+
+See [PowerQuery Association IDs Update](../../docs/updates/PowerQuery-Association-IDs-Update.md) for complete details on this change.
+
 ### Custom Parser Format
 
 For complex CSV formats (multi-row, conditional logic, etc.), create a custom parser function in the templates folder and reference it in the template:
