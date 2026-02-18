@@ -14,7 +14,7 @@
     
     Phase 1: Demographic changes (firstName, lastName, middleName, prefix, suffix, gender, employer)
     Phase 2: Email addresses, phone numbers, and addresses (for both new and updated contacts)
-    Phase 3: Student-contact relationships (future)
+    Phase 3: Student-contact relationships (for both new and updated contacts)
 
 .PARAMETER Changes
     PSCustomObject containing the comparison results from Compare-PSContact.
@@ -104,15 +104,29 @@
     
     Phase 1: Demographics (firstName, lastName, middleName, prefix, suffix, gender, employer)
     Phase 2: Email addresses, phone numbers, and addresses - IMPLEMENTED
-    Phase 3: Student-contact relationships (future)
+    Phase 3: Student-contact relationships - IMPLEMENTED
     
     TemplateMetadata is required and must be included in the Changes object from Compare-PSContact.
     All field mappings are driven by the template configuration - no hardcoded mappings exist.
     
     API Endpoints:
-    - POST /ws/contacts/contact - Create new contact (with demographics, emails, phones, addresses)
-    - PUT /ws/contacts/{contactId}/demographics - Update contact demographics
-    - PUT /ws/contacts/{contactId} - Update contact emails, phones, or addresses
+    - POST /ws/contacts/contact - Create new contact (with demographics, emails, phones, addresses, relationships)
+    - PUT /ws/contacts/`{contactId`}/demographics - Update contact demographics
+    - POST /ws/contacts/`{contactId`}/emails - Add email address
+    - PUT /ws/contacts/`{contactId`}/emails/`{contactEmailId`} - Update email address
+    - DELETE /ws/contacts/`{contactId`}/emails/`{contactEmailId`} - Delete email address
+    - POST /ws/contacts/`{contactId`}/phones - Add phone number
+    - PUT /ws/contacts/`{contactId`}/phones/`{contactPhoneId`} - Update phone number
+    - DELETE /ws/contacts/`{contactId`}/phones/`{contactPhoneId`} - Delete phone number
+    - POST /ws/contacts/`{contactId`}/addresses - Add address
+    - PUT /ws/contacts/`{contactId`}/addresses/`{contactAddressId`} - Update address
+    - DELETE /ws/contacts/`{contactId`}/addresses/`{contactAddressId`} - Delete address
+    - POST /ws/contacts/`{contactId`}/students - Add student-contact relationship
+    - DELETE /ws/contacts/`{contactId`}/students/`{contactStudentId`} - Delete student-contact relationship
+    
+    Note: For modified relationships, the current implementation deletes and re-creates the relationship
+    to ensure all fields are updated correctly. This is because PowerSchool's relationship update API
+    has complex requirements around studentDetails and date ranges.
 #>
 function Submit-PSContactChange {
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Object')]
@@ -248,7 +262,6 @@ function Submit-PSContactChange {
                     if ($WhatIfPreference) {
                         Write-Host "`n=== WHATIF: New Contact Creation ===" -ForegroundColor Cyan
                         Write-Host "Contact: $matchKey ($($contact.FirstName) $($contact.LastName))" -ForegroundColor Yellow
-                        Write-Verbose "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/contacts/contact"
                         
                         # Show field details for new contact - iterate dynamically
                         Write-Host "Contact Fields to Create:" -ForegroundColor Gray
@@ -264,14 +277,12 @@ function Submit-PSContactChange {
                             }
                         }
                         
-                        # Only show full payload with -Verbose
-                        Write-Verbose "API Payload: $($payload | ConvertTo-Json -Depth 10)"
+                        # Field details shown above
                     }
                     
                     if ($PSCmdlet.ShouldProcess("New Contact: $matchKey ($($contact.FirstName) $($contact.LastName))", "Create in PowerSchool")) {
                         if (-not $WhatIfPreference) {
                             Write-Verbose "Creating new contact: $matchKey"
-                            Write-Verbose "API Endpoint: POST $($script:PowerSchoolBaseUrl)/ws/contacts/contact"
                             Write-Verbose "Contact fields being created:"
                             
                             # Display contact fields (payload is flat structure for Contact API)
@@ -281,8 +292,6 @@ function Submit-PSContactChange {
                                     Write-Verbose "  ${key}: $value"
                                 }
                             }
-                            
-                            Write-Verbose "API Payload: $($payload | ConvertTo-Json -Depth 10 -Compress)"
                             
                             # Make API call to create contact
                             $result = Invoke-CreateContact -Payload $payload -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
@@ -312,21 +321,23 @@ function Submit-PSContactChange {
 
             # Process updated contacts
             foreach ($updatedContact in $Changes.Updated) {
-                # Phase 2: Now handles demographic changes, email changes, phone changes, and address changes
+                # Phase 3: Now handles demographic changes, email changes, phone changes, address changes, and relationship changes
                 $matchKey = $updatedContact.MatchKey
                 $changes = $updatedContact.Changes
                 $emailChanges = $updatedContact.EmailChanges
                 $phoneChanges = $updatedContact.PhoneChanges
                 $addressChanges = $updatedContact.AddressChanges
+                $relationshipChanges = $updatedContact.RelationshipChanges
                 
                 # Determine if this contact has any changes to process
                 $hasDemographicChanges = $changes -and (($changes -is [array] -and $changes.Count -gt 0) -or ($changes -isnot [array]))
                 $hasEmailChanges = $emailChanges -and ($emailChanges.Added.Count -gt 0 -or $emailChanges.Modified.Count -gt 0 -or $emailChanges.Removed.Count -gt 0)
                 $hasPhoneChanges = $phoneChanges -and ($phoneChanges.Added.Count -gt 0 -or $phoneChanges.Modified.Count -gt 0 -or $phoneChanges.Removed.Count -gt 0)
                 $hasAddressChanges = $addressChanges -and ($addressChanges.Added.Count -gt 0 -or $addressChanges.Modified.Count -gt 0 -or $addressChanges.Removed.Count -gt 0)
+                $hasRelationshipChanges = $relationshipChanges -and ($relationshipChanges.Added.Count -gt 0 -or $relationshipChanges.Modified.Count -gt 0 -or $relationshipChanges.Removed.Count -gt 0)
                 
                 # Skip if no changes at all
-                if (-not ($hasDemographicChanges -or $hasEmailChanges -or $hasPhoneChanges -or $hasAddressChanges)) {
+                if (-not ($hasDemographicChanges -or $hasEmailChanges -or $hasPhoneChanges -or $hasAddressChanges -or $hasRelationshipChanges)) {
                     Write-Verbose "Skipping contact $matchKey - no changes to apply"
                     continue
                 }
@@ -377,6 +388,10 @@ function Submit-PSContactChange {
                         $addressCount = $addressChanges.Added.Count + $addressChanges.Modified.Count + $addressChanges.Removed.Count
                         $changeParts += "$addressCount address change(s)"
                     }
+                    if ($hasRelationshipChanges) {
+                        $relationshipCount = $relationshipChanges.Added.Count + $relationshipChanges.Modified.Count + $relationshipChanges.Removed.Count
+                        $changeParts += "$relationshipCount relationship change(s)"
+                    }
                     $updateMessage = "Contact: $matchKey (ContactID: $contactId) Name: $contactName - $($changeParts -join ', ')"
                     
                     # Track overall success and collect errors
@@ -389,12 +404,10 @@ function Submit-PSContactChange {
                         $payload = Build-ContactUpdatePayload -Changes $changes -ContactID $contactId -PowerSchoolPerson $psPerson -TemplateMetadata $TemplateMetadata
                         
                         if ($WhatIfPreference) {
-                            Write-Verbose "API Endpoint: PUT $($script:PowerSchoolBaseUrl)/ws/contacts/$contactId/demographics"
                             Write-Verbose "Demographic Field Changes ($($changes.Count) total):"
                             foreach ($change in $changes) {
                                 Write-Verbose "  $($change.Field): '$($change.OldValue)' -> '$($change.NewValue)'"
                             }
-                            Write-Verbose "API Payload: $($payload | ConvertTo-Json -Depth 10)"
                         }
                         
                         if ($PSCmdlet.ShouldProcess("Demographic changes for $matchKey", "Update in PowerSchool")) {
@@ -476,6 +489,30 @@ function Submit-PSContactChange {
                                         $operationErrors.Add("Address: $($addressResult.Error)")
                                     } elseif ($addressResult.Errors) {
                                         $operationErrors.AddRange($addressResult.Errors)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    # Process relationship changes if present (Phase 3)
+                    if ($hasRelationshipChanges) {
+                        if ($WhatIfPreference) {
+                            Write-Verbose "Relationship Changes:"
+                            Write-Verbose "  Added: $($relationshipChanges.Added.Count)"
+                            Write-Verbose "  Modified: $($relationshipChanges.Modified.Count)"
+                            Write-Verbose "  Removed: $($relationshipChanges.Removed.Count)"
+                        }
+                        
+                        if ($PSCmdlet.ShouldProcess("Relationship changes for $matchKey", "Update in PowerSchool")) {
+                            if (-not $WhatIfPreference) {
+                                $relationshipResult = Invoke-UpdateContactRelationships -ContactID $contactId -RelationshipChanges $relationshipChanges -TemplateMetadata $TemplateMetadata -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
+                                if (-not $relationshipResult.Success) {
+                                    $allOperationsSucceeded = $false
+                                    if ($relationshipResult.Error) {
+                                        $operationErrors.Add("Relationship: $($relationshipResult.Error)")
+                                    } elseif ($relationshipResult.Errors) {
+                                        $operationErrors.AddRange($relationshipResult.Errors)
                                     }
                                 }
                             }
@@ -855,8 +892,12 @@ function Build-RelationshipPayload {
     }
 
     # Add relationship note
+    # Note: Always include relationshipNote field to prevent PowerSchool from setting a default value
+    # If the value is null/empty, set it to empty string to clear any existing value
     if (-not [string]::IsNullOrWhiteSpace($Relationship.RelationshipNote)) {
         $studentDetail['relationshipNote'] = $Relationship.RelationshipNote
+    } else {
+        $studentDetail['relationshipNote'] = ''
     }
 
     # Add boolean flags
@@ -903,7 +944,7 @@ function Build-ContactUpdatePayload {
         $TemplateMetadata
     )
 
-    # Build update object for PUT /ws/contacts/{contactId}/demographics
+    # Build update object for PUT /ws/contacts/`{contactId`}/demographics
     # Contact demographics API expects a flat structure with just the fields being updated
     $payload = @{}
 
@@ -955,28 +996,12 @@ function Invoke-CreateContact {
     )
 
     try {
-        # Ensure connection is valid
-        Test-PowerSchoolConnection
-
-        # Get access token
-        $accessToken = Get-PowerSchoolAccessToken
-        
-        $headers = @{
-            'Authorization' = "Bearer $accessToken"
-            'Content-Type' = 'application/json'
-            'Accept' = 'application/json'
-        }
-
-        $uri = "$script:PowerSchoolBaseUrl/ws/contacts/contact"
+        $endpoint = "/ws/contacts/contact"
 
         Write-Verbose "Making API call to create contact"
-        Write-Verbose "URI: POST $uri"
-        Write-Verbose "Headers: Authorization=Bearer [REDACTED], Content-Type=application/json, Accept=application/json"
-        Write-Verbose "Payload: $($Payload | ConvertTo-Json -Depth 10 -Compress)"
         
-        $response = Invoke-PowerSchoolApiRequest `
-            -Uri $uri `
-            -Headers $headers `
+        $response = Invoke-PSRequest `
+            -Endpoint $endpoint `
             -Method Post `
             -Body $Payload `
             -MaxRetries $MaxRetries `
@@ -1045,29 +1070,13 @@ function Invoke-UpdateContact {
     )
 
     try {
-        # Ensure connection is valid
-        Test-PowerSchoolConnection
-
-        # Get access token
-        $accessToken = Get-PowerSchoolAccessToken
-        
-        $headers = @{
-            'Authorization' = "Bearer $accessToken"
-            'Content-Type' = 'application/json'
-            'Accept' = 'application/json'
-        }
-
         # Contact demographics update uses PUT /ws/contacts/{contactId}/demographics
-        $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/demographics"
+        $endpoint = "/ws/contacts/$ContactID/demographics"
 
         Write-Verbose "Making API call to update contact ContactID: $ContactID"
-        Write-Verbose "URI: PUT $uri"
-        Write-Verbose "Headers: Authorization=Bearer [REDACTED], Content-Type=application/json, Accept=application/json"
-        Write-Verbose "Payload: $($Payload | ConvertTo-Json -Depth 10 -Compress)"
         
-        $response = Invoke-PowerSchoolApiRequest `
-            -Uri $uri `
-            -Headers $headers `
+        $response = Invoke-PSRequest `
+            -Endpoint $endpoint `
             -Method Put `
             -Body $Payload `
             -MaxRetries $MaxRetries `
@@ -1117,17 +1126,11 @@ function Invoke-UpdateContactEmails {
     )
     
     try {
-        $headers = @{
-            'Authorization' = "Bearer $(Get-PowerSchoolAccessToken)"
-            'Content-Type' = 'application/json'
-            'Accept' = 'application/json'
-        }
-        
         $allSuccess = $true
         $errors = [System.Collections.Generic.List[string]]::new()
         $successCount = 0
         
-        # Process removed emails first - DELETE /ws/contacts/{contactid}/emails/{contactemailid}
+        # Process removed emails first - DELETE /ws/contacts/{contactId}/emails/{contactEmailId}
         foreach ($removedEmail in $EmailChanges.Removed) {
             $emailAddress = $removedEmail.Email.emailaddress_emailaddress
             $contactEmailId = $removedEmail.Email.emailaddress_contactEmailId
@@ -1140,13 +1143,11 @@ function Invoke-UpdateContactEmails {
             }
             
             try {
-                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/emails/$contactEmailId"
+                $endpoint = "/ws/contacts/$ContactID/emails/$contactEmailId"
                 Write-Verbose "  Deleting email: $emailAddress (contactEmailId: $contactEmailId)"
-                Write-Verbose "  URI: DELETE $uri"
                 
-                $response = Invoke-PowerSchoolApiRequest `
-                    -Uri $uri `
-                    -Headers $headers `
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
                     -Method Delete `
                     -MaxRetries $MaxRetries `
                     -InitialRetryDelaySeconds $RetryDelaySeconds
@@ -1162,7 +1163,7 @@ function Invoke-UpdateContactEmails {
             }
         }
         
-        # Process modified emails - PUT /ws/contacts/{contactid}/emails/{contactemailid}
+        # Process modified emails - PUT /ws/contacts/`{contactId`}/emails/`{contactEmailId`}
         foreach ($modifiedEmail in $EmailChanges.Modified) {
             $oldEmailAddress = $modifiedEmail.OldEmail.emailaddress_emailaddress
             $newEmailAddress = $modifiedEmail.NewEmail.EmailAddress
@@ -1177,15 +1178,12 @@ function Invoke-UpdateContactEmails {
             
             try {
                 $emailPayload = Build-EmailPayload -Email $modifiedEmail.NewEmail -TemplateMetadata $TemplateMetadata
-                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/emails/$contactEmailId"
+                $endpoint = "/ws/contacts/$ContactID/emails/$contactEmailId"
                 
                 Write-Verbose "  Modifying email: $oldEmailAddress -> $newEmailAddress (contactEmailId: $contactEmailId)"
-                Write-Verbose "  URI: PUT $uri"
-                Write-Verbose "  Payload: $($emailPayload | ConvertTo-Json -Depth 10 -Compress)"
                 
-                $response = Invoke-PowerSchoolApiRequest `
-                    -Uri $uri `
-                    -Headers $headers `
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
                     -Method Put `
                     -Body $emailPayload `
                     -MaxRetries $MaxRetries `
@@ -1202,21 +1200,18 @@ function Invoke-UpdateContactEmails {
             }
         }
         
-        # Process added emails - POST /ws/contacts/{contactid}/emails
+        # Process added emails - POST /ws/contacts/`{contactId`}/emails
         foreach ($addedEmail in $EmailChanges.Added) {
             $emailAddress = $addedEmail.Email.EmailAddress
             
             try {
                 $emailPayload = Build-EmailPayload -Email $addedEmail.Email -TemplateMetadata $TemplateMetadata
-                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/emails"
+                $endpoint = "/ws/contacts/$ContactID/emails"
                 
                 Write-Verbose "  Adding email: $emailAddress"
-                Write-Verbose "  URI: POST $uri"
-                Write-Verbose "  Payload: $($emailPayload | ConvertTo-Json -Depth 10 -Compress)"
                 
-                $response = Invoke-PowerSchoolApiRequest `
-                    -Uri $uri `
-                    -Headers $headers `
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
                     -Method Post `
                     -Body $emailPayload `
                     -MaxRetries $MaxRetries `
@@ -1282,17 +1277,11 @@ function Invoke-UpdateContactPhones {
     )
     
     try {
-        $headers = @{
-            'Authorization' = "Bearer $(Get-PowerSchoolAccessToken)"
-            'Content-Type' = 'application/json'
-            'Accept' = 'application/json'
-        }
-        
         $allSuccess = $true
         $errors = [System.Collections.Generic.List[string]]::new()
         $successCount = 0
         
-        # Process removed phones first - DELETE /ws/contacts/{contactid}/phones/{contactphoneid}
+        # Process removed phones first - DELETE /ws/contacts/{contactId}/phones/{contactPhoneId}
         foreach ($removedPhone in $PhoneChanges.Removed) {
             $phoneNumber = $removedPhone.Phone.phonenumber_phonenumber
             $contactPhoneId = $removedPhone.Phone.phonenumber_contactPhoneId
@@ -1305,13 +1294,11 @@ function Invoke-UpdateContactPhones {
             }
             
             try {
-                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/phones/$contactPhoneId"
+                $endpoint = "/ws/contacts/$ContactID/phones/$contactPhoneId"
                 Write-Verbose "  Deleting phone: $phoneNumber (contactPhoneId: $contactPhoneId)"
-                Write-Verbose "  URI: DELETE $uri"
                 
-                $response = Invoke-PowerSchoolApiRequest `
-                    -Uri $uri `
-                    -Headers $headers `
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
                     -Method Delete `
                     -MaxRetries $MaxRetries `
                     -InitialRetryDelaySeconds $RetryDelaySeconds
@@ -1327,7 +1314,7 @@ function Invoke-UpdateContactPhones {
             }
         }
         
-        # Process modified phones - PUT /ws/contacts/{contactid}/phones/{contactphoneid}
+        # Process modified phones - PUT /ws/contacts/`{contactId`}/phones/`{contactPhoneId`}
         foreach ($modifiedPhone in $PhoneChanges.Modified) {
             $oldPhoneNumber = $modifiedPhone.OldPhone.phonenumber_phonenumber
             $newPhoneNumber = $modifiedPhone.NewPhone.PhoneNumber
@@ -1342,15 +1329,12 @@ function Invoke-UpdateContactPhones {
             
             try {
                 $phonePayload = Build-PhonePayload -Phone $modifiedPhone.NewPhone -TemplateMetadata $TemplateMetadata
-                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/phones/$contactPhoneId"
+                $endpoint = "/ws/contacts/$ContactID/phones/$contactPhoneId"
                 
                 Write-Verbose "  Modifying phone: $oldPhoneNumber -> $newPhoneNumber (contactPhoneId: $contactPhoneId)"
-                Write-Verbose "  URI: PUT $uri"
-                Write-Verbose "  Payload: $($phonePayload | ConvertTo-Json -Depth 10 -Compress)"
                 
-                $response = Invoke-PowerSchoolApiRequest `
-                    -Uri $uri `
-                    -Headers $headers `
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
                     -Method Put `
                     -Body $phonePayload `
                     -MaxRetries $MaxRetries `
@@ -1367,21 +1351,18 @@ function Invoke-UpdateContactPhones {
             }
         }
         
-        # Process added phones - POST /ws/contacts/{contactid}/phones
+        # Process added phones - POST /ws/contacts/`{contactId`}/phones
         foreach ($addedPhone in $PhoneChanges.Added) {
             $phoneNumber = $addedPhone.Phone.PhoneNumber
             
             try {
                 $phonePayload = Build-PhonePayload -Phone $addedPhone.Phone -TemplateMetadata $TemplateMetadata
-                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/phones"
+                $endpoint = "/ws/contacts/$ContactID/phones"
                 
                 Write-Verbose "  Adding phone: $phoneNumber"
-                Write-Verbose "  URI: POST $uri"
-                Write-Verbose "  Payload: $($phonePayload | ConvertTo-Json -Depth 10 -Compress)"
                 
-                $response = Invoke-PowerSchoolApiRequest `
-                    -Uri $uri `
-                    -Headers $headers `
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
                     -Method Post `
                     -Body $phonePayload `
                     -MaxRetries $MaxRetries `
@@ -1447,17 +1428,11 @@ function Invoke-UpdateContactAddresses {
     )
     
     try {
-        $headers = @{
-            'Authorization' = "Bearer $(Get-PowerSchoolAccessToken)"
-            'Content-Type' = 'application/json'
-            'Accept' = 'application/json'
-        }
-        
         $allSuccess = $true
         $errors = [System.Collections.Generic.List[string]]::new()
         $successCount = 0
         
-        # Process removed addresses first - DELETE /ws/contacts/{contactid}/addresses/{contactaddressid}
+        # Process removed addresses first - DELETE /ws/contacts/{contactId}/addresses/{contactAddressId}
         foreach ($removedAddress in $AddressChanges.Removed) {
             $street = $removedAddress.Address.address_street
             $contactAddressId = $removedAddress.Address.address_contactAddressId
@@ -1470,13 +1445,11 @@ function Invoke-UpdateContactAddresses {
             }
             
             try {
-                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/addresses/$contactAddressId"
+                $endpoint = "/ws/contacts/$ContactID/addresses/$contactAddressId"
                 Write-Verbose "  Deleting address: $street (contactAddressId: $contactAddressId)"
-                Write-Verbose "  URI: DELETE $uri"
                 
-                $response = Invoke-PowerSchoolApiRequest `
-                    -Uri $uri `
-                    -Headers $headers `
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
                     -Method Delete `
                     -MaxRetries $MaxRetries `
                     -InitialRetryDelaySeconds $RetryDelaySeconds
@@ -1492,7 +1465,7 @@ function Invoke-UpdateContactAddresses {
             }
         }
         
-        # Process modified addresses - PUT /ws/contacts/{contactid}/addresses/{contactaddressid}
+        # Process modified addresses - PUT /ws/contacts/`{contactId`}/addresses/`{contactAddressId`}
         foreach ($modifiedAddress in $AddressChanges.Modified) {
             $oldStreet = $modifiedAddress.OldAddress.address_street
             $newStreet = $modifiedAddress.NewAddress.Street
@@ -1507,15 +1480,12 @@ function Invoke-UpdateContactAddresses {
             
             try {
                 $addressPayload = Build-AddressPayload -Address $modifiedAddress.NewAddress -TemplateMetadata $TemplateMetadata
-                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/addresses/$contactAddressId"
+                $endpoint = "/ws/contacts/$ContactID/addresses/$contactAddressId"
                 
                 Write-Verbose "  Modifying address: $oldStreet -> $newStreet (contactAddressId: $contactAddressId)"
-                Write-Verbose "  URI: PUT $uri"
-                Write-Verbose "  Payload: $($addressPayload | ConvertTo-Json -Depth 10 -Compress)"
                 
-                $response = Invoke-PowerSchoolApiRequest `
-                    -Uri $uri `
-                    -Headers $headers `
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
                     -Method Put `
                     -Body $addressPayload `
                     -MaxRetries $MaxRetries `
@@ -1532,21 +1502,18 @@ function Invoke-UpdateContactAddresses {
             }
         }
         
-        # Process added addresses - POST /ws/contacts/{contactid}/addresses
+        # Process added addresses - POST /ws/contacts/`{contactId`}/addresses
         foreach ($addedAddress in $AddressChanges.Added) {
             $street = $addedAddress.Address.Street
             
             try {
                 $addressPayload = Build-AddressPayload -Address $addedAddress.Address -TemplateMetadata $TemplateMetadata
-                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/addresses"
+                $endpoint = "/ws/contacts/$ContactID/addresses"
                 
                 Write-Verbose "  Adding address: $street"
-                Write-Verbose "  URI: POST $uri"
-                Write-Verbose "  Payload: $($addressPayload | ConvertTo-Json -Depth 10 -Compress)"
                 
-                $response = Invoke-PowerSchoolApiRequest `
-                    -Uri $uri `
-                    -Headers $headers `
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
                     -Method Post `
                     -Body $addressPayload `
                     -MaxRetries $MaxRetries `
@@ -1584,6 +1551,280 @@ function Invoke-UpdateContactAddresses {
     }
     catch {
         Write-Verbose "Address update failed: $($_.Exception.Message)"
+        return [PSCustomObject]@{
+            Success = $false
+            Error = $_.Exception.Message
+        }
+    }
+}
+
+# Private helper function to update contact relationships (student-contact associations)
+function Invoke-UpdateContactRelationships {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ContactID,
+        
+        [Parameter(Mandatory = $true)]
+        [PSCustomObject]$RelationshipChanges,
+        
+        [Parameter(Mandatory = $false)]
+        $TemplateMetadata,
+        
+        [Parameter(Mandatory = $false)]
+        [int]$MaxRetries = 3,
+        
+        [Parameter(Mandatory = $false)]
+        [int]$RetryDelaySeconds = 5
+    )
+    
+    try {
+        $allSuccess = $true
+        $errors = [System.Collections.Generic.List[string]]::new()
+        $successCount = 0
+        
+        # Build lookup of contactStudentId by student number
+        # First, check if the PowerQuery data already includes the IDs (relationship_contactStudentId)
+        # If not, fetch via API
+        $existingRelationships = @{}
+        $needsApiFetch = $false
+        
+        # Check if any removed/modified relationships have the ID in their data
+        foreach ($removedRel in $RelationshipChanges.Removed) {
+            $studentNumber = $removedRel.StudentNumber
+            if ($removedRel.Relationship.relationship_contactStudentId) {
+                $existingRelationships[$studentNumber] = @{
+                    id = $removedRel.Relationship.relationship_contactStudentId
+                }
+                Write-Verbose "  Using contactStudentId from PowerQuery data for student $studentNumber"
+            } else {
+                $needsApiFetch = $true
+            }
+        }
+        
+        foreach ($modifiedRel in $RelationshipChanges.Modified) {
+            $studentNumber = $modifiedRel.StudentNumber
+            if ($modifiedRel.OldRelationship.relationship_contactStudentId) {
+                $existingRelationships[$studentNumber] = @{
+                    id = $modifiedRel.OldRelationship.relationship_contactStudentId
+                }
+                Write-Verbose "  Using contactStudentId from PowerQuery data for student $studentNumber"
+            } else {
+                $needsApiFetch = $true
+            }
+        }
+        
+        # Fetch existing relationships via API only if needed (for older data without IDs)
+        if ($needsApiFetch -and ($RelationshipChanges.Removed.Count -gt 0 -or $RelationshipChanges.Modified.Count -gt 0)) {
+            try {
+                $endpoint = "/ws/contacts/$ContactID/students"
+                Write-Verbose "  Fetching existing relationships via API to get missing association IDs"
+                
+                $getResponse = Invoke-PSRequest `
+                    -Endpoint $endpoint `
+                    -Method Get `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                # Build lookup by student number (only add if not already present from PowerQuery data)
+                # API returns an array of contact-student relationships with studentContactId field
+                if ($getResponse) {
+                    foreach ($rel in $getResponse) {
+                        $studentNum = $rel.studentNumber
+                        if ($studentNum -and -not $existingRelationships.ContainsKey($studentNum)) {
+                            # Store the relationship with an 'id' property for consistency
+                            $existingRelationships[$studentNum] = @{
+                                id = $rel.studentContactId
+                            }
+                            Write-Verbose "  Found existing relationship via API: Student $studentNum -> contactStudentId $($rel.studentContactId)"
+                        }
+                    }
+                }
+            }
+            catch {
+                Write-Warning "Failed to fetch existing relationships via API: $($_.Exception.Message)"
+                Write-Warning "DELETE and MODIFY operations without PowerQuery IDs will be skipped"
+            }
+        }
+        
+        # Process removed relationships first - DELETE /ws/contacts/`{contactId`}/students/`{contactStudentId`}
+        foreach ($removedRel in $RelationshipChanges.Removed) {
+            $studentNumber = $removedRel.StudentNumber
+            $relationshipType = $removedRel.Relationship.relationship_relationship_code
+            
+            # Find the contactStudentId from the fetched data
+            if (-not $existingRelationships.ContainsKey($studentNumber)) {
+                Write-Warning "Cannot delete relationship for student $studentNumber - not found in existing relationships"
+                $errors.Add("Delete failed for student $studentNumber - not found")
+                $allSuccess = $false
+                continue
+            }
+            
+            $contactStudentId = $existingRelationships[$studentNumber].id
+            
+            if (-not $contactStudentId) {
+                Write-Warning "Cannot delete relationship for student $studentNumber - missing contactStudentId"
+                $errors.Add("Delete failed for student $studentNumber - missing contactStudentId")
+                $allSuccess = $false
+                continue
+            }
+            
+            try {
+                $endpoint = "/ws/contacts/$ContactID/students/$contactStudentId"
+                Write-Verbose "  Deleting relationship: Student $studentNumber ($relationshipType) (contactStudentId: $contactStudentId)"
+                
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
+                    -Method Delete `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Relationship deletion successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Delete failed for student $studentNumber : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
+        }
+        
+        # Process modified relationships
+        # PowerSchool API: PUT /ws/contacts/CONTACTID/students/CONTACTSTUDENTID/studentdetails/CONTACTSTUDENTDETAILID
+        # Since we need the detail ID and it's complex, we'll use a simpler approach:
+        # DELETE the old relationship and POST a new one
+        foreach ($modifiedRel in $RelationshipChanges.Modified) {
+            $studentNumber = $modifiedRel.StudentNumber
+            $oldRelType = if ($modifiedRel.OldRelationship.relationship_relationship_code) { $modifiedRel.OldRelationship.relationship_relationship_code } else { "N/A" }
+            $newRelType = if ($modifiedRel.NewRelationship.RelationshipType) { $modifiedRel.NewRelationship.RelationshipType } else { "N/A" }
+            
+            # Find the contactStudentId from the fetched data
+            if (-not $existingRelationships.ContainsKey($studentNumber)) {
+                Write-Warning "Cannot modify relationship for student $studentNumber - not found in existing relationships"
+                $errors.Add("Modify failed for student $studentNumber - not found")
+                $allSuccess = $false
+                continue
+            }
+            
+            $contactStudentId = $existingRelationships[$studentNumber].id
+            
+            if (-not $contactStudentId) {
+                Write-Warning "Cannot modify relationship for student $studentNumber - missing contactStudentId"
+                $errors.Add("Modify failed for student $studentNumber - missing contactStudentId")
+                $allSuccess = $false
+                continue
+            }
+            
+            try {
+                # Step 1: Delete the existing relationship
+                $deleteEndpoint = "/ws/contacts/$ContactID/students/$contactStudentId"
+                Write-Verbose "  Modifying relationship for student ${studentNumber}: $oldRelType -> $newRelType"
+                Write-Verbose "  Step 1: Deleting old relationship (contactStudentId: $contactStudentId)"
+                
+                $deleteResponse = Invoke-PSRequest `
+                    -Endpoint $deleteEndpoint `
+                    -Method Delete `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Old relationship deleted successfully"
+                
+                # Step 2: Create the new relationship
+                $relationshipPayload = Build-RelationshipPayload -Relationship $modifiedRel.NewRelationship -TemplateMetadata $TemplateMetadata
+                
+                if (-not $relationshipPayload) {
+                    Write-Warning "Failed to build relationship payload for student $studentNumber. Skipping."
+                    $errors.Add("Modify failed for student $studentNumber - invalid relationship payload")
+                    $allSuccess = $false
+                    continue
+                }
+                
+                $postEndpoint = "/ws/contacts/$ContactID/students"
+                Write-Verbose "  Step 2: Creating new relationship"
+                
+                $postResponse = Invoke-PSRequest `
+                    -Endpoint $postEndpoint `
+                    -Method Post `
+                    -Body $relationshipPayload `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Relationship modification successful. Response: $($postResponse | ConvertTo-Json -Depth 10 -Compress)"
+                
+                # Extract the newly created contactStudentId from response for future reference
+                if ($postResponse._success_message -and $postResponse._success_message.id) {
+                    Write-Verbose "  New relationship created with contactStudentId: $($postResponse._success_message.id)"
+                }
+                
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Modify failed for student $studentNumber : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
+        }
+        
+        # Process added relationships - POST /ws/contacts/`{contactId`}/students
+        foreach ($addedRel in $RelationshipChanges.Added) {
+            $studentNumber = $addedRel.StudentNumber
+            $relationshipType = if ($addedRel.Relationship.RelationshipType) { $addedRel.Relationship.RelationshipType } else { "N/A" }
+            
+            try {
+                $relationshipPayload = Build-RelationshipPayload -Relationship $addedRel.Relationship -TemplateMetadata $TemplateMetadata
+                
+                if (-not $relationshipPayload) {
+                    Write-Warning "Failed to build relationship payload for student $studentNumber. Skipping."
+                    $errors.Add("Add failed for student $studentNumber - invalid relationship payload")
+                    $allSuccess = $false
+                    continue
+                }
+                
+                $endpoint = "/ws/contacts/$ContactID/students"
+                
+                Write-Verbose "  Adding relationship: Student $studentNumber ($relationshipType)"
+                
+                $response = Invoke-PSRequest `
+                    -Endpoint $endpoint `
+                    -Method Post `
+                    -Body $relationshipPayload `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Relationship addition successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                
+                # Extract the newly created contactStudentId from response for future reference
+                if ($response._success_message -and $response._success_message.id) {
+                    Write-Verbose "  New relationship created with contactStudentId: $($response._success_message.id)"
+                }
+                
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Add failed for student $studentNumber : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
+        }
+        
+        if ($successCount -eq 0 -and ($RelationshipChanges.Added.Count + $RelationshipChanges.Modified.Count + $RelationshipChanges.Removed.Count) -eq 0) {
+            Write-Verbose "No relationship changes to apply"
+            return [PSCustomObject]@{ Success = $true }
+        }
+        
+        Write-Verbose "Relationship operations completed: $successCount successful, $($errors.Count) failed"
+        
+        return [PSCustomObject]@{
+            Success = $allSuccess
+            SuccessCount = $successCount
+            Errors = $errors
+        }
+    }
+    catch {
+        Write-Verbose "Relationship update failed: $($_.Exception.Message)"
         return [PSCustomObject]@{
             Success = $false
             Error = $_.Exception.Message
