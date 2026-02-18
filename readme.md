@@ -63,6 +63,8 @@ Write-Host "Removed: $($changes.Summary.RemovedCount)"
 - **`Import-FSCsv`** - Parse Final Site Enrollment CSV files
 - **`Compare-PSStudent`** - Detect changes between CSV and PowerSchool student data
 - **`Compare-PSContact`** - Detect changes in contacts, emails, phones, addresses, and relationships
+- **`Submit-PSStudentChange`** - Apply student changes to PowerSchool via API
+- **`Submit-PSContactChange`** - Apply contact changes (demographics, emails, phones, addresses, relationships) to PowerSchool via API
 
 ### Data Files
 - Example CSVs under `data/examples/`
@@ -71,6 +73,7 @@ Write-Host "Removed: $($changes.Summary.RemovedCount)"
 ### Utility Scripts
 - **`Example-ChangeDetection.ps1`** - Complete student change detection workflow example
 - **`Example-ContactChangeDetection.ps1`** - Complete contact change detection workflow with emails, phones, addresses, and relationships
+- **`Example-ContactSubmitChanges.ps1`** - Apply contact changes to PowerSchool from JSON file
 - **`Filter-ParentsByStudentExampleFile.ps1`** - Filter parent rows by student list
 - **`Anonymize-ParentsExampleFile.ps1`** - Anonymize sample data for sharing/tests
 
@@ -91,7 +94,8 @@ Write-Host "Removed: $($changes.Summary.RemovedCount)"
 ### Additional Resources
 - **[CSV Parsing Examples](docs/guides/user/CSV-Parsing-Examples.md)** - CSV import examples
 - **[Invoke-PowerQuery Examples](docs/guides/user/Invoke-PowerQuery-Examples.md)** - PowerQuery usage examples
-- **[Submit Student Changes](docs/guides/developer/Submit-PSStudentChange-Usage.md)** - Developer guide for submitting changes
+- **[Submit Student Changes](docs/guides/developer/Submit-PSStudentChange-Usage.md)** - Developer guide for submitting student changes
+- **[Submit Contact Changes](docs/guides/developer/Submit-PSContactChange-Usage.md)** - Developer guide for submitting contact changes
 - **PowerSchool API Spec**: [docs/api/powerschool_api.yaml](docs/api/powerschool_api.yaml) (OpenAPI)
 - **PowerSchool API Plugin**: [docs/powerschool api plugin/](docs/powerschool%20api%20plugin/)
 - **PowerQuery Documentation**: [docs/powerschool api plugin/](docs/powerschool%20api%20plugin/)*.named_queries.md

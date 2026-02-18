@@ -14,6 +14,7 @@ docs/
 │   │   └── Invoke-PowerQuery-Pagination-Examples.md
 │   ├── developer/                      # Developer guides
 │   │   ├── Submit-PSStudentChange-Usage.md
+│   │   ├── Submit-PSContactChange-Usage.md
 │   │   ├── Invoke-PSRequest-Usage.md
 │   │   └── DateTime-Format-Configuration.md
 │   └── README.md
@@ -57,6 +58,7 @@ docs/
 
 ### 👨‍💻 Developer Guides (`guides/developer/`)
 - **[Submit Student Changes Usage](guides/developer/Submit-PSStudentChange-Usage.md)** - Guide for submitting student changes to PowerSchool
+- **[Submit Contact Changes Usage](guides/developer/Submit-PSContactChange-Usage.md)** - Guide for submitting contact changes to PowerSchool
 - **[Invoke-PSRequest Usage](guides/developer/Invoke-PSRequest-Usage.md)** - Making PowerSchool API requests with retry logic
 - **[DateTime Format Configuration](guides/developer/DateTime-Format-Configuration.md)** - Configuring date/time formats in templates
 
