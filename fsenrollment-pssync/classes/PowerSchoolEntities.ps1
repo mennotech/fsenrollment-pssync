@@ -40,6 +40,95 @@ class PSStudent {
     [string]$FamilyIdent
 
     PSStudent() {}
+    
+    # Factory method to create from PSCustomObject (e.g., from JSON deserialization)
+    static [PSStudent] FromObject([object]$obj) {
+        $student = [PSStudent]::new()
+        
+        if ($obj.PSObject.Properties['StudentNumber']) {
+            $student.StudentNumber = $obj.StudentNumber
+        }
+        if ($obj.PSObject.Properties['SchoolID']) {
+            $student.SchoolID = $obj.SchoolID
+        }
+        if ($obj.PSObject.Properties['FirstName']) {
+            $student.FirstName = $obj.FirstName
+        }
+        if ($obj.PSObject.Properties['MiddleName']) {
+            $student.MiddleName = $obj.MiddleName
+        }
+        if ($obj.PSObject.Properties['LastName']) {
+            $student.LastName = $obj.LastName
+        }
+        if ($obj.PSObject.Properties['GradeLevel']) {
+            $student.GradeLevel = [int]$obj.GradeLevel
+        }
+        if ($obj.PSObject.Properties['HomePhone']) {
+            $student.HomePhone = $obj.HomePhone
+        }
+        if ($obj.PSObject.Properties['Gender']) {
+            $student.Gender = $obj.Gender
+        }
+        if ($obj.PSObject.Properties['DOB']) {
+            $student.DOB = [datetime]$obj.DOB
+        }
+        if ($obj.PSObject.Properties['FTEID']) {
+            $student.FTEID = $obj.FTEID
+        }
+        if ($obj.PSObject.Properties['EnrollStatus']) {
+            $student.EnrollStatus = [int]$obj.EnrollStatus
+        }
+        if ($obj.PSObject.Properties['EntryDate']) {
+            $student.EntryDate = [datetime]$obj.EntryDate
+        }
+        if ($obj.PSObject.Properties['ExitDate']) {
+            $student.ExitDate = [datetime]$obj.ExitDate
+        }
+        if ($obj.PSObject.Properties['Street']) {
+            $student.Street = $obj.Street
+        }
+        if ($obj.PSObject.Properties['City']) {
+            $student.City = $obj.City
+        }
+        if ($obj.PSObject.Properties['State']) {
+            $student.State = $obj.State
+        }
+        if ($obj.PSObject.Properties['Zip']) {
+            $student.Zip = $obj.Zip
+        }
+        if ($obj.PSObject.Properties['MailingStreet']) {
+            $student.MailingStreet = $obj.MailingStreet
+        }
+        if ($obj.PSObject.Properties['MailingCity']) {
+            $student.MailingCity = $obj.MailingCity
+        }
+        if ($obj.PSObject.Properties['MailingState']) {
+            $student.MailingState = $obj.MailingState
+        }
+        if ($obj.PSObject.Properties['MailingZip']) {
+            $student.MailingZip = $obj.MailingZip
+        }
+        if ($obj.PSObject.Properties['SchedNextYearGrade']) {
+            $student.SchedNextYearGrade = [int]$obj.SchedNextYearGrade
+        }
+        if ($obj.PSObject.Properties['NextSchool']) {
+            $student.NextSchool = $obj.NextSchool
+        }
+        if ($obj.PSObject.Properties['SchedScheduled']) {
+            $student.SchedScheduled = [int]$obj.SchedScheduled
+        }
+        if ($obj.PSObject.Properties['SchedYearOfGraduation']) {
+            $student.SchedYearOfGraduation = [int]$obj.SchedYearOfGraduation
+        }
+        if ($obj.PSObject.Properties['TransferComment']) {
+            $student.TransferComment = $obj.TransferComment
+        }
+        if ($obj.PSObject.Properties['FamilyIdent']) {
+            $student.FamilyIdent = $obj.FamilyIdent
+        }
+        
+        return $student
+    }
 }
 
 # Contact entity representing a PowerSchool contact (parent/guardian)
@@ -57,6 +146,47 @@ class PSContact {
     [bool]$ExcludeFromExport
 
     PSContact() {}
+    
+    # Factory method to create from PSCustomObject (e.g., from JSON deserialization)
+    static [PSContact] FromObject([object]$obj) {
+        $contact = [PSContact]::new()
+        
+        if ($obj.PSObject.Properties['ContactIdentifier']) {
+            $contact.ContactIdentifier = $obj.ContactIdentifier
+        }
+        if ($obj.PSObject.Properties['ContactID']) {
+            $contact.ContactID = $obj.ContactID
+        }
+        if ($obj.PSObject.Properties['Prefix']) {
+            $contact.Prefix = $obj.Prefix
+        }
+        if ($obj.PSObject.Properties['FirstName']) {
+            $contact.FirstName = $obj.FirstName
+        }
+        if ($obj.PSObject.Properties['MiddleName']) {
+            $contact.MiddleName = $obj.MiddleName
+        }
+        if ($obj.PSObject.Properties['LastName']) {
+            $contact.LastName = $obj.LastName
+        }
+        if ($obj.PSObject.Properties['Suffix']) {
+            $contact.Suffix = $obj.Suffix
+        }
+        if ($obj.PSObject.Properties['Gender']) {
+            $contact.Gender = $obj.Gender
+        }
+        if ($obj.PSObject.Properties['Employer']) {
+            $contact.Employer = $obj.Employer
+        }
+        if ($obj.PSObject.Properties['IsActive']) {
+            $contact.IsActive = [bool]$obj.IsActive
+        }
+        if ($obj.PSObject.Properties['ExcludeFromExport']) {
+            $contact.ExcludeFromExport = [bool]$obj.ExcludeFromExport
+        }
+        
+        return $contact
+    }
 }
 
 # Email address entity
