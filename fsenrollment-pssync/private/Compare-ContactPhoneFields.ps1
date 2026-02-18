@@ -71,27 +71,39 @@ function Compare-ContactPhoneFields {
     }
 
     # Create lookup dictionary for PowerSchool phones by normalized number
+    # Keep first occurrence, mark duplicates for removal
     $psLookup = @{}
     foreach ($psPhone in $PowerSchoolPhones) {
         $normalizedPhone = Normalize-PhoneNumber -PhoneNumber $psPhone.phonenumber_phonenumber
         if (-not [string]::IsNullOrWhiteSpace($normalizedPhone)) {
-            # Store in lookup - if duplicate phones exist, last one wins
+            # Store in lookup - if duplicate phones exist, keep first, mark rest for removal
             if ($psLookup.ContainsKey($normalizedPhone)) {
-                Write-Verbose "Duplicate phone number found in PowerSchool data: $($psPhone.phonenumber_phonenumber) (normalized: $normalizedPhone). Using most recent entry."
+                Write-Verbose "Duplicate phone number found in PowerSchool data: $($psPhone.phonenumber_phonenumber) (normalized: $normalizedPhone). Marking duplicate for removal (keeping first occurrence)."
+                # Add this duplicate to removed list
+                $removed.Add([PSCustomObject]@{
+                    PhoneNumber = $normalizedPhone
+                    DisplayNumber = $psPhone.phonenumber_phonenumber
+                    Phone = $psPhone
+                })
+            } else {
+                # First occurrence - add to lookup
+                $psLookup[$normalizedPhone] = $psPhone
             }
-            $psLookup[$normalizedPhone] = $psPhone
         }
     }
 
     # Create lookup dictionary for CSV phones by normalized number
+    # Keep first occurrence, ignore duplicates
     $csvLookup = @{}
     foreach ($csvPhone in $CsvPhones) {
         $normalizedPhone = Normalize-PhoneNumber -PhoneNumber $csvPhone.PhoneNumber
         if (-not [string]::IsNullOrWhiteSpace($normalizedPhone)) {
             if ($csvLookup.ContainsKey($normalizedPhone)) {
-                Write-Verbose "Duplicate phone number found in CSV data: $($csvPhone.PhoneNumber) (normalized: $normalizedPhone). Using most recent entry."
+                Write-Verbose "Duplicate phone number found in CSV data: $($csvPhone.PhoneNumber) (normalized: $normalizedPhone). Ignoring duplicate (keeping first occurrence)."
+            } else {
+                # First occurrence - add to lookup
+                $csvLookup[$normalizedPhone] = $csvPhone
             }
-            $csvLookup[$normalizedPhone] = $csvPhone
         }
     }
 

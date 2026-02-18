@@ -173,9 +173,73 @@ function Import-FSParentsCustomParser {
         Write-Verbose "Successfully imported:"
         Write-Verbose "  - $($normalizedData.Contacts.Count) contacts"
         Write-Verbose "  - $($normalizedData.EmailAddresses.Count) email addresses"
-        Write-Verbose "  - $($normalizedData.PhoneNumbers.Count) phone numbers"
+        Write-Verbose "  - $($normalizedData.PhoneNumbers.Count) phone numbers (before duplicate removal)"
         Write-Verbose "  - $($normalizedData.Addresses.Count) addresses"
         Write-Verbose "  - $($normalizedData.Relationships.Count) student-contact relationships"
+        
+        # Remove duplicate phone numbers for each contact, keeping only the highest priority (lowest Order)
+        Write-Verbose "Checking for duplicate phone numbers in CSV data..."
+        $duplicatesRemoved = 0
+        $phonesToKeep = [System.Collections.Generic.List[PSPhoneNumber]]::new()
+        
+        # Group phones by contact
+        $phonesByContact = $normalizedData.PhoneNumbers | Group-Object -Property ContactIdentifier
+        
+        foreach ($contactGroup in $phonesByContact) {
+            # Normalize phone numbers to detect duplicates
+            $phoneGroups = @{}
+            
+            foreach ($phone in $contactGroup.Group) {
+                # Normalize by removing all non-digit characters
+                $normalized = if ($phone.PhoneNumber) {
+                    $phone.PhoneNumber -replace '[^\d]', ''
+                } else {
+                    ''
+                }
+                
+                if (-not [string]::IsNullOrWhiteSpace($normalized)) {
+                    if (-not $phoneGroups.ContainsKey($normalized)) {
+                        $phoneGroups[$normalized] = [System.Collections.Generic.List[PSPhoneNumber]]::new()
+                    }
+                    $phoneGroups[$normalized].Add($phone)
+                }
+            }
+            
+            # For each normalized phone number, keep only the one with highest priority (lowest Order)
+            foreach ($normalized in $phoneGroups.Keys) {
+                $duplicates = $phoneGroups[$normalized]
+                
+                if ($duplicates.Count -gt 1) {
+                    # Sort by PriorityOrder (ascending) - lowest order = highest priority
+                    $sorted = $duplicates | Sort-Object -Property PriorityOrder
+                    $keepPhone = $sorted[0]
+                    $phonesToKeep.Add($keepPhone)
+                    
+                    # Log the duplicate removal
+                    $removed = $duplicates | Where-Object { $_ -ne $keepPhone }
+                    foreach ($dup in $removed) {
+                        Write-Warning "CSV duplicate phone detected for contact $($contactGroup.Name): Phone '$($dup.PhoneNumber)' (Type: $($dup.PhoneType), Order: $($dup.PriorityOrder)) - REMOVED (keeping Order $($keepPhone.PriorityOrder))"
+                        $duplicatesRemoved++
+                    }
+                }
+                else {
+                    # No duplicates, keep the phone
+                    $phonesToKeep.Add($duplicates[0])
+                }
+            }
+        }
+        
+        # Replace the phone numbers collection with the deduplicated list
+        if ($duplicatesRemoved -gt 0) {
+            $normalizedData.PhoneNumbers.Clear()
+            foreach ($phone in $phonesToKeep) {
+                $normalizedData.PhoneNumbers.Add($phone)
+            }
+            Write-Verbose "Removed $duplicatesRemoved duplicate phone number(s) from CSV data"
+        }
+        
+        Write-Verbose "Final counts after duplicate removal:"
+        Write-Verbose "  - $($normalizedData.PhoneNumbers.Count) phone numbers"
         
         return $normalizedData
     }

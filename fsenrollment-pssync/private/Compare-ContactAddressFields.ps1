@@ -85,21 +85,31 @@ function Compare-ContactAddressFields {
     }
 
     # Create lookup dictionary for PowerSchool addresses by match key
+    # Keep first occurrence, mark duplicates for removal
     $psLookup = @{}
     foreach ($psAddress in $PowerSchoolAddresses) {
         $matchKey = Get-AddressMatchKey -Street $psAddress.address_street `
                                        -City $psAddress.address_city `
                                        -PostalCode $psAddress.address_postalcode
         if ($matchKey) {
-            # If duplicate match keys exist, last one wins
+            # If duplicate match keys exist, keep first, mark rest for removal
             if ($psLookup.ContainsKey($matchKey)) {
-                Write-Warning "Duplicate address found in PowerSchool data: $($psAddress.address_street), $($psAddress.address_city) $($psAddress.address_postalcode). Using most recent entry."
+                Write-Verbose "Duplicate address found in PowerSchool data: $($psAddress.address_street), $($psAddress.address_city) $($psAddress.address_postalcode). Marking duplicate for removal (keeping first occurrence)."
+                # Add this duplicate to removed list
+                $removed.Add([PSCustomObject]@{
+                    MatchKey = $matchKey
+                    DisplayAddress = "$($psAddress.address_street), $($psAddress.address_city), $($psAddress.address_state) $($psAddress.address_postalcode)"
+                    Address = $psAddress
+                })
+            } else {
+                # First occurrence - add to lookup
+                $psLookup[$matchKey] = $psAddress
             }
-            $psLookup[$matchKey] = $psAddress
         }
     }
 
     # Create lookup dictionary for CSV addresses by match key
+    # Keep first occurrence, ignore duplicates
     $csvLookup = @{}
     foreach ($csvAddress in $CsvAddresses) {
         $matchKey = Get-AddressMatchKey -Street $csvAddress.Street `
@@ -107,9 +117,11 @@ function Compare-ContactAddressFields {
                                        -PostalCode $csvAddress.PostalCode
         if ($matchKey) {
             if ($csvLookup.ContainsKey($matchKey)) {
-                Write-Warning "Duplicate address found in CSV data: $($csvAddress.Street), $($csvAddress.City) $($csvAddress.PostalCode). Using most recent entry."
+                Write-Verbose "Duplicate address found in CSV data: $($csvAddress.Street), $($csvAddress.City) $($csvAddress.PostalCode). Ignoring duplicate (keeping first occurrence)."
+            } else {
+                # First occurrence - add to lookup
+                $csvLookup[$matchKey] = $csvAddress
             }
-            $csvLookup[$matchKey] = $csvAddress
         }
     }
 

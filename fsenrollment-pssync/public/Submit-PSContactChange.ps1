@@ -379,6 +379,10 @@ function Submit-PSContactChange {
                     }
                     $updateMessage = "Contact: $matchKey (ContactID: $contactId) Name: $contactName - $($changeParts -join ', ')"
                     
+                    # Track overall success and collect errors
+                    $allOperationsSucceeded = $true
+                    $operationErrors = [System.Collections.Generic.List[string]]::new()
+                    
                     # Process demographic changes if present
                     if ($hasDemographicChanges) {
                         if ($changes -isnot [array]) { $changes = @($changes) }
@@ -419,7 +423,12 @@ function Submit-PSContactChange {
                             if (-not $WhatIfPreference) {
                                 $emailResult = Invoke-UpdateContactEmails -ContactID $contactId -EmailChanges $emailChanges -TemplateMetadata $TemplateMetadata -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
                                 if (-not $emailResult.Success) {
-                                    Write-Warning "Email update failed: $($emailResult.Error)"
+                                    $allOperationsSucceeded = $false
+                                    if ($emailResult.Error) {
+                                        $operationErrors.Add("Email: $($emailResult.Error)")
+                                    } elseif ($emailResult.Errors) {
+                                        $operationErrors.AddRange($emailResult.Errors)
+                                    }
                                 }
                             }
                         }
@@ -438,7 +447,12 @@ function Submit-PSContactChange {
                             if (-not $WhatIfPreference) {
                                 $phoneResult = Invoke-UpdateContactPhones -ContactID $contactId -PhoneChanges $phoneChanges -TemplateMetadata $TemplateMetadata -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
                                 if (-not $phoneResult.Success) {
-                                    Write-Warning "Phone update failed: $($phoneResult.Error)"
+                                    $allOperationsSucceeded = $false
+                                    if ($phoneResult.Error) {
+                                        $operationErrors.Add("Phone: $($phoneResult.Error)")
+                                    } elseif ($phoneResult.Errors) {
+                                        $operationErrors.AddRange($phoneResult.Errors)
+                                    }
                                 }
                             }
                         }
@@ -457,16 +471,34 @@ function Submit-PSContactChange {
                             if (-not $WhatIfPreference) {
                                 $addressResult = Invoke-UpdateContactAddresses -ContactID $contactId -AddressChanges $addressChanges -TemplateMetadata $TemplateMetadata -MaxRetries $MaxRetries -RetryDelaySeconds $RetryDelaySeconds
                                 if (-not $addressResult.Success) {
-                                    Write-Warning "Address update failed: $($addressResult.Error)"
+                                    $allOperationsSucceeded = $false
+                                    if ($addressResult.Error) {
+                                        $operationErrors.Add("Address: $($addressResult.Error)")
+                                    } elseif ($addressResult.Errors) {
+                                        $operationErrors.AddRange($addressResult.Errors)
+                                    }
                                 }
                             }
                         }
                     }
                     
-                    # Only increment success counter if not in WhatIf mode
+                    # Only mark as successful if ALL operations succeeded
                     if (-not $WhatIfPreference) {
-                        $script:ApplyResults.UpdatedContactsApplied++
-                        Write-Host "✓ $updateMessage" -ForegroundColor Cyan
+                        if ($allOperationsSucceeded) {
+                            $script:ApplyResults.UpdatedContactsApplied++
+                            Write-Host "✓ $updateMessage" -ForegroundColor Green
+                        } else {
+                            # One or more operations failed - add to failed changes
+                            $errorMessage = $operationErrors -join '; '
+                            Write-Host "✗ $updateMessage - FAILED" -ForegroundColor Red
+                            $script:ApplyResults.FailedChanges.Add([PSCustomObject]@{
+                                Type = 'Update'
+                                MatchKey = $matchKey
+                                ContactID = $contactId
+                                Changes = $updatedContact
+                                Error = $errorMessage
+                            })
+                        }
                     }
                 }
                 catch {
@@ -681,8 +713,11 @@ function Build-PhonePayload {
     }
 
     # Add sequence (priority order)
+    # Convert from 0-based indexing (Final Site) to 1-based indexing (PowerSchool) by adding 1
     if ($null -ne $Phone.PriorityOrder) {
-        $phonePayload['sequence'] = [int]$Phone.PriorityOrder
+        $priorityOrder = [int]$Phone.PriorityOrder + 1
+        $phonePayload['sequence'] = $priorityOrder
+        Write-Verbose "Phone sequence: Final Site $($Phone.PriorityOrder) -> PowerSchool $priorityOrder"
     }
 
     # Add preferred status
@@ -744,8 +779,11 @@ function Build-AddressPayload {
     }
 
     # Add sequence (priority order)
+    # Convert from 0-based indexing (Final Site) to 1-based indexing (PowerSchool) by adding 1
     if ($null -ne $Address.PriorityOrder) {
-        $addressPayload['sequence'] = [int]$Address.PriorityOrder
+        $priorityOrder = [int]$Address.PriorityOrder + 1
+        $addressPayload['sequence'] = $priorityOrder
+        Write-Verbose "Address sequence: Final Site $($Address.PriorityOrder) -> PowerSchool $priorityOrder"
     }
 
     return $addressPayload
@@ -1079,73 +1117,139 @@ function Invoke-UpdateContactEmails {
     )
     
     try {
-        # Build payload with all email changes
-        $emailPayloads = @()
-        
-        # Add new emails
-        foreach ($addedEmail in $EmailChanges.Added) {
-            $emailPayloads += Build-EmailPayload -Email $addedEmail -TemplateMetadata $TemplateMetadata
-            Write-Verbose "  Adding email: $($addedEmail.EmailAddress)"
-        }
-        
-        # Modified emails - update with new values
-        foreach ($modifiedEmail in $EmailChanges.Modified) {
-            $emailPayloads += Build-EmailPayload -Email $modifiedEmail.NewEmail -TemplateMetadata $TemplateMetadata
-            Write-Verbose "  Modifying email: $($modifiedEmail.OldEmail.EmailAddress) -> $($modifiedEmail.NewEmail.EmailAddress)"
-        }
-        
-        # Removed emails - mark as deleted
-        foreach ($removedEmail in $EmailChanges.Removed) {
-            $deletePayload = @{
-                deleted = $true
-                address = $removedEmail.emailaddress_emailaddress
-            }
-            $emailPayloads += $deletePayload
-            Write-Verbose "  Removing email: $($removedEmail.emailaddress_emailaddress)"
-        }
-        
-        if ($emailPayloads.Count -eq 0) {
-            Write-Verbose "No email changes to apply"
-            return [PSCustomObject]@{ Success = $true }
-        }
-        
-        # Make API call using PUT /ws/contacts/{contactId}
-        # The Contact API requires sending the full contact object with the emails array
-        $payload = @{
-            emails = $emailPayloads
-        }
-        
         $headers = @{
             'Authorization' = "Bearer $(Get-PowerSchoolAccessToken)"
             'Content-Type' = 'application/json'
             'Accept' = 'application/json'
         }
         
-        $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID"
+        $allSuccess = $true
+        $errors = [System.Collections.Generic.List[string]]::new()
+        $successCount = 0
         
-        Write-Verbose "Updating emails for contact $ContactID"
-        Write-Verbose "URI: PUT $uri"
-        Write-Verbose "Payload: $($payload | ConvertTo-Json -Depth 10 -Compress)"
-        
-        $response = Invoke-PowerSchoolApiRequest `
-            -Uri $uri `
-            -Headers $headers `
-            -Method Put `
-            -Body $payload `
-            -MaxRetries $MaxRetries `
-            -InitialRetryDelaySeconds $RetryDelaySeconds
-        
-        Write-Verbose "Email update successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
-        
-        # Check for errors
-        if ($response.status -eq 'ERROR' -or $response.error_message -or $response._error_message) {
-            $errorMsg = if ($response.error_message) { $response.error_message | ConvertTo-Json -Compress } else { $response._error_message }
-            throw "PowerSchool API error: $errorMsg"
+        # Process removed emails first - DELETE /ws/contacts/{contactid}/emails/{contactemailid}
+        foreach ($removedEmail in $EmailChanges.Removed) {
+            $emailAddress = $removedEmail.Email.emailaddress_emailaddress
+            $contactEmailId = $removedEmail.Email.emailaddress_contactEmailId
+            
+            if (-not $contactEmailId) {
+                Write-Warning "Cannot delete email $emailAddress - missing contactEmailId (association ID)"
+                $errors.Add("Delete failed for $emailAddress - missing contactEmailId")
+                $allSuccess = $false
+                continue
+            }
+            
+            try {
+                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/emails/$contactEmailId"
+                Write-Verbose "  Deleting email: $emailAddress (contactEmailId: $contactEmailId)"
+                Write-Verbose "  URI: DELETE $uri"
+                
+                $response = Invoke-PowerSchoolApiRequest `
+                    -Uri $uri `
+                    -Headers $headers `
+                    -Method Delete `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Email deletion successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Delete failed for $emailAddress : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
         }
         
+        # Process modified emails - PUT /ws/contacts/{contactid}/emails/{contactemailid}
+        foreach ($modifiedEmail in $EmailChanges.Modified) {
+            $oldEmailAddress = $modifiedEmail.OldEmail.emailaddress_emailaddress
+            $newEmailAddress = $modifiedEmail.NewEmail.EmailAddress
+            $contactEmailId = $modifiedEmail.OldEmail.emailaddress_contactEmailId
+            
+            if (-not $contactEmailId) {
+                Write-Warning "Cannot modify email $oldEmailAddress - missing contactEmailId (association ID)"
+                $errors.Add("Modify failed for $oldEmailAddress - missing contactEmailId")
+                $allSuccess = $false
+                continue
+            }
+            
+            try {
+                $emailPayload = Build-EmailPayload -Email $modifiedEmail.NewEmail -TemplateMetadata $TemplateMetadata
+                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/emails/$contactEmailId"
+                
+                Write-Verbose "  Modifying email: $oldEmailAddress -> $newEmailAddress (contactEmailId: $contactEmailId)"
+                Write-Verbose "  URI: PUT $uri"
+                Write-Verbose "  Payload: $($emailPayload | ConvertTo-Json -Depth 10 -Compress)"
+                
+                $response = Invoke-PowerSchoolApiRequest `
+                    -Uri $uri `
+                    -Headers $headers `
+                    -Method Put `
+                    -Body $emailPayload `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Email modification successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Modify failed for $oldEmailAddress : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
+        }
+        
+        # Process added emails - POST /ws/contacts/{contactid}/emails
+        foreach ($addedEmail in $EmailChanges.Added) {
+            $emailAddress = $addedEmail.Email.EmailAddress
+            
+            try {
+                $emailPayload = Build-EmailPayload -Email $addedEmail.Email -TemplateMetadata $TemplateMetadata
+                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/emails"
+                
+                Write-Verbose "  Adding email: $emailAddress"
+                Write-Verbose "  URI: POST $uri"
+                Write-Verbose "  Payload: $($emailPayload | ConvertTo-Json -Depth 10 -Compress)"
+                
+                $response = Invoke-PowerSchoolApiRequest `
+                    -Uri $uri `
+                    -Headers $headers `
+                    -Method Post `
+                    -Body $emailPayload `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Email addition successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                
+                # Extract the newly created contactEmailId from response for future reference
+                if ($response._success_message -and $response._success_message.id) {
+                    Write-Verbose "  New email created with contactEmailId: $($response._success_message.id)"
+                }
+                
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Add failed for $emailAddress : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
+        }
+        
+        if ($successCount -eq 0 -and ($EmailChanges.Added.Count + $EmailChanges.Modified.Count + $EmailChanges.Removed.Count) -eq 0) {
+            Write-Verbose "No email changes to apply"
+            return [PSCustomObject]@{ Success = $true }
+        }
+        
+        Write-Verbose "Email operations completed: $successCount successful, $($errors.Count) failed"
+        
         return [PSCustomObject]@{
-            Success = $true
-            Response = $response
+            Success = $allSuccess
+            SuccessCount = $successCount
+            Errors = $errors
         }
     }
     catch {
@@ -1178,72 +1282,139 @@ function Invoke-UpdateContactPhones {
     )
     
     try {
-        # Build payload with all phone changes
-        $phonePayloads = @()
-        
-        # Add new phones
-        foreach ($addedPhone in $PhoneChanges.Added) {
-            $phonePayloads += Build-PhonePayload -Phone $addedPhone -TemplateMetadata $TemplateMetadata
-            Write-Verbose "  Adding phone: $($addedPhone.PhoneNumber)"
-        }
-        
-        # Modified phones - update with new values
-        foreach ($modifiedPhone in $PhoneChanges.Modified) {
-            $phonePayloads += Build-PhonePayload -Phone $modifiedPhone.NewPhone -TemplateMetadata $TemplateMetadata
-            Write-Verbose "  Modifying phone: $($modifiedPhone.OldPhone.PhoneNumber) -> $($modifiedPhone.NewPhone.PhoneNumber)"
-        }
-        
-        # Removed phones - mark as deleted
-        foreach ($removedPhone in $PhoneChanges.Removed) {
-            $deletePayload = @{
-                deleted = $true
-                phoneNumber = $removedPhone.phonenumber_phonenumber
-            }
-            $phonePayloads += $deletePayload
-            Write-Verbose "  Removing phone: $($removedPhone.phonenumber_phonenumber)"
-        }
-        
-        if ($phonePayloads.Count -eq 0) {
-            Write-Verbose "No phone changes to apply"
-            return [PSCustomObject]@{ Success = $true }
-        }
-        
-        # Make API call using PUT /ws/contacts/{contactId}
-        $payload = @{
-            phones = $phonePayloads
-        }
-        
         $headers = @{
             'Authorization' = "Bearer $(Get-PowerSchoolAccessToken)"
             'Content-Type' = 'application/json'
             'Accept' = 'application/json'
         }
         
-        $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID"
+        $allSuccess = $true
+        $errors = [System.Collections.Generic.List[string]]::new()
+        $successCount = 0
         
-        Write-Verbose "Updating phones for contact $ContactID"
-        Write-Verbose "URI: PUT $uri"
-        Write-Verbose "Payload: $($payload | ConvertTo-Json -Depth 10 -Compress)"
-        
-        $response = Invoke-PowerSchoolApiRequest `
-            -Uri $uri `
-            -Headers $headers `
-            -Method Put `
-            -Body $payload `
-            -MaxRetries $MaxRetries `
-            -InitialRetryDelaySeconds $RetryDelaySeconds
-        
-        Write-Verbose "Phone update successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
-        
-        # Check for errors
-        if ($response.status -eq 'ERROR' -or $response.error_message -or $response._error_message) {
-            $errorMsg = if ($response.error_message) { $response.error_message | ConvertTo-Json -Compress } else { $response._error_message }
-            throw "PowerSchool API error: $errorMsg"
+        # Process removed phones first - DELETE /ws/contacts/{contactid}/phones/{contactphoneid}
+        foreach ($removedPhone in $PhoneChanges.Removed) {
+            $phoneNumber = $removedPhone.Phone.phonenumber_phonenumber
+            $contactPhoneId = $removedPhone.Phone.phonenumber_contactPhoneId
+            
+            if (-not $contactPhoneId) {
+                Write-Warning "Cannot delete phone $phoneNumber - missing contactPhoneId (association ID)"
+                $errors.Add("Delete failed for $phoneNumber - missing contactPhoneId")
+                $allSuccess = $false
+                continue
+            }
+            
+            try {
+                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/phones/$contactPhoneId"
+                Write-Verbose "  Deleting phone: $phoneNumber (contactPhoneId: $contactPhoneId)"
+                Write-Verbose "  URI: DELETE $uri"
+                
+                $response = Invoke-PowerSchoolApiRequest `
+                    -Uri $uri `
+                    -Headers $headers `
+                    -Method Delete `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Phone deletion successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Delete failed for $phoneNumber : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
         }
         
+        # Process modified phones - PUT /ws/contacts/{contactid}/phones/{contactphoneid}
+        foreach ($modifiedPhone in $PhoneChanges.Modified) {
+            $oldPhoneNumber = $modifiedPhone.OldPhone.phonenumber_phonenumber
+            $newPhoneNumber = $modifiedPhone.NewPhone.PhoneNumber
+            $contactPhoneId = $modifiedPhone.OldPhone.phonenumber_contactPhoneId
+            
+            if (-not $contactPhoneId) {
+                Write-Warning "Cannot modify phone $oldPhoneNumber - missing contactPhoneId (association ID)"
+                $errors.Add("Modify failed for $oldPhoneNumber - missing contactPhoneId")
+                $allSuccess = $false
+                continue
+            }
+            
+            try {
+                $phonePayload = Build-PhonePayload -Phone $modifiedPhone.NewPhone -TemplateMetadata $TemplateMetadata
+                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/phones/$contactPhoneId"
+                
+                Write-Verbose "  Modifying phone: $oldPhoneNumber -> $newPhoneNumber (contactPhoneId: $contactPhoneId)"
+                Write-Verbose "  URI: PUT $uri"
+                Write-Verbose "  Payload: $($phonePayload | ConvertTo-Json -Depth 10 -Compress)"
+                
+                $response = Invoke-PowerSchoolApiRequest `
+                    -Uri $uri `
+                    -Headers $headers `
+                    -Method Put `
+                    -Body $phonePayload `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Phone modification successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Modify failed for $oldPhoneNumber : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
+        }
+        
+        # Process added phones - POST /ws/contacts/{contactid}/phones
+        foreach ($addedPhone in $PhoneChanges.Added) {
+            $phoneNumber = $addedPhone.Phone.PhoneNumber
+            
+            try {
+                $phonePayload = Build-PhonePayload -Phone $addedPhone.Phone -TemplateMetadata $TemplateMetadata
+                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/phones"
+                
+                Write-Verbose "  Adding phone: $phoneNumber"
+                Write-Verbose "  URI: POST $uri"
+                Write-Verbose "  Payload: $($phonePayload | ConvertTo-Json -Depth 10 -Compress)"
+                
+                $response = Invoke-PowerSchoolApiRequest `
+                    -Uri $uri `
+                    -Headers $headers `
+                    -Method Post `
+                    -Body $phonePayload `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Phone addition successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                
+                # Extract the newly created contactPhoneId from response for future reference
+                if ($response._success_message -and $response._success_message.id) {
+                    Write-Verbose "  New phone created with contactPhoneId: $($response._success_message.id)"
+                }
+                
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Add failed for $phoneNumber : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
+        }
+        
+        if ($successCount -eq 0 -and ($PhoneChanges.Added.Count + $PhoneChanges.Modified.Count + $PhoneChanges.Removed.Count) -eq 0) {
+            Write-Verbose "No phone changes to apply"
+            return [PSCustomObject]@{ Success = $true }
+        }
+        
+        Write-Verbose "Phone operations completed: $successCount successful, $($errors.Count) failed"
+        
         return [PSCustomObject]@{
-            Success = $true
-            Response = $response
+            Success = $allSuccess
+            SuccessCount = $successCount
+            Errors = $errors
         }
     }
     catch {
@@ -1276,72 +1447,139 @@ function Invoke-UpdateContactAddresses {
     )
     
     try {
-        # Build payload with all address changes
-        $addressPayloads = @()
-        
-        # Add new addresses
-        foreach ($addedAddress in $AddressChanges.Added) {
-            $addressPayloads += Build-AddressPayload -Address $addedAddress -TemplateMetadata $TemplateMetadata
-            Write-Verbose "  Adding address: $($addedAddress.Street), $($addedAddress.City), $($addedAddress.State)"
-        }
-        
-        # Modified addresses - update with new values
-        foreach ($modifiedAddress in $AddressChanges.Modified) {
-            $addressPayloads += Build-AddressPayload -Address $modifiedAddress.NewAddress -TemplateMetadata $TemplateMetadata
-            Write-Verbose "  Modifying address: $($modifiedAddress.OldAddress.Street) -> $($modifiedAddress.NewAddress.Street)"
-        }
-        
-        # Removed addresses - mark as deleted
-        foreach ($removedAddress in $AddressChanges.Removed) {
-            $deletePayload = @{
-                deleted = $true
-                street = $removedAddress.address_street
-            }
-            $addressPayloads += $deletePayload
-            Write-Verbose "  Removing address: $($removedAddress.address_street)"
-        }
-        
-        if ($addressPayloads.Count -eq 0) {
-            Write-Verbose "No address changes to apply"
-            return [PSCustomObject]@{ Success = $true }
-        }
-        
-        # Make API call using PUT /ws/contacts/{contactId}
-        $payload = @{
-            addresses = $addressPayloads
-        }
-        
         $headers = @{
             'Authorization' = "Bearer $(Get-PowerSchoolAccessToken)"
             'Content-Type' = 'application/json'
             'Accept' = 'application/json'
         }
         
-        $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID"
+        $allSuccess = $true
+        $errors = [System.Collections.Generic.List[string]]::new()
+        $successCount = 0
         
-        Write-Verbose "Updating addresses for contact $ContactID"
-        Write-Verbose "URI: PUT $uri"
-        Write-Verbose "Payload: $($payload | ConvertTo-Json -Depth 10 -Compress)"
-        
-        $response = Invoke-PowerSchoolApiRequest `
-            -Uri $uri `
-            -Headers $headers `
-            -Method Put `
-            -Body $payload `
-            -MaxRetries $MaxRetries `
-            -InitialRetryDelaySeconds $RetryDelaySeconds
-        
-        Write-Verbose "Address update successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
-        
-        # Check for errors
-        if ($response.status -eq 'ERROR' -or $response.error_message -or $response._error_message) {
-            $errorMsg = if ($response.error_message) { $response.error_message | ConvertTo-Json -Compress } else { $response._error_message }
-            throw "PowerSchool API error: $errorMsg"
+        # Process removed addresses first - DELETE /ws/contacts/{contactid}/addresses/{contactaddressid}
+        foreach ($removedAddress in $AddressChanges.Removed) {
+            $street = $removedAddress.Address.address_street
+            $contactAddressId = $removedAddress.Address.address_contactAddressId
+            
+            if (-not $contactAddressId) {
+                Write-Warning "Cannot delete address $street - missing contactAddressId (association ID)"
+                $errors.Add("Delete failed for $street - missing contactAddressId")
+                $allSuccess = $false
+                continue
+            }
+            
+            try {
+                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/addresses/$contactAddressId"
+                Write-Verbose "  Deleting address: $street (contactAddressId: $contactAddressId)"
+                Write-Verbose "  URI: DELETE $uri"
+                
+                $response = Invoke-PowerSchoolApiRequest `
+                    -Uri $uri `
+                    -Headers $headers `
+                    -Method Delete `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Address deletion successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Delete failed for $street : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
         }
         
+        # Process modified addresses - PUT /ws/contacts/{contactid}/addresses/{contactaddressid}
+        foreach ($modifiedAddress in $AddressChanges.Modified) {
+            $oldStreet = $modifiedAddress.OldAddress.address_street
+            $newStreet = $modifiedAddress.NewAddress.Street
+            $contactAddressId = $modifiedAddress.OldAddress.address_contactAddressId
+            
+            if (-not $contactAddressId) {
+                Write-Warning "Cannot modify address $oldStreet - missing contactAddressId (association ID)"
+                $errors.Add("Modify failed for $oldStreet - missing contactAddressId")
+                $allSuccess = $false
+                continue
+            }
+            
+            try {
+                $addressPayload = Build-AddressPayload -Address $modifiedAddress.NewAddress -TemplateMetadata $TemplateMetadata
+                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/addresses/$contactAddressId"
+                
+                Write-Verbose "  Modifying address: $oldStreet -> $newStreet (contactAddressId: $contactAddressId)"
+                Write-Verbose "  URI: PUT $uri"
+                Write-Verbose "  Payload: $($addressPayload | ConvertTo-Json -Depth 10 -Compress)"
+                
+                $response = Invoke-PowerSchoolApiRequest `
+                    -Uri $uri `
+                    -Headers $headers `
+                    -Method Put `
+                    -Body $addressPayload `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Address modification successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Modify failed for $oldStreet : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
+        }
+        
+        # Process added addresses - POST /ws/contacts/{contactid}/addresses
+        foreach ($addedAddress in $AddressChanges.Added) {
+            $street = $addedAddress.Address.Street
+            
+            try {
+                $addressPayload = Build-AddressPayload -Address $addedAddress.Address -TemplateMetadata $TemplateMetadata
+                $uri = "$script:PowerSchoolBaseUrl/ws/contacts/$ContactID/addresses"
+                
+                Write-Verbose "  Adding address: $street"
+                Write-Verbose "  URI: POST $uri"
+                Write-Verbose "  Payload: $($addressPayload | ConvertTo-Json -Depth 10 -Compress)"
+                
+                $response = Invoke-PowerSchoolApiRequest `
+                    -Uri $uri `
+                    -Headers $headers `
+                    -Method Post `
+                    -Body $addressPayload `
+                    -MaxRetries $MaxRetries `
+                    -InitialRetryDelaySeconds $RetryDelaySeconds
+                
+                Write-Verbose "  Address addition successful. Response: $($response | ConvertTo-Json -Depth 10 -Compress)"
+                
+                # Extract the newly created contactAddressId from response for future reference
+                if ($response._success_message -and $response._success_message.id) {
+                    Write-Verbose "  New address created with contactAddressId: $($response._success_message.id)"
+                }
+                
+                $successCount++
+            }
+            catch {
+                $errorMsg = "Add failed for $street : $($_.Exception.Message)"
+                Write-Warning $errorMsg
+                $errors.Add($errorMsg)
+                $allSuccess = $false
+            }
+        }
+        
+        if ($successCount -eq 0 -and ($AddressChanges.Added.Count + $AddressChanges.Modified.Count + $AddressChanges.Removed.Count) -eq 0) {
+            Write-Verbose "No address changes to apply"
+            return [PSCustomObject]@{ Success = $true }
+        }
+        
+        Write-Verbose "Address operations completed: $successCount successful, $($errors.Count) failed"
+        
         return [PSCustomObject]@{
-            Success = $true
-            Response = $response
+            Success = $allSuccess
+            SuccessCount = $successCount
+            Errors = $errors
         }
     }
     catch {
