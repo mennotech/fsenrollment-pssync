@@ -73,6 +73,7 @@
             @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
             @{ CSVColumn = 'Email Address'; EntityProperty = 'EmailAddress'; DataType = 'string'; PowerSchoolAPIField = 'emailaddress_emailAddress' }
             @{ CSVColumn = 'Contact Email Address ID'; EntityProperty = 'EmailAddressID'; DataType = 'string'; PowerSchoolAPIField = 'emailaddress_id' }
+            @{ CSVColumn = '* PowerQuery *'; EntityProperty = 'ContactEmailID'; DataType = 'int'; PowerSchoolAPIField = 'emailaddress_contactEmailId' }
             @{ CSVColumn = 'Is Primary Email Address'; EntityProperty = 'IsPrimary'; DataType = 'bool'; PowerSchoolAPIField = 'emailaddress_isPrimary' }
             @{ CSVColumn = 'Exclude from PowerSchool Export'; EntityProperty = 'ExcludeFromExport'; DataType = 'bool' }
         )
@@ -84,6 +85,7 @@
             @{ CSVColumn = 'Is Preferred'; EntityProperty = 'IsPreferred'; DataType = 'bool'; PowerSchoolAPIField = 'phonenumber_isPreferred' }
             @{ CSVColumn = 'Is SMS'; EntityProperty = 'IsSMS'; DataType = 'bool'; PowerSchoolAPIField = 'phonenumber_isSMS' }
             @{ CSVColumn = 'Contact Phone Number ID'; EntityProperty = 'PhoneNumberID'; DataType = 'string'; PowerSchoolAPIField = 'phonenumber_id' }
+            @{ CSVColumn = '* PowerQuery *'; EntityProperty = 'ContactPhoneID'; DataType = 'int'; PowerSchoolAPIField = 'phonenumber_contactPhoneId' }
             @{ CSVColumn = 'Exclude from PowerSchool Export'; EntityProperty = 'ExcludeFromExport'; DataType = 'bool' }
         )
         Address = @(
@@ -96,6 +98,7 @@
             @{ CSVColumn = 'State'; EntityProperty = 'State'; DataType = 'string'; PowerSchoolAPIField = 'address_state' }
             @{ CSVColumn = 'Postal Code'; EntityProperty = 'PostalCode'; DataType = 'string'; PowerSchoolAPIField = 'address_postalCode' }
             @{ CSVColumn = 'Contact Address ID'; EntityProperty = 'AddressID'; DataType = 'string'; PowerSchoolAPIField = 'address_id' }
+            @{ CSVColumn = '* PowerQuery *'; EntityProperty = 'ContactAddressID'; DataType = 'int'; PowerSchoolAPIField = 'address_contactAddressId' }
             @{ CSVColumn = 'Address Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int'; PowerSchoolAPIField = 'address_order' }
             @{ CSVColumn = 'Exclude from PowerSchool Export'; EntityProperty = 'ExcludeFromExport'; DataType = 'bool' }
         )
