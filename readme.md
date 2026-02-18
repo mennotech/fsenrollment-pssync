@@ -80,14 +80,21 @@ Write-Host "Removed: $($changes.Summary.RemovedCount)"
 
 ## Documentation
 
-- **[Secure Credential Management](docs/Secure-Credential-Management.md)** - 🔒 Comprehensive guide to secure credential handling
-- **[PowerSchool Change Detection Usage Guide](docs/PowerSchool-ChangeDetection-Usage.md)** - Detailed usage examples for student and contact change detection
-- **[Documentation Overview](docs/readme.md)** - Full documentation structure
-- **[CSV Parsing Examples](docs/CSV-Parsing-Examples.md)** - CSV import examples
-- **[Invoke-PowerQuery Examples](docs/Invoke-PowerQuery-Examples.md)** - PowerQuery usage examples
-- **PowerSchool API Spec**: `docs/powerschool_api.yaml` (OpenAPI)
-- **PowerSchool API Plugin**: `docs/powerschool api plugin/plugin.xml`
-- **PowerQuery Documentation**: `docs/powerschool api plugin/*.named_queries.md`
+### Essential Reading
+- **[Secure Credential Management](docs/security/Secure-Credential-Management.md)** - 🔒 Comprehensive guide to secure credential handling
+- **[PowerSchool Change Detection Guide](docs/guides/user/PowerSchool-ChangeDetection-Usage.md)** - Detailed usage examples for student and contact change detection
+- **[PowerQuery Association IDs Update](docs/updates/PowerQuery-Association-IDs-Update.md)** - ⚠️ **IMPORTANT:** Critical PowerQuery plugin update required for contact email/phone/address operations
+
+### Full Documentation Index
+- **[Documentation Overview](docs/readme.md)** - Complete documentation structure and quick links
+
+### Additional Resources
+- **[CSV Parsing Examples](docs/guides/user/CSV-Parsing-Examples.md)** - CSV import examples
+- **[Invoke-PowerQuery Examples](docs/guides/user/Invoke-PowerQuery-Examples.md)** - PowerQuery usage examples
+- **[Submit Student Changes](docs/guides/developer/Submit-PSStudentChange-Usage.md)** - Developer guide for submitting changes
+- **PowerSchool API Spec**: [docs/api/powerschool_api.yaml](docs/api/powerschool_api.yaml) (OpenAPI)
+- **PowerSchool API Plugin**: [docs/powerschool api plugin/](docs/powerschool%20api%20plugin/)
+- **PowerQuery Documentation**: [docs/powerschool api plugin/](docs/powerschool%20api%20plugin/)*.named_queries.md
 
 ## Requirements
 

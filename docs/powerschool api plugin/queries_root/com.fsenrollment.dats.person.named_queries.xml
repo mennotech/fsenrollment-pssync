@@ -50,6 +50,7 @@ ORDER BY person.dcid
         <columns>
             <column column="person.dcid">person_dcid</column>
             <column column="person.id">person_id</column>
+            <column column="personemailaddressassoc.personemailaddressassocid">emailaddress_contactEmailId</column>
             <column column="emailaddress.emailaddressid">emailaddress_id</column>
             <column column="emailaddress.emailaddress">emailaddress_emailAddress</column>
             <column column="emailaddress.whencreated">emailaddress_whencreated</column>
@@ -63,6 +64,7 @@ ORDER BY person.dcid
 SELECT DISTINCT
     person.dcid AS person_dcid,
     person.id AS person_id,
+    personemailaddressassoc.personemailaddressassocid AS emailaddress_contactEmailId,
     emailaddress.emailaddressid AS emailaddress_id,
     emailaddress.emailaddress AS emailaddress_emailAddress,
     emailaddress.whencreated AS emailaddress_whencreated,
@@ -91,6 +93,7 @@ ORDER BY person.dcid, emailaddress.emailaddressid
         <columns>
             <column column="person.dcid">person_dcid</column>
             <column column="person.id">person_id</column>
+            <column column="personphonenumberassoc.personphonenumberassocid">phonenumber_contactPhoneId</column>
             <column column="phonenumber.phonenumberid">phonenumber_id</column>
             <column column="phonenumber.phonenumber">phonenumber_phoneNumber</column>
             <column column="phonenumber.phonenumberext">phonenumber_extension</column>
@@ -104,6 +107,7 @@ ORDER BY person.dcid, emailaddress.emailaddressid
 SELECT DISTINCT
     person.dcid AS person_dcid,
     person.id AS person_id,
+    personphonenumberassoc.personphonenumberassocid AS phonenumber_contactPhoneId,
     phonenumber.phonenumberid AS phonenumber_id,
     phonenumber.phonenumber AS phonenumber_phoneNumber,
     phonenumber.phonenumberext AS phonenumber_extension,
@@ -132,6 +136,7 @@ ORDER BY person.dcid, phonenumber.phonenumberid
         <columns>
             <column column="person.dcid">person_dcid</column>
             <column column="person.id">person_id</column>
+            <column column="personaddressassoc.personaddressassocid">address_contactAddressId</column>
             <column column="personaddress.personaddressid">address_id</column>
             <column column="personaddress.street">address_street</column>
             <column column="personaddress.linetwo">address_lineTwo</column>
@@ -148,6 +153,7 @@ ORDER BY person.dcid, phonenumber.phonenumberid
 SELECT DISTINCT
     person.dcid AS person_dcid,
     person.id AS person_id,
+    personaddressassoc.personaddressassocid AS address_contactAddressId,
     personaddress.personaddressid AS address_id,
     personaddress.street AS address_street,
     personaddress.linetwo AS address_lineTwo,
