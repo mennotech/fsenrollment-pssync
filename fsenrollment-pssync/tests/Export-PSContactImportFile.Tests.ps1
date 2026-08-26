@@ -29,7 +29,7 @@ Describe 'Export-PSContactImportFile' {
 
         $result.FullName | Should -Be $script:outputPath
         $rows.Count | Should -Be $script:expectedRowCount
-        $rows[0].PSObject.Properties.Name.Count | Should -Be 76
+        $rows[0].PSObject.Properties.Name.Count | Should -Be 75
         $rows[0].PSObject.Properties.Name[0] | Should -Be 'New Contact Identifier'
         $rows[0].PSObject.Properties.Name[-1] | Should -Be 'STUDENTCONTACTDETAILCOREFIELDS.isVolunteer'
     }
@@ -39,8 +39,8 @@ Describe 'Export-PSContactImportFile' {
         $map = Import-PowerShellDataFile -LiteralPath $mapPath
 
         $map.MapName | Should -Be 'ContactsDataImportManager'
-        @($map.Mappings).Count | Should -Be 76
-        @($map.Mappings.OutputColumn | Select-Object -Unique).Count | Should -Be 76
+        @($map.Mappings).Count | Should -Be 75
+        @($map.Mappings.OutputColumn | Select-Object -Unique).Count | Should -Be 75
         $map.Mappings[0].OutputColumn | Should -Be 'New Contact Identifier'
         $map.Mappings[-1].OutputColumn | Should -Be 'STUDENTCONTACTDETAILCOREFIELDS.isVolunteer'
     }
@@ -52,7 +52,7 @@ Describe 'Export-PSContactImportFile' {
         $contactRows = @($rows | Where-Object { $_.'New Contact Identifier' -eq $firstContact.ContactIdentifier })
 
         $contactRows[0].'First Name' | Should -Be $firstContact.FirstName
-        $contactRows[0].'Last Name' | Should -Be $firstContact.LastName
+        $contactRows[0].'Last Name *' | Should -Be $firstContact.LastName
         $contactRows[0].'State Contact ID' | Should -Be $firstContact.ContactIdentifier
         $contactRows[0].'Email Address' | Should -Not -BeNullOrEmpty
         $contactRows[0].phoneNumberAsEntered | Should -Not -BeNullOrEmpty

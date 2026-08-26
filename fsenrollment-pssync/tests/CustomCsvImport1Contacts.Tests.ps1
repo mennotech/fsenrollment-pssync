@@ -75,7 +75,7 @@ Describe 'custom_csv_import_1_contacts template' {
 
     It 'Exports the official PowerSchool 2022.09 contact schema' {
         $script:rows.Count | Should -Be 6
-        @($script:rows[0].PSObject.Properties.Name).Count | Should -Be 76
+        @($script:rows[0].PSObject.Properties.Name).Count | Should -Be 75
         $script:rows[0].PSObject.Properties.Name[0] | Should -Be 'New Contact Identifier'
         $script:rows[0].PSObject.Properties.Name[-1] | Should -Be 'STUDENTCONTACTDETAILCOREFIELDS.isVolunteer'
         @($script:rows.'New Contact Identifier' | Sort-Object -Unique).Count | Should -Be 3

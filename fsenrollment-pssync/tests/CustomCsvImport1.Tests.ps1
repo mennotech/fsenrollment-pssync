@@ -35,11 +35,11 @@ Describe 'custom_csv_import_1 template' {
         $student.Email | Should -Be 'emmaw31@sc.school'
     }
 
-    It 'Maps preferred names into the core first name' {
+    It 'Maps preferred names to the core name and legal middle names only to the custom field' {
         $student = $script:data.Students | Where-Object LastName -eq 'Hiebert'
 
         $student.FirstName | Should -Be 'Max'
-        $student.MiddleName | Should -Be 'Henry'
+        $student.MiddleName | Should -BeNullOrEmpty
         $student.LastName | Should -Be 'Hiebert'
         $student.CustomFields.legal_givenname | Should -Be 'Maxwell'
         $student.CustomFields.legal_middlenames | Should -Be 'Henry'
@@ -133,7 +133,7 @@ Describe 'custom_csv_import_1 template' {
         $student.Street | Should -Be '30155 Rd 32 E'
         $student.City | Should -Be 'Steinbach'
         $student.State | Should -Be 'MB'
-        $student.Zip | Should -Be 'R5G1 N9'
+        $student.Zip | Should -Be 'R5G 1N9'
         $student.MailingStreet | Should -Be 'Box 2424 Group 4'
         $student.MailingCity | Should -Be 'steinbach'
         $student.MailingState | Should -Be 'MB'
@@ -166,8 +166,9 @@ Describe 'custom_csv_import_1 template' {
         $actual = @(Import-Csv $outputPath)
 
         $actual.Count | Should -Be 2
-        ($actual | Where-Object Last_Name -eq 'Wall').Middle_Name | Should -Be 'Jordan'
+        ($actual | Where-Object Last_Name -eq 'Wall').Middle_Name | Should -BeNullOrEmpty
         ($actual | Where-Object Last_Name -eq 'Wall').'U_StudentsUserFields.legal_givenname' | Should -Be 'Emma'
+        ($actual | Where-Object Last_Name -eq 'Wall').'U_StudentsUserFields.legal_middlenames' | Should -Be 'Jordan'
         ($actual | Where-Object Last_Name -eq 'Wall').'U_StudentsUserFields.HAS_FOOD_ALLERGY' | Should -BeNullOrEmpty
     }
 
