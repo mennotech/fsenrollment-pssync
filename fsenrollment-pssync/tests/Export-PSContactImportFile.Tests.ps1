@@ -34,6 +34,17 @@ Describe 'Export-PSContactImportFile' {
         $rows[0].PSObject.Properties.Name[-1] | Should -Be 'STUDENTCONTACTDETAILCOREFIELDS.isVolunteer'
     }
 
+    It 'Uses the maintained ContactsDataImportManager map' {
+        $mapPath = Join-Path $PSScriptRoot '../../config/powerschool-maps/ContactsDataImportManager.psd1'
+        $map = Import-PowerShellDataFile -LiteralPath $mapPath
+
+        $map.MapName | Should -Be 'ContactsDataImportManager'
+        @($map.Mappings).Count | Should -Be 76
+        @($map.Mappings.OutputColumn | Select-Object -Unique).Count | Should -Be 76
+        $map.Mappings[0].OutputColumn | Should -Be 'New Contact Identifier'
+        $map.Mappings[-1].OutputColumn | Should -Be 'STUDENTCONTACTDETAILCOREFIELDS.isVolunteer'
+    }
+
     It 'Maps normalized contact and related entity values' {
         Export-PSContactImportFile -Data $script:contactData -Path $script:outputPath
         $rows = @(Import-Csv -LiteralPath $script:outputPath)
@@ -76,5 +87,10 @@ Describe 'Export-PSContactImportFile' {
 
             { Export-PSContactImportFile -Data $data -Path $OutputPath -ErrorAction Stop } | Should -Throw '*neither ContactIdentifier nor ContactID*'
         }
+    }
+
+    It 'Rejects an unknown output map' {
+        { Export-PSContactImportFile -Data $script:contactData -Path $script:outputPath -OutputMapName 'MissingMap' } |
+            Should -Throw '*PowerSchool output map not found*'
     }
 }

@@ -279,6 +279,58 @@ Maps parent/contact data from Final Site Enrollment's PowerSchool Non-API Report
 - **Additional phone rows**: Same contact ID, only phone data
 - **Relationship rows**: Identified by presence of studentNumber field
 
+### custom_csv_import_1_contacts.psd1
+
+Creates new PowerSchool parent contacts from the father and mother columns in
+the `custom_csv_import_1` student source. The custom parser:
+
+- uses the student template's source `Student Number` mapping so associations
+    match the student import without depending on source row order
+- reuses a parent contact across siblings when role, name, email, and mobile
+    phone identify the same source contact
+- emits separate primary email, Mobile phone, Work phone, Home address, and
+    student relationship entities
+- leaves PowerSchool contact and association IDs blank because the records are
+    new
+- assigns Mother priority 1 and Father priority 2
+- defaults parent legal guardian, custody, lives-with, pickup, and mailing flags
+    to true, but does not mark parent relationships as emergency contacts
+- creates a separate priority-3 `Other` contact from the emergency name and
+    phone, reuses it across siblings, and enables only its emergency flag
+
+The output follows the official PowerSchool Student Contacts Data Import
+Template 2022.09 stored under `docs/powerschool import templates`:
+
+```powershell
+$contacts = Import-FSCsv `
+        -Path './data/incoming/custom_students.csv' `
+        -TemplateName 'custom_csv_import_1_contacts'
+
+Export-PSContactImportFile `
+        -Data $contacts `
+        -Path './data/incoming/custom_students_contacts_import.csv'
+```
+
+Review relationship permissions before importing.
+
+After PowerSchool creates the contacts, export Person records containing
+`PERSON.STATECONTACTID` and `PERSON.ID`, then enrich the normalized contacts
+before generating a subsequent update file:
+
+```powershell
+$contacts = Merge-PSContactExport `
+    -Data $contacts `
+    -Path './data/incoming/Person_export.csv' `
+    -RequireAllMatches
+
+Export-PSContactImportFile `
+    -Data $contacts `
+    -Path './data/incoming/custom_students_contacts_update.csv'
+```
+
+`PERSON.STATECONTACTID` matches the original `ContactIdentifier` and
+`PERSON.ID` populates the PowerSchool `Contact ID` output column.
+
 **Entity Types Created**:
 - PSContact
 - PSEmailAddress

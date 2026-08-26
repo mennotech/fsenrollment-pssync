@@ -7,8 +7,9 @@ Current maps:
 - `PowerSchoolStudentApi.psd1`: Student API field paths
 - `PowerSchoolContactsPowerQuery.psd1`: Contact PowerQuery result fields
 - `StudentsQuickImport.psd1`: Quick Import Students columns
+- `ContactsDataImportManager.psd1`: Student Contacts Data Import Manager 2022.09 columns
 
-Additional formats should use separate files, such as `DM-Student-Email.psd1` and `DM-Contacts.psd1`.
+Additional formats should use separate files, such as `DM-Student-Email.psd1`.
 
 ## Custom fields
 

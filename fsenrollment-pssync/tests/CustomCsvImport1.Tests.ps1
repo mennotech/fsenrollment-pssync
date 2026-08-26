@@ -5,9 +5,9 @@ BeforeAll {
     Import-Module (Join-Path $PSScriptRoot '../FSEnrollment-PSSync.psd1') -Force
     $sourcePath = Join-Path $TestDrive 'custom_csv_import_1.csv'
     @'
-"First Name","Middle Name(s)","Last Name","Student's Preferred Name (if different from legal first name)","Gender","Birth Date","Applying For Grade","Street Address","Street Address Line 2","City","State / Province","Postal / Zip Code","Mailing Street Address","Mailing Street Address Line 2","Mailing City","Mailing State / Province","Mailing Postal / Zip Code","Church Attending","Denomination","MB Health # - 9 Digit","MB Health # - 6 Digit","Allergies:","Medical Restrictions & Medications:"
-Emma,Jordan,Wall,,Female,"May 30, 2013",8,"41084 Road 33 East",,Blumenort,MB,"R0A 0C1",,,,,,"Calvary Church",Christian,122206929,526288,,
-Maxwell,Henry,Hiebert,Max,Male,"Aug 31, 2026",2,"30155 Rd 32 E",,Steinbach,Mb,"R5G1 N9","Box 2424","Group 4",steinbach,MB,R5g1n9,"Pansy Chapel",EMC,124822115,387599,,
+"Student Number","First Name","Middle Name(s)","Last Name","Student's Preferred Name (if different from legal first name)","Gender","Birth Date","Applying For Grade","Street Address","Street Address Line 2","City","State / Province","Postal / Zip Code","Mailing Street Address","Mailing Street Address Line 2","Mailing City","Mailing State / Province","Mailing Postal / Zip Code","Church Attending","Denomination","MB Health # - 9 Digit","MB Health # - 6 Digit","Allergies:","Medical Restrictions & Medications:"
+880001,Emma,Jordan,Wall,,Female,"May 30, 2013",8,"41084 Road 33 East",,Blumenort,MB,"R0A 0C1",,,,,,"Calvary Church",Christian,122206929,526288,,
+880002,Maxwell,Henry,Hiebert,Max,Male,"Aug 31, 2026",2,"30155 Rd 32 E",,Steinbach,Mb,"R5G1 N9","Box 2424","Group 4",steinbach,MB,R5g1n9,"Pansy Chapel",EMC,124822115,387599,,
 '@ | Set-Content -LiteralPath $sourcePath
     $script:data = Import-FSCsv -Path $sourcePath -TemplateName 'custom_csv_import_1'
 }
@@ -25,7 +25,7 @@ Describe 'custom_csv_import_1 template' {
     It 'Applies constants and computed values' {
         $student = $script:data.Students | Where-Object LastName -eq 'Wall'
 
-        $student.StudentNumber | Should -Be '3101'
+        $student.StudentNumber | Should -Be '880001'
         $student.FTEID | Should -Be '551'
         $student.SchoolID | Should -Be '961453'
         $student.NextSchool | Should -Be '961453'
@@ -43,7 +43,7 @@ Describe 'custom_csv_import_1 template' {
         $student.LastName | Should -Be 'Hiebert'
         $student.CustomFields.legal_givenname | Should -Be 'Maxwell'
         $student.CustomFields.legal_middlenames | Should -Be 'Henry'
-        $student.StudentNumber | Should -Be '3701'
+        $student.StudentNumber | Should -Be '880002'
         $student.Email | Should -Be 'maxh37@sc.school'
     }
 

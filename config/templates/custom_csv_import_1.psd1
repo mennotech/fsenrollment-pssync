@@ -18,16 +18,7 @@
     CustomParser = $null
 
     ColumnMappings = @(
-        @{
-            EntityProperty = 'StudentNumber'
-            DataType = 'string'
-            PowerSchoolDataType = 'int'
-            Transform = 'ComposeString'
-            Parts = @(
-                @{ Column = 'Applying For Grade'; Operations = @(@{ Name = 'GraduationYear'; SchoolYearStart = 2026; FinalGrade = 12 }, @{ Name = 'Right'; Count = 2 }) }
-                @{ Sequence = @{ Width = 2 } }
-            )
-        }
+        @{ CSVColumn = 'Student Number'; EntityProperty = 'StudentNumber'; DataType = 'string'; PowerSchoolDataType = 'int' }
         @{ EntityProperty = 'FTEID'; DataType = 'string'; Transform = 'Constant'; Value = '551' }
         @{ EntityProperty = 'SchoolID'; DataType = 'string'; Transform = 'Constant'; Value = '961453' }
         @{ EntityProperty = 'NextSchool'; DataType = 'string'; Transform = 'Constant'; Value = '961453' }

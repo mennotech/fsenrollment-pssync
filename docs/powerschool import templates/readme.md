@@ -38,8 +38,9 @@ Current maintained maps include:
 - `PowerSchoolStudentApi.psd1`
 - `PowerSchoolContactsPowerQuery.psd1`
 - `StudentsQuickImport.psd1`
+- `ContactsDataImportManager.psd1`
 
-When adding a Data Manager or other import format, create a separate map such as `DM-Student-Email.psd1` or `DM-Contacts.psd1`. Do not add destination column mappings to source templates.
+When adding another Data Manager or import format, create a separate map such as `DM-Student-Email.psd1`. Do not add destination column mappings to source templates.
 
 ## Updating References
 
