@@ -57,27 +57,38 @@ function Compare-ContactEmailFields {
     $unchanged = [System.Collections.Generic.List[PSCustomObject]]::new()
 
     # Create lookup dictionary for PowerSchool emails by normalized email address
+    # Keep first occurrence, mark duplicates for removal
     $psLookup = @{}
     foreach ($psEmail in $PowerSchoolEmails) {
         $normalizedEmail = (Normalize-ComparisonValue -Value $psEmail.emailaddress_emailaddress).ToLower()
         if (-not [string]::IsNullOrWhiteSpace($normalizedEmail)) {
-            # Store in lookup - if duplicate emails exist, last one wins
+            # Store in lookup - if duplicate emails exist, keep first, mark rest for removal
             if ($psLookup.ContainsKey($normalizedEmail)) {
-                Write-Warning "Duplicate email address found in PowerSchool data: $($psEmail.emailaddress_emailaddress) (normalized: $normalizedEmail). Using most recent entry."
+                Write-Verbose "Duplicate email address found in PowerSchool data: $($psEmail.emailaddress_emailaddress) (normalized: $normalizedEmail). Marking duplicate for removal (keeping first occurrence)."
+                # Add this duplicate to removed list
+                $removed.Add([PSCustomObject]@{
+                    EmailAddress = $normalizedEmail
+                    Email = $psEmail
+                })
+            } else {
+                # First occurrence - add to lookup
+                $psLookup[$normalizedEmail] = $psEmail
             }
-            $psLookup[$normalizedEmail] = $psEmail
         }
     }
 
     # Create lookup dictionary for CSV emails by normalized email address
+    # Keep first occurrence, ignore duplicates
     $csvLookup = @{}
     foreach ($csvEmail in $CsvEmails) {
         $normalizedEmail = (Normalize-ComparisonValue -Value $csvEmail.EmailAddress).ToLower()
         if (-not [string]::IsNullOrWhiteSpace($normalizedEmail)) {
             if ($csvLookup.ContainsKey($normalizedEmail)) {
-                Write-Warning "Duplicate email address found in CSV data: $($csvEmail.EmailAddress) (normalized: $normalizedEmail). Using most recent entry."
+                Write-Verbose "Duplicate email address found in CSV data: $($csvEmail.EmailAddress) (normalized: $normalizedEmail). Ignoring duplicate (keeping first occurrence)."
+            } else {
+                # First occurrence - add to lookup
+                $csvLookup[$normalizedEmail] = $csvEmail
             }
-            $csvLookup[$normalizedEmail] = $csvEmail
         }
     }
 

@@ -47,7 +47,7 @@ Each record in the `Records` array contains the following fields:
 | Field Name | Type | Description | Example |
 |------------|------|-------------|---------|
 | `phonenumber_id` | integer | Unique phone number ID | `54321` |
-| `phonenumber_phonenumber` | string | The formatted phone number | `"(555) 123-4567"` |
+| `phonenumber_phoneNumber` | string | The formatted phone number | `"(555) 123-4567"` |
 | `phonenumber_extension` | string | Phone extension (optional, omitted if null) | `"123"` |
 | `phonenumber_type` | string | Type of phone number | `"Home"`, `"Mobile"`, `"Work"` |
 | `phonenumber_order` | integer | Priority order (1 = highest priority) | `1` |
@@ -62,7 +62,7 @@ Each record in the `Records` array contains the following fields:
   "RecordCount": 100,
   "Records": [
     {
-      "phonenumber_phonenumber": "(555) 123-4567",
+      "phonenumber_phoneNumber": "(555) 123-4567",
       "_name": "PhoneNumber",
       "phonenumber_order": 1,
       "phonenumber_ispreferred": 1,
@@ -74,7 +74,7 @@ Each record in the `Records` array contains the following fields:
       "person_id": 1151
     },
     {
-      "phonenumber_phonenumber": "(555) 987-6543",
+      "phonenumber_phoneNumber": "(555) 987-6543",
       "phonenumber_extension": "123",
       "_name": "PhoneNumber",
       "phonenumber_order": 2,
@@ -99,7 +99,7 @@ Each record in the `Records` array contains the following fields:
 - `person_id`
 - `person_dcid`
 - `phonenumber_id`
-- `phonenumber_phonenumber`
+- `phonenumber_phoneNumber`
 
 **Commonly Present:**
 - `phonenumber_type` (should always be present)

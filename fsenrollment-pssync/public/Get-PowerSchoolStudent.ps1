@@ -105,7 +105,7 @@ function Get-PowerSchoolStudent {
         [string[]]$Extensions = @(),
 
         [Parameter(Mandatory = $false)]
-        [hashtable]$TemplateMetadata,
+        [PSCustomObject]$TemplateMetadata,
 
         [Parameter(Mandatory = $false)]
         [string]$TemplateName

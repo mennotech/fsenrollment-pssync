@@ -11,11 +11,19 @@
     # Key field for matching records between CSV and PowerSchool
     KeyField = 'ContactIdentifier'
     # PowerSchool API field that corresponds to the key field
-    PowerSchoolKeyField = 'person_statecontactid'
+    PowerSchoolKeyField = 'person_contactNumber'
     # PowerSchool API key field data type (for proper type conversion during matching)
     PowerSchoolKeyDataType = 'string'
     # Optional: CSV column name for excluding contacts from import (omit if not used in your CSV)
     ExcludeColumnName = 'Exclude from PowerSchool Export'
+    
+    # Validation rules for relationship types
+    # ValidRelationshipTypes: Array of allowed relationship values (whitelist)
+    # This list matches the Relationship codeset from PowerSchool (System > System Settings > Code Sets)
+    ValidationRules = @{
+        ValidRelationshipTypes = @('Aunt', 'Brother', 'Doctor', 'Father', 'FosterFather', 'FosterMother', 'Friend', 'Grandfather', 'Grandmother', 'Legal Guardian', 'Mother', 'Neighbor', 'Other', 'Sister', 'Step-Father', 'Step-Mother', 'Uncle')
+    }
+    
     # Entity type mappings for hashtable keys (used by custom parser to infer EntityType)
     # Each entity maps to its PowerSchool class, PowerQuery for data retrieval, and fields to check for changes
     EntityTypeMap = @{
@@ -43,47 +51,54 @@
         }
     }
     # Column mappings for each entity type (EntityType is inferred from hashtable key via EntityTypeMap)
+    # IMPORTANT: PowerSchoolAPIField specifies the PowerQuery field name (e.g., 'person_firstName', 'emailaddress_emailAddress')
+    # These are the flat field names returned by PowerQuery Data Access API (com.fsenrollment.dats.person, etc.)
+    # This is NOT the same as REST API field names used for updates (e.g., 'firstName' without 'person_' prefix)
+    # The Submit-PSContactChange function handles converting PowerQuery field names to REST API field names when submitting updates
     ColumnMappings = @{
         Contact = @(
-            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string'; PowerSchoolAPIField = 'person_statecontactid' }
+            @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string'; PowerSchoolAPIField = 'person_contactNumber' }
             @{ CSVColumn = 'Contact ID'; EntityProperty = 'ContactID'; DataType = 'string'; PowerSchoolAPIField = 'person_id' }
             @{ CSVColumn = 'Prefix'; EntityProperty = 'Prefix'; DataType = 'string' }
-            @{ CSVColumn = 'First Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolAPIField = 'person_firstname' }
-            @{ CSVColumn = 'Middle Name'; EntityProperty = 'MiddleName'; DataType = 'string'; PowerSchoolAPIField = 'person_middlename' }
-            @{ CSVColumn = 'Last Name'; EntityProperty = 'LastName'; DataType = 'string'; PowerSchoolAPIField = 'person_lastname' }
+            @{ CSVColumn = 'First Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolAPIField = 'person_firstName' }
+            @{ CSVColumn = 'Middle Name'; EntityProperty = 'MiddleName'; DataType = 'string'; PowerSchoolAPIField = 'person_middleName' }
+            @{ CSVColumn = 'Last Name'; EntityProperty = 'LastName'; DataType = 'string'; PowerSchoolAPIField = 'person_lastName' }
             @{ CSVColumn = 'Suffix'; EntityProperty = 'Suffix'; DataType = 'string' }
-            @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string'; PowerSchoolAPIField = 'person_gender_code' }
+            @{ CSVColumn = 'Gender'; EntityProperty = 'Gender'; DataType = 'string'; PowerSchoolAPIField = 'person_gender' }
             @{ CSVColumn = 'Employer'; EntityProperty = 'Employer'; DataType = 'string'; PowerSchoolAPIField = 'person_employer' }
-            @{ CSVColumn = 'Is Active'; EntityProperty = 'IsActive'; DataType = 'bool' }
+            @{ CSVColumn = 'Is Active'; EntityProperty = 'IsActive'; DataType = 'bool'; PowerSchoolAPIField = 'person_active' }
             @{ CSVColumn = 'Exclude from PowerSchool Export'; EntityProperty = 'ExcludeFromExport'; DataType = 'bool' }
         )
         EmailAddress = @(
             @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
-            @{ CSVColumn = 'Email Address'; EntityProperty = 'EmailAddress'; DataType = 'string'; PowerSchoolAPIField = 'emailaddress_emailaddress' }
+            @{ CSVColumn = 'Email Address'; EntityProperty = 'EmailAddress'; DataType = 'string'; PowerSchoolAPIField = 'emailaddress_emailAddress' }
             @{ CSVColumn = 'Contact Email Address ID'; EntityProperty = 'EmailAddressID'; DataType = 'string'; PowerSchoolAPIField = 'emailaddress_id' }
-            @{ CSVColumn = 'Is Primary Email Address'; EntityProperty = 'IsPrimary'; DataType = 'bool'; PowerSchoolAPIField = 'emailaddress_isprimary' }
+            @{ CSVColumn = '* PowerQuery *'; EntityProperty = 'ContactEmailID'; DataType = 'int'; PowerSchoolAPIField = 'emailaddress_contactEmailId' }
+            @{ CSVColumn = 'Is Primary Email Address'; EntityProperty = 'IsPrimary'; DataType = 'bool'; PowerSchoolAPIField = 'emailaddress_isPrimary' }
             @{ CSVColumn = 'Exclude from PowerSchool Export'; EntityProperty = 'ExcludeFromExport'; DataType = 'bool' }
         )
         PhoneNumber = @(
             @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
             @{ CSVColumn = 'Phone Number Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int'; PowerSchoolAPIField = 'phonenumber_order' }
             @{ CSVColumn = 'Phone Type'; EntityProperty = 'PhoneType'; DataType = 'string'; PowerSchoolAPIField = 'phonenumber_type' }
-            @{ CSVColumn = 'phoneNumberAsEntered'; EntityProperty = 'PhoneNumber'; DataType = 'string'; PowerSchoolAPIField = 'phonenumber_phonenumber' }
-            @{ CSVColumn = 'Is Preferred'; EntityProperty = 'IsPreferred'; DataType = 'bool'; PowerSchoolAPIField = 'phonenumber_ispreferred' }
-            @{ CSVColumn = 'Is SMS'; EntityProperty = 'IsSMS'; DataType = 'bool'; PowerSchoolAPIField = 'phonenumber_issms' }
+            @{ CSVColumn = 'phoneNumberAsEntered'; EntityProperty = 'PhoneNumber'; DataType = 'string'; PowerSchoolAPIField = 'phonenumber_phoneNumber' }
+            @{ CSVColumn = 'Is Preferred'; EntityProperty = 'IsPreferred'; DataType = 'bool'; PowerSchoolAPIField = 'phonenumber_isPreferred' }
+            @{ CSVColumn = 'Is SMS'; EntityProperty = 'IsSMS'; DataType = 'bool'; PowerSchoolAPIField = 'phonenumber_isSMS' }
             @{ CSVColumn = 'Contact Phone Number ID'; EntityProperty = 'PhoneNumberID'; DataType = 'string'; PowerSchoolAPIField = 'phonenumber_id' }
+            @{ CSVColumn = '* PowerQuery *'; EntityProperty = 'ContactPhoneID'; DataType = 'int'; PowerSchoolAPIField = 'phonenumber_contactPhoneId' }
             @{ CSVColumn = 'Exclude from PowerSchool Export'; EntityProperty = 'ExcludeFromExport'; DataType = 'bool' }
         )
         Address = @(
             @{ CSVColumn = 'New Contact Identifier'; EntityProperty = 'ContactIdentifier'; DataType = 'string' }
             @{ CSVColumn = 'Address Type'; EntityProperty = 'AddressType'; DataType = 'string'; PowerSchoolAPIField = 'address_type' }
             @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string'; PowerSchoolAPIField = 'address_street' }
-            @{ CSVColumn = 'Line Two'; EntityProperty = 'LineTwo'; DataType = 'string'; PowerSchoolAPIField = 'address_linetwo' }
+            @{ CSVColumn = 'Line Two'; EntityProperty = 'LineTwo'; DataType = 'string'; PowerSchoolAPIField = 'address_lineTwo' }
             @{ CSVColumn = 'Unit'; EntityProperty = 'Unit'; DataType = 'string'; PowerSchoolAPIField = 'address_unit' }
             @{ CSVColumn = 'City'; EntityProperty = 'City'; DataType = 'string'; PowerSchoolAPIField = 'address_city' }
             @{ CSVColumn = 'State'; EntityProperty = 'State'; DataType = 'string'; PowerSchoolAPIField = 'address_state' }
-            @{ CSVColumn = 'Postal Code'; EntityProperty = 'PostalCode'; DataType = 'string'; PowerSchoolAPIField = 'address_postalcode' }
+            @{ CSVColumn = 'Postal Code'; EntityProperty = 'PostalCode'; DataType = 'string'; PowerSchoolAPIField = 'address_postalCode' }
             @{ CSVColumn = 'Contact Address ID'; EntityProperty = 'AddressID'; DataType = 'string'; PowerSchoolAPIField = 'address_id' }
+            @{ CSVColumn = '* PowerQuery *'; EntityProperty = 'ContactAddressID'; DataType = 'int'; PowerSchoolAPIField = 'address_contactAddressId' }
             @{ CSVColumn = 'Address Priority Order'; EntityProperty = 'PriorityOrder'; DataType = 'int'; PowerSchoolAPIField = 'address_order' }
             @{ CSVColumn = 'Exclude from PowerSchool Export'; EntityProperty = 'ExcludeFromExport'; DataType = 'bool' }
         )
@@ -98,10 +113,10 @@
             @{ CSVColumn = 'Relationship Note'; EntityProperty = 'RelationshipNote'; DataType = 'string'; PowerSchoolAPIField = 'relationship_relationship_note' }
             @{ CSVColumn = 'STUDENTCONTACTDETAILCOREFIELDS.legalGuardian'; EntityProperty = 'IsLegalGuardian'; DataType = 'bool' }
             @{ CSVColumn = 'Contact Has Custody'; EntityProperty = 'HasCustody'; DataType = 'bool'; PowerSchoolAPIField = 'relationship_iscustodial' }
-            @{ CSVColumn = 'Contact Lives With'; EntityProperty = 'LivesWith'; DataType = 'bool'; PowerSchoolAPIField = 'relationship_liveswith' }
-            @{ CSVColumn = 'Contact Allow School Pickup'; EntityProperty = 'AllowSchoolPickup'; DataType = 'bool'; PowerSchoolAPIField = 'relationship_schoolpickup' }
-            @{ CSVColumn = 'Is Emergency Contact'; EntityProperty = 'IsEmergencyContact'; DataType = 'bool'; PowerSchoolAPIField = 'relationship_isemergency' }
-            @{ CSVColumn = 'Contact Receives Mailings'; EntityProperty = 'ReceivesMail'; DataType = 'bool'; PowerSchoolAPIField = 'relationship_receivesmail' }
+            @{ CSVColumn = 'Contact Lives With'; EntityProperty = 'LivesWith'; DataType = 'bool'; PowerSchoolAPIField = 'relationship_livesWith' }
+            @{ CSVColumn = 'Contact Allow School Pickup'; EntityProperty = 'AllowSchoolPickup'; DataType = 'bool'; PowerSchoolAPIField = 'relationship_schoolPickup' }
+            @{ CSVColumn = 'Is Emergency Contact'; EntityProperty = 'IsEmergencyContact'; DataType = 'bool'; PowerSchoolAPIField = 'relationship_isEmergency' }
+            @{ CSVColumn = 'Contact Receives Mailings'; EntityProperty = 'ReceivesMail'; DataType = 'bool'; PowerSchoolAPIField = 'relationship_receivesMail' }
             @{ CSVColumn = 'Exclude from PowerSchool Export'; EntityProperty = 'ExcludeFromExport'; DataType = 'bool' }
         )
     }

@@ -43,30 +43,28 @@
     -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords).
     If provided, student-contact relationships will be compared for changes.
 
-.PARAMETER TemplateConfig
-    Template configuration object loaded from the template file. Used to determine
-    key fields and fields to check for changes.
-
 .PARAMETER MatchOn
     Property to use for matching contacts between CSV and PowerSchool. Default is determined
-    by TemplateConfig.KeyField. If TemplateConfig is not provided, defaults to 'ContactID'.
+    by CsvData.TemplateMetadata.KeyField. If TemplateMetadata is not present, defaults to 'ContactID'.
     Currently supports 'ContactID' and 'ContactIdentifier'.
 
 .OUTPUTS
-    PSCustomObject with properties: New, Updated, Unchanged, Summary
+    PSCustomObject with properties: New, Updated, Unchanged, Summary, TemplateMetadata
+    
+    The TemplateMetadata property contains the template configuration from the CSV import,
+    which can be passed to Submit-PSContactChange for field mapping.
     
     Note: The Removed collection is not included as this function does not detect removed contacts.
 
 .EXAMPLE
     $csvData = Import-FSCsv -Path './contacts.csv' -TemplateName 'fs_powerschool_nonapi_report_parents'
     $psData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person' -AllRecords
-    $templateConfig = Import-PowerShellDataFile './config/templates/fs_powerschool_nonapi_report_parents.psd1'
     
-    $changes = Compare-PSContact -CsvData $csvData -PowerSchoolData $psData.Records -TemplateConfig $templateConfig
+    $changes = Compare-PSContact -CsvData $csvData -PowerSchoolData $psData.Records
     
     Write-Host "New: $($changes.New.Count), Updated: $($changes.Updated.Count)"
     
-    Compares contacts using the template configuration to determine key fields and comparison settings.
+    Compares contacts using the template metadata from the CSV import to determine key fields and comparison settings.
 
 .EXAMPLE
     # Compare with email, phone, address, and relationship data
@@ -76,15 +74,13 @@
     $psPhoneData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.phone' -AllRecords
     $psAddressData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.address' -AllRecords
     $psRelationshipData = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords
-    $templateConfig = Import-PowerShellDataFile './config/templates/fs_powerschool_nonapi_report_parents.psd1'
     
     $changes = Compare-PSContact -CsvData $csvData `
         -PowerSchoolData $psPersonData.Records `
         -PowerSchoolEmailData $psEmailData.Records `
         -PowerSchoolPhoneData $psPhoneData.Records `
         -PowerSchoolAddressData $psAddressData.Records `
-        -PowerSchoolRelationshipData $psRelationshipData.Records `
-        -TemplateConfig $templateConfig
+        -PowerSchoolRelationshipData $psRelationshipData.Records
     
     Compares contacts including email addresses, phone numbers, addresses, and relationships.
 
@@ -121,9 +117,6 @@ function Compare-PSContact {
         [array]$PowerSchoolRelationshipData = @(),
 
         [Parameter(Mandatory = $false)]
-        [hashtable]$TemplateConfig,
-
-        [Parameter(Mandatory = $false)]
         [ValidateSet('ContactID', 'ContactIdentifier')]
         [string]$MatchOn
     )
@@ -131,30 +124,27 @@ function Compare-PSContact {
     begin {
         Write-Verbose "Starting contact comparison"
         
-        # Determine matching configuration from template or defaults
+        # Determine matching configuration from CsvData.TemplateMetadata or defaults
         $columnMappings = @()
-        if ($TemplateConfig) {
-            $keyField = $TemplateConfig.KeyField ?? 'ContactID'
-            $psKeyField = $TemplateConfig.PowerSchoolKeyField ?? 'person_id'
+        if ($CsvData.TemplateMetadata) {
+            $keyField = $CsvData.TemplateMetadata.KeyField ?? 'ContactID'
+            $psKeyField = $CsvData.TemplateMetadata.PowerSchoolKeyField ?? 'person_id'
             
-            # Get CheckForChanges from EntityTypeMap.Contact or fall back to top-level or default
-            if ($TemplateConfig.EntityTypeMap -and $TemplateConfig.EntityTypeMap.Contact -and $TemplateConfig.EntityTypeMap.Contact.CheckForChanges) {
-                $checkForChanges = $TemplateConfig.EntityTypeMap.Contact.CheckForChanges
-            } elseif ($TemplateConfig.CheckForChanges) {
-                # Fallback to top-level for backward compatibility
-                $checkForChanges = $TemplateConfig.CheckForChanges
+            # Get CheckForChanges from TemplateMetadata
+            if ($CsvData.TemplateMetadata.CheckForChanges) {
+                $checkForChanges = $CsvData.TemplateMetadata.CheckForChanges
             } else {
                 $checkForChanges = @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
             }
             
-            # Get Contact entity column mappings from template
-            if ($TemplateConfig.ColumnMappings -and $TemplateConfig.ColumnMappings.Contact) {
-                $columnMappings = $TemplateConfig.ColumnMappings.Contact
+            # Get Contact entity column mappings from TemplateMetadata
+            if ($CsvData.TemplateMetadata.ColumnMappings) {
+                $columnMappings = $CsvData.TemplateMetadata.ColumnMappings
             }
             
-            # Get CheckForChanges for Relationship entity from EntityTypeMap
-            if ($TemplateConfig.EntityTypeMap -and $TemplateConfig.EntityTypeMap.Relationship -and $TemplateConfig.EntityTypeMap.Relationship.CheckForChanges) {
-                $relationshipCheckForChanges = $TemplateConfig.EntityTypeMap.Relationship.CheckForChanges
+            # Get CheckForChanges for Relationship entity from TemplateMetadata
+            if ($CsvData.TemplateMetadata.RelationshipCheckForChanges) {
+                $relationshipCheckForChanges = $CsvData.TemplateMetadata.RelationshipCheckForChanges
             } else {
                 # Default relationship fields to check
                 $relationshipCheckForChanges = @('ContactPriorityOrder', 'RelationshipType', 'RelationshipNote', 'HasCustody', 'LivesWith', 'AllowSchoolPickup', 'IsEmergencyContact', 'ReceivesMail')
@@ -172,7 +162,7 @@ function Compare-PSContact {
             # Set corresponding PowerSchool field based on match field
             switch ($MatchOn) {
                 'ContactID' { $psKeyField = 'person_id' }
-                'ContactIdentifier' { $psKeyField = $TemplateConfig.PowerSchoolKeyField ?? 'person_statecontactid' }
+                'ContactIdentifier' { $psKeyField = $CsvData.TemplateMetadata.PowerSchoolKeyField ?? 'person_statecontactid' }
                 default { $psKeyField = 'person_id' }
             }
         }
@@ -376,12 +366,34 @@ function Compare-PSContact {
                     }
                 } else {
                     # Contact is new (not in PowerSchool)
-                    $newContacts.Add([PSCustomObject]@{
+                    # Collect related entities for this contact from CsvData
+                    $csvEmails = $CsvData.EmailAddresses | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                    $csvPhones = $CsvData.PhoneNumbers | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                    $csvAddresses = $CsvData.Addresses | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                    $csvRelationships = $CsvData.Relationships | Where-Object { $_.ContactIdentifier -eq $matchKey }
+                    
+                    $newRecord = [PSCustomObject]@{
                         MatchKey = $matchKey
                         MatchField = $keyField
                         Contact = $csvContact
-                    })
-                    Write-Verbose "Contact $matchKey is new (not in PowerSchool)"
+                    }
+                    
+                    # Add related entities if they exist
+                    if ($csvEmails.Count -gt 0) {
+                        $newRecord | Add-Member -NotePropertyName 'EmailAddresses' -NotePropertyValue @($csvEmails)
+                    }
+                    if ($csvPhones.Count -gt 0) {
+                        $newRecord | Add-Member -NotePropertyName 'PhoneNumbers' -NotePropertyValue @($csvPhones)
+                    }
+                    if ($csvAddresses.Count -gt 0) {
+                        $newRecord | Add-Member -NotePropertyName 'Addresses' -NotePropertyValue @($csvAddresses)
+                    }
+                    if ($csvRelationships.Count -gt 0) {
+                        $newRecord | Add-Member -NotePropertyName 'Relationships' -NotePropertyValue @($csvRelationships)
+                    }
+                    
+                    $newContacts.Add($newRecord)
+                    Write-Verbose "Contact $matchKey is new (not in PowerSchool) - Emails: $($csvEmails.Count), Phones: $($csvPhones.Count), Addresses: $($csvAddresses.Count), Relationships: $($csvRelationships.Count)"
                 }
             }
             
@@ -401,6 +413,7 @@ function Compare-PSContact {
                 Updated = $updatedContacts
                 Unchanged = $unchangedContacts
                 Summary = $summary
+                TemplateMetadata = $CsvData.TemplateMetadata
             }
             
             Write-Verbose "Comparison complete: $($newContacts.Count) new, $($updatedContacts.Count) updated, $($unchangedContacts.Count) unchanged"

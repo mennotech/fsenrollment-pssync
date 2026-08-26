@@ -2,6 +2,28 @@
 
 This directory contains utility scripts and standalone PowerShell scripts that support the FSEnrollment-PSSync module.
 
+## Credentials and Security
+
+Before running scripts that connect to PowerSchool, set up secure credentials:
+
+### For Local Development (Recommended)
+```powershell
+# 1. Create .env file from template
+Copy-Item config\.env.example config\.env
+
+# 2. Edit config\.env with your PowerSchool credentials
+# 3. Run scripts - they will automatically load credentials from .env
+```
+
+### Alternative: Environment Variables
+```powershell
+$env:PowerSchool_BaseUrl = 'https://your-instance.powerschool.com'
+$env:PowerSchool_ClientID = 'your-client-id'
+$env:PowerSchool_ClientSecret = 'your-secret'
+```
+
+See [Secure Credential Management](../docs/Secure-Credential-Management.md) for complete details.
+
 ## Main Scripts
 
 ### Change Detection Scripts

@@ -6,6 +6,19 @@ This directory contains configuration files for the FSEnrollment-PSSync applicat
 
 **NEVER commit configuration files containing secrets, credentials, or sensitive data to the repository!**
 
+## Secure Credential Management
+
+For detailed information about securely managing credentials:
+
+📖 **[See Secure Credential Management Documentation](../docs/Secure-Credential-Management.md)**
+
+Key security features:
+- `.env` files for local development (automatically excluded from git)
+- SecureString encryption for credentials in memory
+- Environment variable clearing after loading
+- Automated security tests to detect credential leaks
+- Cross-platform support (Linux and Windows)
+
 ## Configuration Files
 
 Configuration files should use formats like:

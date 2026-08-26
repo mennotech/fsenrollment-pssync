@@ -233,17 +233,15 @@ Write-Host "Phone records: $($phoneData.RecordCount)" -ForegroundColor Green
 Write-Host "Address records: $($addressData.RecordCount)" -ForegroundColor Green
 Write-Host "Relationship records: $($relationshipData.RecordCount)" -ForegroundColor Green
 
-# Use with Compare-PSContact for change detection
+# Use with Compare-PSContact for change detection (TemplateMetadata from $csvData is used automatically)
 $csvData = Import-FSCsv -Path './contacts.csv' -TemplateName 'fs_powerschool_nonapi_report_parents'
-$templateConfig = Import-PowerShellDataFile './config/templates/fs_powerschool_nonapi_report_parents.psd1'
 
 $changes = Compare-PSContact -CsvData $csvData `
     -PowerSchoolData $personData.Records `
     -PowerSchoolEmailData $emailData.Records `
     -PowerSchoolPhoneData $phoneData.Records `
     -PowerSchoolAddressData $addressData.Records `
-    -PowerSchoolRelationshipData $relationshipData.Records `
-    -TemplateConfig $templateConfig
+    -PowerSchoolRelationshipData $relationshipData.Records
 
 Write-Host "`nContact changes detected:"
 Write-Host "  New: $($changes.Summary.NewCount)"

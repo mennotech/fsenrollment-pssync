@@ -276,4 +276,70 @@ Describe 'Import-FSCsv' {
             $FirstContact.ContactIdentifier | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context 'TemplateMetadata' {
+        BeforeAll {
+            $TestDataPath = Join-Path $PSScriptRoot '../../data/examples/fs_powerschool_nonapi_report/parents_example.csv'
+            $Result = Import-FSCsv -Path $TestDataPath -TemplateName 'fs_powerschool_nonapi_report_parents'
+        }
+
+        It 'Should include TemplateMetadata in result' {
+            $Result.TemplateMetadata | Should -Not -BeNullOrEmpty
+        }
+
+        It 'Should include entire template configuration object' {
+            $Result.TemplateMetadata.TemplateName | Should -Be 'fs_powerschool_nonapi_report_parents'
+            $Result.TemplateMetadata.Description | Should -Not -BeNullOrEmpty
+            $Result.TemplateMetadata.EntityType | Should -Be 'PSNormalizedData'
+        }
+
+        It 'Should include ValidationRules from template' {
+            $Result.TemplateMetadata.ValidationRules | Should -Not -BeNullOrEmpty
+            $Result.TemplateMetadata.ValidationRules.ValidRelationshipTypes | Should -Not -BeNullOrEmpty
+        }
+
+        It 'Should include all ValidRelationshipTypes' {
+            $ValidTypes = $Result.TemplateMetadata.ValidationRules.ValidRelationshipTypes
+            $ValidTypes | Should -Contain 'Mother'
+            $ValidTypes | Should -Contain 'Father'
+            $ValidTypes | Should -Contain 'Legal Guardian'
+            $ValidTypes.Count | Should -BeGreaterThan 10
+        }
+
+        It 'Should include EntityTypeMap from template' {
+            $Result.TemplateMetadata.EntityTypeMap | Should -Not -BeNullOrEmpty
+            $Result.TemplateMetadata.EntityTypeMap.Contact | Should -Not -BeNullOrEmpty
+            $Result.TemplateMetadata.EntityTypeMap.Relationship | Should -Not -BeNullOrEmpty
+        }
+
+        It 'Should include KeyField and PowerSchoolKeyField' {
+            $Result.TemplateMetadata.KeyField | Should -Be 'ContactIdentifier'
+            $Result.TemplateMetadata.PowerSchoolKeyField | Should -Be 'person_contactNumber'
+        }
+
+        It 'Should include DateTimeFormat' {
+            $Result.TemplateMetadata.DateTimeFormat | Should -Be 'dd/MM/yyyy'
+        }
+
+        It 'Should include CustomParser reference' {
+            $Result.TemplateMetadata.CustomParser | Should -Be 'Import-FSParentsCustomParser'
+        }
+    }
+
+    Context 'Students TemplateMetadata' {
+        BeforeAll {
+            $TestDataPath = Join-Path $PSScriptRoot '../../data/examples/fs_powerschool_nonapi_report/students_example.csv'
+            $Result = Import-FSCsv -Path $TestDataPath -TemplateName 'fs_powerschool_nonapi_report_students'
+        }
+
+        It 'Should include entire template configuration for students template' {
+            $Result.TemplateMetadata | Should -Not -BeNullOrEmpty
+            $Result.TemplateMetadata.TemplateName | Should -Be 'fs_powerschool_nonapi_report_students'
+        }
+
+        It 'Should include ColumnMappings from template' {
+            $Result.TemplateMetadata.ColumnMappings | Should -Not -BeNullOrEmpty
+            $Result.TemplateMetadata.ColumnMappings.Count | Should -BeGreaterThan 0
+        }
+    }
 }

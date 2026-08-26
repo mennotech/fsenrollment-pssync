@@ -22,15 +22,23 @@
 
 .PARAMETER ColumnMappings
     Array of column mapping objects from the template containing PowerSchoolAPIField mappings.
+    Note: PowerSchoolAPIField contains PowerQuery field names (e.g., 'person_firstName'), not REST API field names.
 
 .OUTPUTS
-    Array of PSCustomObjects with properties: Field, PowerSchoolField, OldValue, NewValue
+    Array of PSCustomObjects with properties: Field, PowerSchoolAPIField, OldValue, NewValue
+    
+    PowerSchoolAPIField contains the PowerQuery field name (e.g., 'person_firstName', 'emailaddress_emailAddress')
+    from the PowerQuery Data Access API, NOT the REST API field name (e.g., 'firstName').
     
     Only includes changes to fields specified in CheckForChanges array.
 
 .NOTES
     This is a private function used internally by Compare-PSContact.
     Maps PSContact properties to PowerSchool PowerQuery person field names using template ColumnMappings.
+    
+    NAMING CONVENTION:
+    - PowerSchoolAPIField = PowerQuery field name (e.g., 'person_firstName') - used for comparison
+    - REST API field name = Different format (e.g., 'firstName') - used by Submit-PSContactChange for updates
 #>
 function Compare-ContactFields {
     [CmdletBinding()]
@@ -52,10 +60,10 @@ function Compare-ContactFields {
 
     # Default mapping of PSContact properties to PowerQuery person fields (fallback)
     $defaultFieldMapping = @{
-        'FirstName' = 'person_firstname'
-        'MiddleName' = 'person_middlename'
-        'LastName' = 'person_lastname'
-        'Gender' = 'person_gender_code'
+        'FirstName' = 'person_firstName'
+        'MiddleName' = 'person_middleName'
+        'LastName' = 'person_lastName'
+        'Gender' = 'person_gender'
         'Employer' = 'person_employer'
     }
 
@@ -96,7 +104,7 @@ function Compare-ContactFields {
         if ($csvValueNormalized -ne $psValueNormalized) {
             $changes.Add([PSCustomObject]@{
                 Field = $fieldName
-                PowerSchoolField = $psFieldName
+                PowerSchoolAPIField = $psFieldName
                 OldValue = $psValueNormalized
                 NewValue = $csvValueNormalized
             })

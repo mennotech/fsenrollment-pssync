@@ -63,6 +63,8 @@ Write-Host "Removed: $($changes.Summary.RemovedCount)"
 - **`Import-FSCsv`** - Parse Final Site Enrollment CSV files
 - **`Compare-PSStudent`** - Detect changes between CSV and PowerSchool student data
 - **`Compare-PSContact`** - Detect changes in contacts, emails, phones, addresses, and relationships
+- **`Submit-PSStudentChange`** - Apply student changes to PowerSchool via API
+- **`Submit-PSContactChange`** - Apply contact changes (demographics, emails, phones, addresses, relationships) to PowerSchool via API
 
 ### Data Files
 - Example CSVs under `data/examples/`
@@ -71,6 +73,7 @@ Write-Host "Removed: $($changes.Summary.RemovedCount)"
 ### Utility Scripts
 - **`Example-ChangeDetection.ps1`** - Complete student change detection workflow example
 - **`Example-ContactChangeDetection.ps1`** - Complete contact change detection workflow with emails, phones, addresses, and relationships
+- **`Example-ContactSubmitChanges.ps1`** - Apply contact changes to PowerSchool from JSON file
 - **`Filter-ParentsByStudentExampleFile.ps1`** - Filter parent rows by student list
 - **`Anonymize-ParentsExampleFile.ps1`** - Anonymize sample data for sharing/tests
 
@@ -80,13 +83,22 @@ Write-Host "Removed: $($changes.Summary.RemovedCount)"
 
 ## Documentation
 
-- **[PowerSchool Change Detection Usage Guide](docs/PowerSchool-ChangeDetection-Usage.md)** - Detailed usage examples for student and contact change detection
-- **[Documentation Overview](docs/readme.md)** - Full documentation structure
-- **[CSV Parsing Examples](docs/CSV-Parsing-Examples.md)** - CSV import examples
-- **[Invoke-PowerQuery Examples](docs/Invoke-PowerQuery-Examples.md)** - PowerQuery usage examples
-- **PowerSchool API Spec**: `docs/powerschool_api.yaml` (OpenAPI)
-- **PowerSchool API Plugin**: `docs/powerschool api plugin/plugin.xml`
-- **PowerQuery Documentation**: `docs/powerschool api plugin/*.named_queries.md`
+### Essential Reading
+- **[Secure Credential Management](docs/security/Secure-Credential-Management.md)** - 🔒 Comprehensive guide to secure credential handling
+- **[PowerSchool Change Detection Guide](docs/guides/user/PowerSchool-ChangeDetection-Usage.md)** - Detailed usage examples for student and contact change detection
+- **[PowerQuery Association IDs Update](docs/updates/PowerQuery-Association-IDs-Update.md)** - ⚠️ **IMPORTANT:** Critical PowerQuery plugin update required for contact email/phone/address operations
+
+### Full Documentation Index
+- **[Documentation Overview](docs/readme.md)** - Complete documentation structure and quick links
+
+### Additional Resources
+- **[CSV Parsing Examples](docs/guides/user/CSV-Parsing-Examples.md)** - CSV import examples
+- **[Invoke-PowerQuery Examples](docs/guides/user/Invoke-PowerQuery-Examples.md)** - PowerQuery usage examples
+- **[Submit Student Changes](docs/guides/developer/Submit-PSStudentChange-Usage.md)** - Developer guide for submitting student changes
+- **[Submit Contact Changes](docs/guides/developer/Submit-PSContactChange-Usage.md)** - Developer guide for submitting contact changes
+- **PowerSchool API Spec**: [docs/api/powerschool_api.yaml](docs/api/powerschool_api.yaml) (OpenAPI)
+- **PowerSchool API Plugin**: [docs/powerschool api plugin/](docs/powerschool%20api%20plugin/)
+- **PowerQuery Documentation**: [docs/powerschool api plugin/](docs/powerschool%20api%20plugin/)*.named_queries.md
 
 ## Requirements
 
@@ -97,7 +109,32 @@ Write-Host "Removed: $($changes.Summary.RemovedCount)"
 
 ## Configuration
 
-### Environment Variables (Recommended)
+### Secure Credential Management (Recommended)
+
+Use the secure credential system to prevent credential leaks. `Connect-PowerSchool` now automatically loads credentials from the `.env` file:
+
+```powershell
+# 1. Create .env file from template
+Copy-Item config\.env.example config\.env
+# Edit config\.env with your actual credentials
+
+# 2. Import the module and connect (credentials loaded automatically from .env)
+Import-Module ./fsenrollment-pssync/FSEnrollment-PSSync.psd1
+Connect-PowerSchool  # No parameters needed - uses .env file!
+
+# Alternative: Manually import credentials for other uses
+$credentials = Import-EnvironmentCredentials -ClearEnvironmentVariables
+```
+
+**Credential Loading Priority:**
+1. Explicit parameters (highest priority)
+2. `.env` file credentials
+3. Environment variables  
+4. Interactive prompts (lowest priority)
+
+See **[Secure Credential Management](docs/Secure-Credential-Management.md)** for complete details.
+
+### Environment Variables (Alternative)
 
 ```powershell
 $env:PowerSchool_BaseUrl = 'https://your-instance.powerschool.com'
@@ -105,17 +142,22 @@ $env:PowerSchool_ClientID = 'your-client-id'
 $env:PowerSchool_ClientSecret = 'your-client-secret'
 ```
 
-### Configuration File
+### Configuration File (Legacy)
 
 Copy `config/config.example.psd1` to `config/config.psd1` and customize settings.
 
 ## Security
 
-- Credentials stored as `SecureString` in memory
-- Supports environment variables and interactive secure prompts
-- Never commit credentials to version control
-- Token automatically refreshed before expiration
-- Implements retry logic with exponential backoff
+- **SecureString encryption** - Credentials stored as SecureStrings in memory
+- **Environment variable clearing** - Automatically clear environment variables after loading to minimize exposure
+- **Automated security testing** - Pester tests scan for credential leaks before commits
+- **Git hooks** - Pre-commit hooks prevent accidental credential commits
+- **Cross-platform** - Secure credential handling on both Linux and Windows
+- **Production-ready** - VM boot scripts can load and encrypt credentials, then clear environment variables
+- **Token management** - OAuth tokens automatically refreshed before expiration
+- **Retry logic** - Implements exponential backoff for API calls
+
+See **[Secure Credential Management](docs/Secure-Credential-Management.md)** for complete security documentation.
 
 ## Development Roadmap
 
@@ -143,7 +185,21 @@ Invoke-Pester -Path ./fsenrollment-pssync/tests/
 
 # Run specific test file
 Invoke-Pester -Path ./fsenrollment-pssync/tests/Connect-PowerSchool.Tests.ps1 -Output Detailed
+
+# Run security tests to check for credential leaks
+Invoke-Pester -Path ./fsenrollment-pssync/tests/Security.CredentialLeak.Tests.ps1
 ```
+
+### Enable Pre-commit Hooks
+
+Automatically run security tests before each commit:
+
+```powershell
+# Configure git to use the hooks directory
+git config core.hooksPath .githooks
+```
+
+See [.githooks/README.md](.githooks/README.md) for more information.
 
 ## Contributing
 

@@ -59,12 +59,12 @@ Each record in the `Records` array contains the following fields:
 #### Relationship Flags
 | Field Name | Type | Description | Example |
 |------------|------|-------------|---------|
-| `relationship_isactive` | integer | Whether relationship is active (1=yes, 0=no) | `1` |
-| `relationship_iscustodial` | integer | Whether contact has custody (1=yes, 0=no) | `1` |
-| `relationship_isemergency` | integer | Whether this is an emergency contact (1=yes, 0=no) | `1` |
-| `relationship_liveswith` | integer | Whether student lives with this contact (1=yes, 0=no) | `1` |
-| `relationship_receivesmail` | integer | Whether contact receives mail (1=yes, 0=no) | `1` |
-| `relationship_schoolpickup` | integer | Whether contact can pick up from school (1=yes, 0=no) | `1` |
+| `relationship_isActive` | integer | Whether relationship is active (1=yes, 0=no) | `1` |
+| `relationship_isCustodial` | integer | Whether contact has custody (1=yes, 0=no) | `1` |
+| `relationship_isEmergency` | integer | Whether this is an emergency contact (1=yes, 0=no) | `1` |
+| `relationship_livesWith` | integer | Whether student lives with this contact (1=yes, 0=no) | `1` |
+| `relationship_receivesMail` | integer | Whether contact receives mail (1=yes, 0=no) | `1` |
+| `relationship_schoolPickup` | integer | Whether contact can pick up from school (1=yes, 0=no) | `1` |
 
 ## Sample Response
 
@@ -78,14 +78,14 @@ Each record in the `Records` array contains the following fields:
       "_name": "StudentContactAssoc",
       "student_dcid": 1051,
       "relationship_relationship_code": "Father",
-      "relationship_receivesmail": 1,
-      "relationship_schoolpickup": 1,
+      "relationship_receivesMail": 1,
+      "relationship_schoolPickup": 1,
       "relationship_priority_order": 1,
-      "relationship_iscustodial": 1,
-      "relationship_liveswith": 1,
-      "relationship_isactive": 1,
+      "relationship_isCustodial": 1,
+      "relationship_livesWith": 1,
+      "relationship_isActive": 1,
       "_id": 1151,
-      "relationship_isemergency": 1,
+      "relationship_isEmergency": 1,
       "person_dcid": 1201,
       "person_id": 1151
     },
@@ -93,12 +93,12 @@ Each record in the `Records` array contains the following fields:
       "student_student_number": "789012",
       "student_dcid": 54322,
       "relationship_priority_order": 1,
-      "relationship_isactive": 1,
-      "relationship_iscustodial": 1,
-      "relationship_isemergency": 1,
-      "relationship_liveswith": 1,
-      "relationship_receivesmail": 1,
-      "relationship_schoolpickup": 1,
+      "relationship_isActive": 1,
+      "relationship_isCustodial": 1,
+      "relationship_isEmergency": 1,
+      "relationship_livesWith": 1,
+      "relationship_receivesMail": 1,
+      "relationship_schoolPickup": 1,
       "relationship_relationship_code": "Mother",
       "relationship_relationship_note": "Primary contact",
       "_name": "StudentContactAssoc",
@@ -133,7 +133,7 @@ Each record in the `Records` array contains the following fields:
 
 #### Boolean Fields (stored as integers)
 - **Format**: `0` (false) or `1` (true)
-- **Examples**: `relationship_isactive: 1`, `relationship_iscustodial: 0`
+- **Examples**: `relationship_isActive: 1`, `relationship_isCustodial: 0`
 - **Note**: PowerSchool stores boolean values as integers
 
 #### Priority Order
@@ -162,13 +162,13 @@ $primaryContacts = $relationships.Records | Where-Object { $_.relationship_prior
 ### Get Emergency Contacts
 ```powershell
 $relationships = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords
-$emergencyContacts = $relationships.Records | Where-Object { $_.relationship_isemergency -eq 1 }
+$emergencyContacts = $relationships.Records | Where-Object { $_.relationship_isEmergency -eq 1 }
 ```
 
 ### Get Custodial Parents
 ```powershell
 $relationships = Invoke-PowerQuery -PowerQueryName 'com.fsenrollment.dats.person.relationship' -AllRecords
-$custodialParents = $relationships.Records | Where-Object { $_.relationship_iscustodial -eq 1 }
+$custodialParents = $relationships.Records | Where-Object { $_.relationship_isCustodial -eq 1 }
 ```
 
 ### Group Relationships by Person
@@ -230,5 +230,5 @@ This query is used by the `Compare-PSContact` function to detect changes in stud
 - Multiple contacts can have the same priority in some cases
 
 ### Active vs Inactive Relationships
-- The `relationship_isactive` flag indicates if the relationship is currently active
+- The `relationship_isActive` flag indicates if the relationship is currently active
 - Inactive relationships may still be in the system for historical purposes

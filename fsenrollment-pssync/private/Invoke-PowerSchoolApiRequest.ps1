@@ -94,11 +94,25 @@ function Invoke-PowerSchoolApiRequest {
         catch {
             $statusCode = $null
             $retryAfter = $null
+            $errorDetails = $_.Exception.Message
             
-            # Extract status code and Retry-After header if available
+            # Extract status code, headers, and response body if available
             if ($_.Exception.Response) {
                 $statusCode = [int]$_.Exception.Response.StatusCode
                 $retryAfter = $_.Exception.Response.Headers['Retry-After']
+            }
+            
+            # Try to get error details from ErrorDetails property
+            if ($_.ErrorDetails.Message) {
+                $errorMessage = $_.ErrorDetails.Message.Trim() -replace '\s+', ' '
+                
+                if ($statusCode) {
+                    $errorDetails = "HTTP $statusCode - $errorMessage"
+                } else {
+                    $errorDetails = $errorMessage
+                }
+            } elseif ($statusCode) {
+                $errorDetails = "HTTP $statusCode - $($_.Exception.Message)"
             }
 
             $shouldRetry = $false
@@ -140,9 +154,8 @@ function Invoke-PowerSchoolApiRequest {
                 # Exponential backoff for next attempt
                 $retryDelay = $retryDelay * 2
             } else {
-                # No more retries or non-retryable error
-                Write-Error "PowerSchool API request failed: $_"
-                throw
+                # No more retries or non-retryable error - throw with detailed error message
+                throw $errorDetails
             }
         }
     }

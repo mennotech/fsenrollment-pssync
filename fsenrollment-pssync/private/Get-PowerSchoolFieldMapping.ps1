@@ -13,7 +13,7 @@
     The name of the entity property to get the PowerSchool API field for (e.g., 'FirstName', 'MiddleName').
 
 .PARAMETER TemplateMetadata
-    Optional template metadata hashtable containing ColumnMappings with PowerSchoolAPIField mappings.
+    Optional template metadata containing ColumnMappings with PowerSchoolAPIField mappings.
 
 .OUTPUTS
     String representing the PowerSchool API field name, or $null if no mapping found.
@@ -28,7 +28,7 @@
     # Returns: 'name.first_name'
 
 .NOTES
-    This is a private helper function used by Submit-PSStudentChange and other functions.
+    Private helper function for Submit-PSStudentChange and Submit-PSContactChange.
     Maintains consistency with template-driven field mapping throughout the system.
 #>
 function Get-PowerSchoolFieldMapping {
@@ -38,26 +38,49 @@ function Get-PowerSchoolFieldMapping {
         [string]$EntityProperty,
 
         [Parameter(Mandatory = $false)]
-        [hashtable]$TemplateMetadata
+        [PSCustomObject]$TemplateMetadata
     )
 
     # Try to get mapping from template metadata first
-    if ($TemplateMetadata -and $TemplateMetadata.ColumnMappings) {
-        $mapping = $TemplateMetadata.ColumnMappings | Where-Object { $_.EntityProperty -eq $EntityProperty } | Select-Object -First 1
-        if ($mapping -and $mapping.PowerSchoolAPIField) {
+    if ($TemplateMetadata -and $TemplateMetadata.PSObject.Properties['ColumnMappings']) {
+        $columnMappings = $TemplateMetadata.ColumnMappings
+        
+        # Handle both single entity and multi-entity templates
+        $allMappings = @()
+        
+        if ($columnMappings -is [PSCustomObject]) {
+            # Multi-entity template: ColumnMappings has entity names as properties
+            foreach ($prop in $columnMappings.PSObject.Properties) {
+                $allMappings += $prop.Value
+            }
+        } else {
+            # Single entity template (e.g., Student) - ColumnMappings is directly an array
+            $allMappings = $columnMappings
+        }
+        
+        # Find mapping with PowerSchoolAPIField defined (skip mappings without API field)
+        # This is important for fields that appear in multiple entities (e.g., ContactIdentifier)
+        # where only one entity has the PowerSchoolAPIField defined
+        $mapping = $allMappings | Where-Object { 
+            $_.EntityProperty -eq $EntityProperty -and 
+            $_.PowerSchoolAPIField 
+        } | Select-Object -First 1
+        
+        if ($mapping) {
             return $mapping.PowerSchoolAPIField
         }
     }
 
-    # Fallback to default field mappings for common student fields
+    # Fallback to default field mappings for common student and contact fields
+    # NOTE: These defaults are for Student API (v1) which uses nested structures.
+    # Contact API uses flat field names (firstName, middleName, lastName).
+    # Templates should define their own ColumnMappings in TemplateMetadata for proper mapping.
+    # These defaults are only used when TemplateMetadata is not provided or incomplete.
     $defaultFieldMapping = @{
+        # Student-specific fields (use nested structure for v1 API)
         'StudentNumber' = 'local_id'
         'SchoolID' = 'school_id'
-        'FirstName' = 'name.first_name'
-        'MiddleName' = 'name.middle_name'
-        'LastName' = 'name.last_name'
         'GradeLevel' = 'grade_level'
-        'Gender' = 'gender'
         'DOB' = 'dob'
         'EnrollStatus' = 'enroll_status'
         'EntryDate' = 'entrydate'
@@ -73,6 +96,18 @@ function Get-PowerSchoolFieldMapping {
         'MailingZip' = 'mailing_zip'
         'FamilyIdent' = 'family_ident'
         'TransferComment' = 'transfer_comment'
+        
+        # Shared name fields - defaults use Student API pattern (nested under 'name')
+        # Contact API overrides these with flat names in template
+        'FirstName' = 'name.first_name'
+        'MiddleName' = 'name.middle_name'
+        'LastName' = 'name.last_name'
+        'Gender' = 'gender'
+        
+        # Contact-specific fields (flat structure) - should be defined in template
+        'Prefix' = 'prefix'
+        'Suffix' = 'suffix'
+        'Employer' = 'employer'
     }
 
     return $defaultFieldMapping[$EntityProperty]

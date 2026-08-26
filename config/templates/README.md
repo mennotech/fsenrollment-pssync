@@ -42,7 +42,10 @@ For simple CSV formats with one entity per row, use column mappings with EntityT
     CheckForChanges = @('FirstName', 'MiddleName', 'LastName', 'Street', 'City', 'State', 'Zip')
     CustomParser = $null
     # EntityType is inherited from template-level setting for all mappings
-    # PowerSchoolAPIField defines the API path for syncing changes back to PowerSchool
+    # IMPORTANT: PowerSchoolAPIField specifies the PowerQuery field name for data retrieval and comparison
+    # For Students: Use REST API field paths (e.g., 'name.first_name', '@demographics.birth_date')
+    # For Contacts: Use PowerQuery field names (e.g., 'person_firstName', 'emailaddress_emailAddress')
+    # The submit functions handle field name conversion when syncing changes back to PowerSchool
     ColumnMappings = @(
         @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; DataType = 'string'; PowerSchoolAPIField = 'local_id'; PowerSchoolDataType = 'int' }
         @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolAPIField = 'name.first_name' }
@@ -52,6 +55,40 @@ For simple CSV formats with one entity per row, use column mappings with EntityT
     )
 }
 ```
+
+### PowerSchoolAPIField Naming Convention
+
+**IMPORTANT**: The `PowerSchoolAPIField` property has different formats depending on the entity type:
+
+1. **For Student data** (using REST API):
+   - Format: REST API field paths
+   - Examples: `'local_id'`, `'name.first_name'`, `'@demographics.birth_date'`
+   - Used for both retrieval via GET /ws/v1/student/{id} and updates via PATCH
+
+2. **For Contact data** (using PowerQuery Data Access API):
+   - Format: PowerQuery flat field names with entity prefix
+   - Examples: `'person_firstName'`, `'person_lastName'`, `'emailaddress_emailAddress'`, `'phonenumber_phoneNumber'`
+   - Used for retrieval via PowerQuery (com.fsenrollment.dats.person, etc.)
+   - **Note**: When submitting updates, Submit-PSContactChange converts these to REST API format automatically
+
+**Why the difference?**
+- Students use PowerSchool's REST API directly for both retrieval and updates
+- Contacts use PowerQuery for efficient bulk retrieval but REST API for updates
+- The conversion is handled automatically by the submit functions
+
+**Common pitfall**: Don't confuse PowerQuery field names (`person_firstName`) with REST API field names (`firstName`). The template always uses PowerQuery format for contacts, and the code handles conversion during updates.
+
+**Important - Association IDs for Emails, Phones, and Addresses:**
+
+The Contact API requires **association IDs** (not entity IDs) for PUT and DELETE operations. These are mapped using `CSVColumn = '* PowerQuery *'` since they come from PowerQuery, not the CSV:
+
+- **EmailAddress**: `ContactEmailID` (from `emailaddress_contactEmailId`) - required for email PUT/DELETE
+- **PhoneNumber**: `ContactPhoneID` (from `phonenumber_contactPhoneId`) - required for phone PUT/DELETE  
+- **Address**: `ContactAddressID` (from `address_contactAddressId`) - required for address PUT/DELETE
+
+PowerSchool uses dual IDs: the **entity ID** (e.g., `emailaddressid`) references the email record, while the **association ID** (e.g., `personemailaddressassocid`) references the person-to-email link. The Contact API operations require the association ID.
+
+See [PowerQuery Association IDs Update](../../docs/updates/PowerQuery-Association-IDs-Update.md) for complete details on this change.
 
 ### Custom Parser Format
 

@@ -53,8 +53,13 @@
         'Compare-PSStudent'
         'Compare-PSContact'
         'Submit-PSStudentChange'
+        'Submit-PSContactChange'
         'Get-RequiredPowerSchoolFields'
         'Invoke-PowerQuery'
+        'Invoke-PSRequest'
+        'ConvertFrom-SecureCredential'
+        'Import-EnvironmentCredentials'
+        'ConvertTo-ContactChangesCsv'
     )
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry

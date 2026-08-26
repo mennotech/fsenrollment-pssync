@@ -21,8 +21,7 @@
     - @expansion_name.field → adds 'expansion_name' to expansions
 
 .PARAMETER TemplateMetadata
-    Template metadata hashtable containing ColumnMappings. Typically accessed from
-    PSNormalizedData.TemplateMetadata after calling Import-FSCsv.
+    Template metadata containing ColumnMappings from PSNormalizedData.TemplateMetadata.
 
 .OUTPUTS
     PSCustomObject with properties: Extensions (array), Expansions (array)
@@ -47,22 +46,23 @@
     $students = Get-PowerSchoolStudent -All -TemplateMetadata $csvData.TemplateMetadata
 
 .NOTES
-    This function is called internally by Get-PowerSchoolStudent when using -TemplateMetadata or -TemplateName.
-    Most workflows don't need to call this function directly.
+    Called internally by Get-PowerSchoolStudent when using -TemplateMetadata or -TemplateName.
     Returns empty arrays if no extensions or expansions are required.
 #>
 function Get-RequiredPowerSchoolFields {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $false)]
-        [hashtable]$TemplateMetadata
+        [PSCustomObject]$TemplateMetadata
     )
 
     $extensions = [System.Collections.Generic.HashSet[string]]::new()
     $expansions = [System.Collections.Generic.HashSet[string]]::new()
 
-    if ($TemplateMetadata -and $TemplateMetadata.ColumnMappings) {
-        foreach ($mapping in $TemplateMetadata.ColumnMappings) {
+    if ($TemplateMetadata -and $TemplateMetadata.PSObject.Properties['ColumnMappings']) {
+        $columnMappings = $TemplateMetadata.ColumnMappings
+        
+        foreach ($mapping in $columnMappings) {
             if ($mapping.PowerSchoolAPIField) {
                 $fieldPath = $mapping.PowerSchoolAPIField
                 

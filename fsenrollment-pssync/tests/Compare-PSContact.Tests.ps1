@@ -74,7 +74,7 @@ Describe 'Compare-PSContact' {
                     person_id = 12345
                     person_firstname = 'John'
                     person_lastname = 'Doe'
-                    person_gender_code = 'F'
+                    person_gender = 'F'
                 }
                 $script:PowerSchoolData = @($psPerson)
                 
@@ -89,7 +89,7 @@ Describe 'Compare-PSContact' {
                 $firstNameChange | Should -Not -BeNullOrEmpty
                 $firstNameChange.OldValue | Should -Be 'John'
                 $firstNameChange.NewValue | Should -Be 'Jane'
-                $firstNameChange.PowerSchoolField | Should -Be 'person_firstname'
+                $firstNameChange.PowerSchoolAPIField | Should -Be 'person_firstname'
             }
         }
 
@@ -109,7 +109,7 @@ Describe 'Compare-PSContact' {
                     person_id = 12345
                     person_firstname = 'John'
                     person_lastname = 'Doe'
-                    person_gender_code = 'M'
+                    person_gender = 'M'
                     person_employer = 'Widget Inc'
                 }
                 $script:PowerSchoolData = @($psPerson)
@@ -201,7 +201,7 @@ Describe 'Compare-PSContact' {
                     person_id = 12345
                     person_firstname = 'John'
                     person_lastname = 'Doe'
-                    person_gender_code = 'M'
+                    person_gender = 'M'
                 }
                 $script:PowerSchoolData = @($psPerson)
                 
@@ -429,7 +429,7 @@ Describe 'Compare-PSContact' {
                     person_id = 12345
                     person_firstname = 'Alex'
                     person_lastname = 'Smith'
-                    person_gender_code = 'M'
+                    person_gender = 'M'
                 }
                 $script:PowerSchoolData = @($psPerson)
                 
@@ -471,19 +471,16 @@ Describe 'Compare-PSContact' {
                 # PowerSchool email data (empty)
                 $psEmailData = @()
                 
-                $templateConfig = @{
+                # Set TemplateMetadata on CsvData
+                $script:CsvData.TemplateMetadata = @{
                     KeyField = 'ContactID'
                     PowerSchoolKeyField = 'person_id'
-                    EntityTypeMap = @{
-                        Contact = @{
-                            CheckForChanges = @('FirstName', 'LastName')
-                        }
-                    }
+                    CheckForChanges = @('FirstName', 'LastName')
                 }
+                
                 $result = Compare-PSContact -CsvData $script:CsvData `
                     -PowerSchoolData $script:PowerSchoolData `
-                    -PowerSchoolEmailData $psEmailData `
-                    -TemplateConfig $templateConfig
+                    -PowerSchoolEmailData $psEmailData
                 
                 $result.Updated.Count | Should -Be 1
                 $result.Updated[0].EmailChanges | Should -Not -BeNullOrEmpty
@@ -693,6 +690,213 @@ Describe 'Compare-PSContact' {
                 # Contact should be in Unchanged collection since no changes detected
                 $result.Unchanged.Count | Should -Be 1
                 $result.Updated.Count | Should -Be 0
+            }
+        }
+
+        It 'Should detect duplicate phone numbers with different types and mark non-matching types for removal' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with phone as Mobile
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvPhone = [PSPhoneNumber]::new()
+                $csvPhone.ContactIdentifier = '12345'
+                $csvPhone.PhoneNumber = '555-123-4567'
+                $csvPhone.PhoneType = 'Mobile'
+                $csvPhone.IsPreferred = $true
+                $csvPhone.IsSMS = $false
+                $script:CsvData.PhoneNumbers.Add($csvPhone)
+                
+                # PowerSchool person
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool has SAME number with TWO different types (Mobile and Work)
+                $psPhoneData = @(
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        phonenumber_phonenumber = '555-123-4567'
+                        phonenumber_type = 'Mobile'
+                        phonenumber_ispreferred = 1
+                        phonenumber_issms = 0
+                        phonenumber_contactphoneid = 101
+                    },
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        phonenumber_phonenumber = '555-123-4567'
+                        phonenumber_type = 'Work'
+                        phonenumber_ispreferred = 0
+                        phonenumber_issms = 0
+                        phonenumber_contactphoneid = 102
+                    }
+                )
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolPhoneData $psPhoneData
+                
+                $result.Updated.Count | Should -Be 1
+                $contact = $result.Updated[0]
+                
+                # Should have phone changes
+                $contact.PhoneChanges | Should -Not -BeNullOrEmpty
+                
+                # Should NOT modify the Mobile entry (exact match)
+                $contact.PhoneChanges.Modified.Count | Should -Be 0
+                
+                # Should mark the Work entry for removal (duplicate with different type)
+                $contact.PhoneChanges.Removed.Count | Should -Be 1
+                $contact.PhoneChanges.Removed[0].Phone.phonenumber_type | Should -Be 'Work'
+                
+                # Mobile should be in Unchanged
+                $contact.PhoneChanges.Unchanged.Count | Should -Be 1
+            }
+        }
+
+        It 'Should handle duplicate phone numbers when CSV type does not match any PowerSchool type' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with phone as Home
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvPhone = [PSPhoneNumber]::new()
+                $csvPhone.ContactIdentifier = '12345'
+                $csvPhone.PhoneNumber = '555-123-4567'
+                $csvPhone.PhoneType = 'Home'
+                $csvPhone.IsPreferred = $true
+                $script:CsvData.PhoneNumbers.Add($csvPhone)
+                
+                # PowerSchool person
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool has SAME number with Mobile and Work (but not Home)
+                $psPhoneData = @(
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        phonenumber_phonenumber = '555-123-4567'
+                        phonenumber_type = 'Mobile'
+                        phonenumber_ispreferred = 0
+                        phonenumber_contactphoneid = 101
+                    },
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        phonenumber_phonenumber = '555-123-4567'
+                        phonenumber_type = 'Work'
+                        phonenumber_ispreferred = 0
+                        phonenumber_contactphoneid = 102
+                    }
+                )
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolPhoneData $psPhoneData
+                
+                $result.Updated.Count | Should -Be 1
+                $contact = $result.Updated[0]
+                
+                # Should have phone changes
+                $contact.PhoneChanges | Should -Not -BeNullOrEmpty
+                
+                # Should modify the FIRST entry (Mobile) to change type to Home
+                $contact.PhoneChanges.Modified.Count | Should -Be 1
+                $contact.PhoneChanges.Modified[0].NewPhone.PhoneType | Should -Be 'Home'
+                $contact.PhoneChanges.Modified[0].Changes | Should -Not -BeNullOrEmpty
+                $typeChange = $contact.PhoneChanges.Modified[0].Changes | Where-Object { $_.Field -eq 'PhoneType' }
+                $typeChange | Should -Not -BeNullOrEmpty
+                $typeChange.OldValue | Should -Be 'Mobile'
+                $typeChange.NewValue | Should -Be 'Home'
+                
+                # Should mark remaining duplicate (Work) for removal
+                $contact.PhoneChanges.Removed.Count | Should -Be 1
+                $contact.PhoneChanges.Removed[0].Phone.phonenumber_type | Should -Be 'Work'
+            }
+        }
+
+        It 'Should handle three duplicate phone numbers in PowerSchool with one matching CSV' {
+            InModuleScope FSEnrollment-PSSync {
+                # CSV contact with phone as Work
+                $csvContact = [PSContact]::new()
+                $csvContact.ContactID = '12345'
+                $csvContact.FirstName = 'John'
+                $csvContact.LastName = 'Doe'
+                $script:CsvData.Contacts.Add($csvContact)
+                
+                $csvPhone = [PSPhoneNumber]::new()
+                $csvPhone.ContactIdentifier = '12345'
+                $csvPhone.PhoneNumber = '555-123-4567'
+                $csvPhone.PhoneType = 'Work'
+                $csvPhone.IsPreferred = $true
+                $script:CsvData.PhoneNumbers.Add($csvPhone)
+                
+                # PowerSchool person
+                $psPerson = [PSCustomObject]@{
+                    person_id = 12345
+                    person_firstname = 'John'
+                    person_lastname = 'Doe'
+                }
+                $script:PowerSchoolData = @($psPerson)
+                
+                # PowerSchool has same number THREE times (Mobile, Work, Home)
+                $psPhoneData = @(
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        phonenumber_phonenumber = '555-123-4567'
+                        phonenumber_type = 'Mobile'
+                        phonenumber_ispreferred = 0
+                        phonenumber_contactphoneid = 101
+                    },
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        phonenumber_phonenumber = '555-123-4567'
+                        phonenumber_type = 'Work'
+                        phonenumber_ispreferred = 1
+                        phonenumber_contactphoneid = 102
+                    },
+                    [PSCustomObject]@{
+                        person_id = 12345
+                        phonenumber_phonenumber = '555-123-4567'
+                        phonenumber_type = 'Home'
+                        phonenumber_ispreferred = 0
+                        phonenumber_contactphoneid = 103
+                    }
+                )
+                
+                $result = Compare-PSContact -CsvData $script:CsvData `
+                    -PowerSchoolData $script:PowerSchoolData `
+                    -PowerSchoolPhoneData $psPhoneData
+                
+                $result.Updated.Count | Should -Be 1
+                $contact = $result.Updated[0]
+                
+                # Should have phone changes
+                $contact.PhoneChanges | Should -Not -BeNullOrEmpty
+                
+                # First duplicate (Mobile) is kept and compared to CSV (Work type)
+                # Since type and preferred differ, it should be Modified
+                $contact.PhoneChanges.Modified.Count | Should -Be 1
+                $contact.PhoneChanges.Modified[0].NewPhone.PhoneType | Should -Be 'Work'
+                $contact.PhoneChanges.Modified[0].Changes.Count | Should -BeGreaterThan 0
+                
+                # Should mark Work and Home duplicates for removal (keeping first occurrence)
+                $contact.PhoneChanges.Removed.Count | Should -Be 2
+                $removedTypes = $contact.PhoneChanges.Removed | ForEach-Object { $_.Phone.phonenumber_type }
+                $removedTypes | Should -Contain 'Work'
+                $removedTypes | Should -Contain 'Home'
             }
         }
     }

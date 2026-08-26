@@ -150,17 +150,23 @@ The application follows this workflow:
 ### PowerSchool Integration
 - Follow PowerSchool API best practices and documentation
 - Reference the provided Postman collection export file for API endpoint examples and testing
-- Use `Invoke-RestMethod` or `Invoke-WebRequest` for API calls (both work cross-platform)
+- **CRITICAL: Always use `Invoke-PSRequest` for PowerSchool API calls**
+  - `Invoke-PSRequest` is the standardized wrapper function for all PowerSchool API interactions
+  - NEVER call `Invoke-RestMethod` or `Invoke-WebRequest` directly to PowerSchool API endpoints
+  - NEVER call the private function `Invoke-PowerSchoolApiRequest` directly from public functions or scripts
+  - `Invoke-PSRequest` automatically handles authentication, headers, retry logic, and error handling
+  - Example: `Invoke-PSRequest -Endpoint "/ws/contacts/contact" -Method Post -Body $payload`
+  - For specialized operations, use dedicated functions like `Invoke-PowerQuery` instead of raw API calls
 - Implement proper pagination for large data sets using PowerShell loops
-- Implement proper authentication using OAuth or API tokens stored securely
+- Implement proper authentication using OAuth or API tokens stored securely (handled by `Invoke-PSRequest`)
 - Cache API responses for read-only reference data (e.g., school metadata, course catalogs)
 - Avoid caching user-specific or frequently changing data
 - Implement cache invalidation strategies with appropriate TTL values
-- Handle API versioning correctly in request headers
-- Use proper HTTP methods (GET, POST, PUT, DELETE, PATCH)
-- Set appropriate headers including Content-Type and Accept
-- Handle HTTP status codes appropriately
-- Implement proper error handling for network failures
+- Handle API versioning correctly in request headers (handled by `Invoke-PSRequest`)
+- Use proper HTTP methods (GET, POST, PUT, DELETE, PATCH) with `Invoke-PSRequest`
+- Headers (Authorization, Content-Type, Accept) are automatically managed by `Invoke-PSRequest`
+- Handle HTTP status codes appropriately (handled by `Invoke-PSRequest` retry logic)
+- Error handling for network failures is built into `Invoke-PSRequest`
 
 ### CSV File Processing
 - Parse Final Site Enrollment CSV files with proper encoding detection

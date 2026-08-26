@@ -40,6 +40,95 @@ class PSStudent {
     [string]$FamilyIdent
 
     PSStudent() {}
+    
+    # Factory method to create from PSCustomObject (e.g., from JSON deserialization)
+    static [PSStudent] FromObject([object]$obj) {
+        $student = [PSStudent]::new()
+        
+        if ($obj.PSObject.Properties['StudentNumber']) {
+            $student.StudentNumber = $obj.StudentNumber
+        }
+        if ($obj.PSObject.Properties['SchoolID']) {
+            $student.SchoolID = $obj.SchoolID
+        }
+        if ($obj.PSObject.Properties['FirstName']) {
+            $student.FirstName = $obj.FirstName
+        }
+        if ($obj.PSObject.Properties['MiddleName']) {
+            $student.MiddleName = $obj.MiddleName
+        }
+        if ($obj.PSObject.Properties['LastName']) {
+            $student.LastName = $obj.LastName
+        }
+        if ($obj.PSObject.Properties['GradeLevel']) {
+            $student.GradeLevel = [int]$obj.GradeLevel
+        }
+        if ($obj.PSObject.Properties['HomePhone']) {
+            $student.HomePhone = $obj.HomePhone
+        }
+        if ($obj.PSObject.Properties['Gender']) {
+            $student.Gender = $obj.Gender
+        }
+        if ($obj.PSObject.Properties['DOB']) {
+            $student.DOB = [datetime]$obj.DOB
+        }
+        if ($obj.PSObject.Properties['FTEID']) {
+            $student.FTEID = $obj.FTEID
+        }
+        if ($obj.PSObject.Properties['EnrollStatus']) {
+            $student.EnrollStatus = [int]$obj.EnrollStatus
+        }
+        if ($obj.PSObject.Properties['EntryDate']) {
+            $student.EntryDate = [datetime]$obj.EntryDate
+        }
+        if ($obj.PSObject.Properties['ExitDate']) {
+            $student.ExitDate = [datetime]$obj.ExitDate
+        }
+        if ($obj.PSObject.Properties['Street']) {
+            $student.Street = $obj.Street
+        }
+        if ($obj.PSObject.Properties['City']) {
+            $student.City = $obj.City
+        }
+        if ($obj.PSObject.Properties['State']) {
+            $student.State = $obj.State
+        }
+        if ($obj.PSObject.Properties['Zip']) {
+            $student.Zip = $obj.Zip
+        }
+        if ($obj.PSObject.Properties['MailingStreet']) {
+            $student.MailingStreet = $obj.MailingStreet
+        }
+        if ($obj.PSObject.Properties['MailingCity']) {
+            $student.MailingCity = $obj.MailingCity
+        }
+        if ($obj.PSObject.Properties['MailingState']) {
+            $student.MailingState = $obj.MailingState
+        }
+        if ($obj.PSObject.Properties['MailingZip']) {
+            $student.MailingZip = $obj.MailingZip
+        }
+        if ($obj.PSObject.Properties['SchedNextYearGrade']) {
+            $student.SchedNextYearGrade = [int]$obj.SchedNextYearGrade
+        }
+        if ($obj.PSObject.Properties['NextSchool']) {
+            $student.NextSchool = $obj.NextSchool
+        }
+        if ($obj.PSObject.Properties['SchedScheduled']) {
+            $student.SchedScheduled = [int]$obj.SchedScheduled
+        }
+        if ($obj.PSObject.Properties['SchedYearOfGraduation']) {
+            $student.SchedYearOfGraduation = [int]$obj.SchedYearOfGraduation
+        }
+        if ($obj.PSObject.Properties['TransferComment']) {
+            $student.TransferComment = $obj.TransferComment
+        }
+        if ($obj.PSObject.Properties['FamilyIdent']) {
+            $student.FamilyIdent = $obj.FamilyIdent
+        }
+        
+        return $student
+    }
 }
 
 # Contact entity representing a PowerSchool contact (parent/guardian)
@@ -57,6 +146,47 @@ class PSContact {
     [bool]$ExcludeFromExport
 
     PSContact() {}
+    
+    # Factory method to create from PSCustomObject (e.g., from JSON deserialization)
+    static [PSContact] FromObject([object]$obj) {
+        $contact = [PSContact]::new()
+        
+        if ($obj.PSObject.Properties['ContactIdentifier']) {
+            $contact.ContactIdentifier = $obj.ContactIdentifier
+        }
+        if ($obj.PSObject.Properties['ContactID']) {
+            $contact.ContactID = $obj.ContactID
+        }
+        if ($obj.PSObject.Properties['Prefix']) {
+            $contact.Prefix = $obj.Prefix
+        }
+        if ($obj.PSObject.Properties['FirstName']) {
+            $contact.FirstName = $obj.FirstName
+        }
+        if ($obj.PSObject.Properties['MiddleName']) {
+            $contact.MiddleName = $obj.MiddleName
+        }
+        if ($obj.PSObject.Properties['LastName']) {
+            $contact.LastName = $obj.LastName
+        }
+        if ($obj.PSObject.Properties['Suffix']) {
+            $contact.Suffix = $obj.Suffix
+        }
+        if ($obj.PSObject.Properties['Gender']) {
+            $contact.Gender = $obj.Gender
+        }
+        if ($obj.PSObject.Properties['Employer']) {
+            $contact.Employer = $obj.Employer
+        }
+        if ($obj.PSObject.Properties['IsActive']) {
+            $contact.IsActive = [bool]$obj.IsActive
+        }
+        if ($obj.PSObject.Properties['ExcludeFromExport']) {
+            $contact.ExcludeFromExport = [bool]$obj.ExcludeFromExport
+        }
+        
+        return $contact
+    }
 }
 
 # Email address entity
@@ -68,6 +198,29 @@ class PSEmailAddress {
     [bool]$ExcludeFromExport
 
     PSEmailAddress() {}
+    
+    # Factory method to create from PSCustomObject (e.g., from JSON deserialization)
+    static [PSEmailAddress] FromObject([object]$obj) {
+        $email = [PSEmailAddress]::new()
+        
+        if ($obj.PSObject.Properties['ContactIdentifier']) {
+            $email.ContactIdentifier = $obj.ContactIdentifier
+        }
+        if ($obj.PSObject.Properties['EmailAddress']) {
+            $email.EmailAddress = $obj.EmailAddress
+        }
+        if ($obj.PSObject.Properties['EmailAddressID']) {
+            $email.EmailAddressID = $obj.EmailAddressID
+        }
+        if ($obj.PSObject.Properties['IsPrimary']) {
+            $email.IsPrimary = [bool]$obj.IsPrimary
+        }
+        if ($obj.PSObject.Properties['ExcludeFromExport']) {
+            $email.ExcludeFromExport = [bool]$obj.ExcludeFromExport
+        }
+        
+        return $email
+    }
 }
 
 # Phone number entity
@@ -82,6 +235,38 @@ class PSPhoneNumber {
     [bool]$ExcludeFromExport
 
     PSPhoneNumber() {}
+    
+    # Factory method to create from PSCustomObject (e.g., from JSON deserialization)
+    static [PSPhoneNumber] FromObject([object]$obj) {
+        $phone = [PSPhoneNumber]::new()
+        
+        if ($obj.PSObject.Properties['ContactIdentifier']) {
+            $phone.ContactIdentifier = $obj.ContactIdentifier
+        }
+        if ($obj.PSObject.Properties['PriorityOrder']) {
+            $phone.PriorityOrder = [int]$obj.PriorityOrder
+        }
+        if ($obj.PSObject.Properties['PhoneType']) {
+            $phone.PhoneType = $obj.PhoneType
+        }
+        if ($obj.PSObject.Properties['PhoneNumber']) {
+            $phone.PhoneNumber = $obj.PhoneNumber
+        }
+        if ($obj.PSObject.Properties['IsPreferred']) {
+            $phone.IsPreferred = [bool]$obj.IsPreferred
+        }
+        if ($obj.PSObject.Properties['IsSMS']) {
+            $phone.IsSMS = [bool]$obj.IsSMS
+        }
+        if ($obj.PSObject.Properties['PhoneNumberID']) {
+            $phone.PhoneNumberID = $obj.PhoneNumberID
+        }
+        if ($obj.PSObject.Properties['ExcludeFromExport']) {
+            $phone.ExcludeFromExport = [bool]$obj.ExcludeFromExport
+        }
+        
+        return $phone
+    }
 }
 
 # Address entity
@@ -99,6 +284,47 @@ class PSAddress {
     [bool]$ExcludeFromExport
 
     PSAddress() {}
+    
+    # Factory method to create from PSCustomObject (e.g., from JSON deserialization)
+    static [PSAddress] FromObject([object]$obj) {
+        $address = [PSAddress]::new()
+        
+        if ($obj.PSObject.Properties['ContactIdentifier']) {
+            $address.ContactIdentifier = $obj.ContactIdentifier
+        }
+        if ($obj.PSObject.Properties['AddressType']) {
+            $address.AddressType = $obj.AddressType
+        }
+        if ($obj.PSObject.Properties['Street']) {
+            $address.Street = $obj.Street
+        }
+        if ($obj.PSObject.Properties['LineTwo']) {
+            $address.LineTwo = $obj.LineTwo
+        }
+        if ($obj.PSObject.Properties['Unit']) {
+            $address.Unit = $obj.Unit
+        }
+        if ($obj.PSObject.Properties['City']) {
+            $address.City = $obj.City
+        }
+        if ($obj.PSObject.Properties['State']) {
+            $address.State = $obj.State
+        }
+        if ($obj.PSObject.Properties['PostalCode']) {
+            $address.PostalCode = $obj.PostalCode
+        }
+        if ($obj.PSObject.Properties['AddressID']) {
+            $address.AddressID = $obj.AddressID
+        }
+        if ($obj.PSObject.Properties['PriorityOrder']) {
+            $address.PriorityOrder = [int]$obj.PriorityOrder
+        }
+        if ($obj.PSObject.Properties['ExcludeFromExport']) {
+            $address.ExcludeFromExport = [bool]$obj.ExcludeFromExport
+        }
+        
+        return $address
+    }
 }
 
 # Student-Contact relationship entity
@@ -120,6 +346,59 @@ class PSStudentContactRelationship {
     [bool]$ExcludeFromExport
 
     PSStudentContactRelationship() {}
+    
+    # Factory method to create from PSCustomObject (e.g., from JSON deserialization)
+    static [PSStudentContactRelationship] FromObject([object]$obj) {
+        $relationship = [PSStudentContactRelationship]::new()
+        
+        if ($obj.PSObject.Properties['ContactIdentifier']) {
+            $relationship.ContactIdentifier = $obj.ContactIdentifier
+        }
+        if ($obj.PSObject.Properties['StudentNumber']) {
+            $relationship.StudentNumber = $obj.StudentNumber
+        }
+        if ($obj.PSObject.Properties['StudentName']) {
+            $relationship.StudentName = $obj.StudentName
+        }
+        if ($obj.PSObject.Properties['ContactPriorityOrder']) {
+            $relationship.ContactPriorityOrder = [int]$obj.ContactPriorityOrder
+        }
+        if ($obj.PSObject.Properties['StudentContactID']) {
+            $relationship.StudentContactID = $obj.StudentContactID
+        }
+        if ($obj.PSObject.Properties['StudentContactDetailID']) {
+            $relationship.StudentContactDetailID = $obj.StudentContactDetailID
+        }
+        if ($obj.PSObject.Properties['RelationshipType']) {
+            $relationship.RelationshipType = $obj.RelationshipType
+        }
+        if ($obj.PSObject.Properties['RelationshipNote']) {
+            $relationship.RelationshipNote = $obj.RelationshipNote
+        }
+        if ($obj.PSObject.Properties['IsLegalGuardian']) {
+            $relationship.IsLegalGuardian = [bool]$obj.IsLegalGuardian
+        }
+        if ($obj.PSObject.Properties['HasCustody']) {
+            $relationship.HasCustody = [bool]$obj.HasCustody
+        }
+        if ($obj.PSObject.Properties['LivesWith']) {
+            $relationship.LivesWith = [bool]$obj.LivesWith
+        }
+        if ($obj.PSObject.Properties['AllowSchoolPickup']) {
+            $relationship.AllowSchoolPickup = [bool]$obj.AllowSchoolPickup
+        }
+        if ($obj.PSObject.Properties['IsEmergencyContact']) {
+            $relationship.IsEmergencyContact = [bool]$obj.IsEmergencyContact
+        }
+        if ($obj.PSObject.Properties['ReceivesMail']) {
+            $relationship.ReceivesMail = [bool]$obj.ReceivesMail
+        }
+        if ($obj.PSObject.Properties['ExcludeFromExport']) {
+            $relationship.ExcludeFromExport = [bool]$obj.ExcludeFromExport
+        }
+        
+        return $relationship
+    }
 }
 
 # Container class for all normalized data from a CSV import
@@ -130,7 +409,7 @@ class PSNormalizedData {
     [System.Collections.Generic.List[PSPhoneNumber]]$PhoneNumbers
     [System.Collections.Generic.List[PSAddress]]$Addresses
     [System.Collections.Generic.List[PSStudentContactRelationship]]$Relationships
-    [hashtable]$TemplateMetadata
+    [PSCustomObject]$TemplateMetadata
 
     PSNormalizedData() {
         $this.Students = [System.Collections.Generic.List[PSStudent]]::new()

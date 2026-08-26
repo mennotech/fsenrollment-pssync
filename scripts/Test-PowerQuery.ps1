@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Test script to execute PowerSchool PowerQueries with custom parameters.
-    Uses environment variables for authentication, with parameter fallback support.
+    Uses .env file or environment variables for authentication, with parameter fallback support.
     Validates that the PowerQuery exists before attempting to execute it.
     
     Smart Credential Requirements:
@@ -14,9 +14,10 @@
     - Once authenticated, subsequent runs only need the ServerName
     
     Credential Resolution Order:
-    1. Environment variables (PowerSchoolClientID, PowerSchoolClientSecret, PowerSchoolServer)
-    2. Script parameters (-ClientId, -ClientSecret, -ServerName)
-    3. Interactive prompts (secure input for Client Secret)
+    1. .env file credentials (config/.env) - RECOMMENDED for local development
+    2. Environment variables (PowerSchoolClientID, PowerSchoolClientSecret, PowerSchoolServer)
+    3. Script parameters (-ClientId, -ClientSecret, -ServerName)
+    4. Interactive prompts (secure input for Client Secret)
 
 .PARAMETER PowerQueryName
     The name of the PowerQuery to execute (e.g., "com.scs.dats.students.contacts.email")
@@ -49,6 +50,11 @@
     Return the PowerQuery results as an object instead of displaying them. Useful for capturing data in a variable for further processing.
 
 .EXAMPLE
+    # Using .env file (recommended for local development)
+    # Create config/.env file and fill in credentials
+    .\Test-PowerQuery.ps1 -PowerQueryName "com.scs.dats.students.contacts.email"
+
+.EXAMPLE
     # Interactive mode - script will prompt for missing credentials
     .\Test-PowerQuery.ps1 -PowerQueryName "com.scs.dats.students.contacts.email"
     # Script will prompt for: Server name, Client ID, and Client Secret (secure input)
@@ -62,7 +68,7 @@
     .\Test-PowerQuery.ps1 -ServerName "your-school.powerschool.com" -PowerQueryName "com.scs.dats.students.bygrade" -Arguments @{gradeLevel = "12"}
 
 .EXAMPLE
-    # Using environment variables (preferred method)
+    # Using environment variables (alternative method)
     $env:PowerSchoolClientID = "your-client-id"
     $env:PowerSchoolClientSecret = "your-client-secret"
     $env:PowerSchoolServer = "your-school.powerschool.com"
@@ -123,10 +129,89 @@ Param(
 Set-StrictMode -Version Latest
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# Get API credentials from environment variables or parameters
-$ResolvedClientId = if ([string]::IsNullOrWhiteSpace($env:PowerSchoolClientID)) { $ClientId } else { $env:PowerSchoolClientID }
-$ResolvedClientSecret = if ([string]::IsNullOrWhiteSpace($env:PowerSchoolClientSecret)) { $ClientSecret } else { $env:PowerSchoolClientSecret }
-$ResolvedServerName = if ([string]::IsNullOrWhiteSpace($env:PowerSchoolServer)) { $ServerName } else { $env:PowerSchoolServer }
+# Try to load credentials from .env file first (best practice for local development)
+$secureCredentials = $null
+try {
+    # Try to import the module to access Import-EnvironmentCredentials function
+    $ModuleRoot = Split-Path -Parent $PSScriptRoot
+    $ModulePath = Join-Path $ModuleRoot 'fsenrollment-pssync' 'FSEnrollment-PSSync.psd1'
+    if (Test-Path $ModulePath) {
+        Import-Module $ModulePath -Force -ErrorAction SilentlyContinue
+        
+        # Try to load from .env file
+        if (Get-Command Import-EnvironmentCredentials -ErrorAction SilentlyContinue) {
+            $secureCredentials = Import-EnvironmentCredentials -ErrorAction SilentlyContinue
+            if ($secureCredentials) {
+                Write-Verbose "Loaded credentials from .env file"
+                
+                # Extract URL from PowerSchoolUrl (remove https:// and trailing /)
+                if ($secureCredentials.PowerSchoolUrl) {
+                    $envServerName = $secureCredentials.PowerSchoolUrl -replace '^https?://', '' -replace '/$', ''
+                }
+                
+                # Decrypt SecureString credentials when needed
+                if ($secureCredentials.PowerSchoolClientId) {
+                    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureCredentials.PowerSchoolClientId)
+                    try {
+                        $envClientId = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+                    }
+                    finally {
+                        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+                    }
+                }
+                
+                if ($secureCredentials.PowerSchoolClientSecret) {
+                    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureCredentials.PowerSchoolClientSecret)
+                    try {
+                        $envClientSecret = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+                    }
+                    finally {
+                        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+                    }
+                }
+            }
+        }
+    }
+}
+catch {
+    Write-Debug "Could not load .env credentials: $_"
+}
+
+# Get API credentials from .env file, environment variables, or parameters (in that order)
+$ResolvedClientId = if (![string]::IsNullOrWhiteSpace($ClientId)) { 
+    $ClientId 
+} elseif (![string]::IsNullOrWhiteSpace($envClientId)) { 
+    $envClientId 
+} elseif (![string]::IsNullOrWhiteSpace($env:PowerSchoolClientID)) { 
+    $env:PowerSchoolClientID 
+}
+
+$ResolvedClientSecret = if (![string]::IsNullOrWhiteSpace($ClientSecret)) { 
+    $ClientSecret 
+} elseif (![string]::IsNullOrWhiteSpace($envClientSecret)) { 
+    $envClientSecret 
+} elseif (![string]::IsNullOrWhiteSpace($env:PowerSchoolClientSecret)) { 
+    $env:PowerSchoolClientSecret 
+}
+
+$ResolvedServerName = if (![string]::IsNullOrWhiteSpace($ServerName)) { 
+    $ServerName 
+} elseif (![string]::IsNullOrWhiteSpace($envServerName)) { 
+    $envServerName 
+} elseif (![string]::IsNullOrWhiteSpace($env:PowerSchoolServer)) { 
+    $env:PowerSchoolServer 
+}
+
+# Clear plaintext credentials from .env file immediately after copying to resolved variables
+if ($envClientId) { $envClientId = $null }
+if ($envClientSecret) { $envClientSecret = $null }
+if ($envServerName) { $envServerName = $null }
+$secureCredentials = $null
+
+# Force garbage collection to clear any lingering plaintext references
+[System.GC]::Collect()
+[System.GC]::WaitForPendingFinalizers()
+[System.GC]::Collect()
 
 # Always require ServerName since we need it to check for cached tokens
 if ([string]::IsNullOrWhiteSpace($ResolvedServerName)) {
@@ -173,10 +258,17 @@ if (-not $hasValidToken) {
     }
 
     if ([string]::IsNullOrWhiteSpace($ResolvedClientSecret)) {
-        Write-Host "PowerSchool Client Secret not found in environment variables or parameters." -ForegroundColor Yellow
+        Write-Host "PowerSchool Client Secret not found in .env file, environment variables, or parameters." -ForegroundColor Yellow
         Write-Host ""
         $secureSecret = Read-Host "Please enter your PowerSchool Client Secret" -AsSecureString
-        $ResolvedClientSecret = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret))
+        $BSTR = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret)
+        try {
+            $ResolvedClientSecret = [Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+        }
+        finally {
+            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+            $secureSecret = $null
+        }
         if ([string]::IsNullOrWhiteSpace($ResolvedClientSecret)) {
             Write-Error "Client Secret is required to authenticate with PowerSchool API."
             exit 1
@@ -184,10 +276,12 @@ if (-not $hasValidToken) {
     }
     
     Write-Host ""
-    Write-Host "Tip: To avoid entering credentials repeatedly, set environment variables:" -ForegroundColor Cyan
-    Write-Host '  $env:PowerSchoolClientID = "your-client-id"' -ForegroundColor Gray
-    Write-Host '  $env:PowerSchoolClientSecret = "your-client-secret"' -ForegroundColor Gray
-    Write-Host '  $env:PowerSchoolServer = "your-server.powerschool.com"' -ForegroundColor Gray
+    Write-Host "Tip: To avoid entering credentials repeatedly:" -ForegroundColor Cyan
+    Write-Host "  1. Create config/.env file from config/.env.example (RECOMMENDED)" -ForegroundColor Gray
+    Write-Host "  2. Or set environment variables:" -ForegroundColor Gray
+    Write-Host '     $env:PowerSchoolClientID = "your-client-id"' -ForegroundColor Gray
+    Write-Host '     $env:PowerSchoolClientSecret = "your-client-secret"' -ForegroundColor Gray
+    Write-Host '     $env:PowerSchoolServer = "your-server.powerschool.com"' -ForegroundColor Gray
     Write-Host ""
 } else {
     Write-Verbose "Using cached token, credentials not required for this run"
@@ -233,6 +327,9 @@ function Get-PowerSchoolAccessToken {
         "Content-Type" = "application/x-www-form-urlencoded;charset=UTF-8" 
     }
     
+    # Clear the authCode from memory immediately after use
+    $authCode = $null
+    
     try {
         $resp = Invoke-RestMethod -Method Post -Headers $headers -Uri "https://${ServerName}/oauth/access_token/" -Body "grant_type=client_credentials"
         if (-not $resp.access_token) { 
@@ -254,6 +351,11 @@ function Get-PowerSchoolAccessToken {
     catch {
         Write-Error "Failed to obtain access token: $($_.Exception.Message)"
         throw
+    }
+    finally {
+        # Clear headers from memory
+        $headers = $null
+        [System.GC]::Collect()
     }
 }
 
@@ -396,6 +498,10 @@ try {
 
     # Get access token
     $accessToken = Get-PowerSchoolAccessToken -ClientId $ResolvedClientId -ClientSecret $ResolvedClientSecret -ServerName $ResolvedServerName
+    
+    # Clear resolved credentials from memory immediately after obtaining token
+    $ResolvedClientSecret = $null
+    [System.GC]::Collect()
     
     # Get available PowerQueries
     Write-Host "Retrieving available PowerQueries..." -ForegroundColor Yellow
