@@ -50,11 +50,11 @@ function Invoke-ColumnMapping {
 
     foreach ($mapping in $ColumnMappings) {
         $csvColumn = $mapping.CSVColumn
-        $entityProperty = $mapping.EntityProperty
+        $entityProperty = if ($mapping.EntityProperty) { $mapping.EntityProperty } else { "CustomFields.$($mapping.CustomField)" }
         $dataType = $mapping.DataType
         
-        # Get the value from CSV row
-        $value = $CsvRow.$csvColumn
+        # Resolve direct, constant, or transformed values from the template mapping
+        $value = Resolve-ColumnMappingValue -CsvRow $CsvRow -Mapping $mapping
         
         # Skip if value is null or empty string
         if ([string]::IsNullOrWhiteSpace($value)) {
@@ -120,7 +120,15 @@ function Invoke-ColumnMapping {
         
         # Set the property value
         if ($null -ne $convertedValue -or $dataType -eq 'bool') {
-            $Entity.$entityProperty = $convertedValue
+            if ($mapping.CustomField) {
+                if (-not $Entity.PSObject.Properties['CustomFields']) {
+                    throw "Entity type '$($Entity.GetType().Name)' does not support custom fields."
+                }
+                $Entity.CustomFields[$mapping.CustomField] = $convertedValue
+            }
+            else {
+                $Entity.$entityProperty = $convertedValue
+            }
         }
     }
 }

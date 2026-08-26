@@ -18,10 +18,54 @@ A template configuration contains:
 - **PowerSchoolKeyDataType**: Data type for the PowerSchool key field (e.g., 'int', 'string')
 - **CheckForChanges**: Array of entity properties to monitor for changes during comparison
 - **CustomParser**: (Optional) Name of a custom parser function for complex CSV formats
-- **ColumnMappings**: Column mappings from CSV to entity properties with PowerSchool API field paths
+- **ColumnMappings**: Source CSV columns and transforms that populate normalized entity properties
   - For simple formats: Array of mappings (EntityType inherited from template)
   - For complex formats: Hashtable organized by entity type
+- **PowerSchoolApiMapName**: (Optional) Maintained API map in `config/powerschool-maps`
 - **EntityTypeMap**: (Optional, for complex formats) Maps hashtable keys to EntityType class names
+
+### Student Custom Fields
+
+Use `CustomField` instead of `EntityProperty` for school-specific extension
+values. Use the actual imported PowerSchool custom name as the key in
+`PSStudent.CustomFields`:
+
+```powershell
+@{
+        CSVColumn = 'Church Attending'
+        CustomField = 'church_name'
+        DataType = 'string'
+}
+```
+
+Reference custom fields in `CheckForChanges` as `CustomFields.church_name`.
+Each PowerSchool format map declares a prefix and the module appends the
+imported custom name. For example, `church_name` becomes
+`U_StudentsUserFields.church_name` for Quick Import and
+`extension.u_studentsuserfields.church_name` for the Student API. Individual
+custom fields are not maintained in output maps.
+
+Standard mappings may specify `Value` with `Transform = 'Constant'`, or named
+transforms such as `NamePart`, `CoalesceColumns`, `GenderCode`, `Lookup`,
+`JoinColumns`, `ComposeString`, `NormalizeEmpty`, and `NonEmptyFlag`.
+
+`ComposeString` builds values from declarative parts. Each part may contain a
+literal, one column, or an ordered list of fallback columns. Operations are
+restricted to the built-in allowlist; templates cannot execute scriptblocks or
+arbitrary PowerShell code.
+
+```powershell
+@{
+    EntityProperty = 'Email'
+    Transform = 'ComposeString'
+    Parts = @(
+        @{ Columns = @('Preferred Name', 'First Name'); Operations = @('Trim', 'Alphanumeric', 'Lower') }
+        @{ Column = 'Last Name'; Operations = @(@{ Name = 'First'; Count = 1 }, 'Lower') }
+        @{ Column = 'Grade'; Operations = @(@{ Name = 'GraduationYear'; SchoolYearStart = 2026; FinalGrade = 12 }, @{ Name = 'Right'; Count = 2 }) }
+        @{ Literal = '@school.example' }
+    )
+}
+```
 
 ### Standard Template Format
 

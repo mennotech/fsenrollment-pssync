@@ -42,26 +42,13 @@ function Get-PowerSchoolFieldMapping {
     )
 
     # Try to get mapping from template metadata first
-    if ($TemplateMetadata -and $TemplateMetadata.PSObject.Properties['ColumnMappings']) {
-        $columnMappings = $TemplateMetadata.ColumnMappings
-        
-        # Handle both single entity and multi-entity templates
-        $allMappings = @()
-        
-        if ($columnMappings -is [PSCustomObject]) {
-            # Multi-entity template: ColumnMappings has entity names as properties
-            foreach ($prop in $columnMappings.PSObject.Properties) {
-                $allMappings += $prop.Value
-            }
-        } else {
-            # Single entity template (e.g., Student) - ColumnMappings is directly an array
-            $allMappings = $columnMappings
-        }
+    if ($TemplateMetadata) {
+        $columnMappings = Get-PowerSchoolApiMappings -TemplateMetadata $TemplateMetadata
         
         # Find mapping with PowerSchoolAPIField defined (skip mappings without API field)
         # This is important for fields that appear in multiple entities (e.g., ContactIdentifier)
         # where only one entity has the PowerSchoolAPIField defined
-        $mapping = $allMappings | Where-Object { 
+        $mapping = $columnMappings | Where-Object {
             $_.EntityProperty -eq $EntityProperty -and 
             $_.PowerSchoolAPIField 
         } | Select-Object -First 1

@@ -139,7 +139,8 @@ function Compare-PSStudent {
                     $psStudent = $psLookup[$matchKey]
                     
                     # Pass checkForChanges array and column mappings to Compare-StudentFields
-                    $changes = Compare-StudentFields -CsvStudent $csvStudent -PowerSchoolStudent $psStudent -CheckForChanges $checkForChanges -ColumnMappings $CsvData.TemplateMetadata.ColumnMappings
+                    $apiMappings = Get-PowerSchoolApiMappings -TemplateMetadata $CsvData.TemplateMetadata
+                    $changes = Compare-StudentFields -CsvStudent $csvStudent -PowerSchoolStudent $psStudent -CheckForChanges $checkForChanges -ColumnMappings $apiMappings
                     
                     if ($changes.Count -gt 0) {
                         # Student has changes

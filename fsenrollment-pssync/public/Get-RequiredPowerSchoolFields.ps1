@@ -5,8 +5,8 @@
     Extracts required PowerSchool extensions and expansions from template metadata.
 
 .DESCRIPTION
-    Analyzes template column mappings to determine which PowerSchool API extensions and
-    expansions are required to retrieve all fields specified in the template.
+    Resolves the template's PowerSchool API map to determine which extensions and
+    expansions are required to retrieve all mapped fields.
     
     NOTE: Most users don't need to call this function directly. Get-PowerSchoolStudent 
     automatically calls this function internally when you use -TemplateMetadata or -TemplateName.
@@ -21,7 +21,8 @@
     - @expansion_name.field → adds 'expansion_name' to expansions
 
 .PARAMETER TemplateMetadata
-    Template metadata containing ColumnMappings from PSNormalizedData.TemplateMetadata.
+    Template metadata from PSNormalizedData. Maintained API maps are loaded from
+    config/powerschool-maps; legacy inline mappings remain supported.
 
 .OUTPUTS
     PSCustomObject with properties: Extensions (array), Expansions (array)
@@ -59,8 +60,8 @@ function Get-RequiredPowerSchoolFields {
     $extensions = [System.Collections.Generic.HashSet[string]]::new()
     $expansions = [System.Collections.Generic.HashSet[string]]::new()
 
-    if ($TemplateMetadata -and $TemplateMetadata.PSObject.Properties['ColumnMappings']) {
-        $columnMappings = $TemplateMetadata.ColumnMappings
+    if ($TemplateMetadata) {
+        $columnMappings = Get-PowerSchoolApiMappings -TemplateMetadata $TemplateMetadata
         
         foreach ($mapping in $columnMappings) {
             if ($mapping.PowerSchoolAPIField) {

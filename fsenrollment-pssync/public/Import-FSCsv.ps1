@@ -68,7 +68,8 @@ function Import-FSCsv {
         try {
             # Import CSV file
             Write-Verbose "Importing CSV file..."
-            $csvData = Import-Csv -Path $Path
+            $delimiter = if ($templateConfig.Delimiter) { [string]$templateConfig.Delimiter } else { ',' }
+            $csvData = Import-Csv -Path $Path -Delimiter $delimiter
 
             if ($null -eq $csvData -or $csvData.Count -eq 0) {
                 Write-Warning "No data found in CSV file: $Path"

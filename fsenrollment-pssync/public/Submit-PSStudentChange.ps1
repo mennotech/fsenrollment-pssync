@@ -85,7 +85,7 @@
     Uses the PowerSchool API v1 endpoints for creating and updating students.
     Only applies changes to student demographic fields, not contact information.
     TemplateMetadata is required and must be included in the Changes object from Compare-PSStudent.
-    All field mappings are driven by the template configuration - no hardcoded mappings exist.
+    Field mappings are driven by the selected map in config/powerschool-maps.
 #>
 function Submit-PSStudentChange {
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Object')]
@@ -443,7 +443,7 @@ function Build-StudentPayload {
     $studentData = $payload.students.student
 
     # Iterate through all properties of the Student object and map them dynamically
-    $studentProperties = $Student.PSObject.Properties | Where-Object { $null -ne $_.Value -and $_.Value -ne '' }
+    $studentProperties = $Student.PSObject.Properties | Where-Object { $_.Name -ne 'CustomFields' -and $null -ne $_.Value -and $_.Value -ne '' }
     
     foreach ($property in $studentProperties) {
         $propertyName = $property.Name
@@ -467,6 +467,16 @@ function Build-StudentPayload {
             Set-PowerSchoolFieldValue -StudentData $studentData -FieldPath $psFieldPath -Value $propertyValue
         } else {
             Write-Verbose "No PowerSchool API field mapping found for property: $propertyName (skipping)"
+        }
+    }
+
+    if ($TemplateMetadata) {
+        $apiMappings = Get-PowerSchoolApiMappings -TemplateMetadata $TemplateMetadata
+        foreach ($mapping in ($apiMappings | Where-Object { $_.CustomField -and $_.PowerSchoolAPIField })) {
+            $customValue = $Student.CustomFields[$mapping.CustomField]
+            if ($null -ne $customValue -and $customValue -ne '') {
+                Set-PowerSchoolFieldValue -StudentData $studentData -FieldPath $mapping.PowerSchoolAPIField -Value $customValue
+            }
         }
     }
 
@@ -765,14 +775,37 @@ function Set-PowerSchoolFieldValue {
         $StudentData['name'][$matches[1]] = $Value
     }
     elseif ($FieldPath -match '^extension\.([^.]+)\.(.+)$') {
-        # Extension field - would need proper extension structure
-        # This is complex and depends on PowerSchool version
-        Write-Warning "Extension field updates not yet implemented: $FieldPath"
+        $tableName = $matches[1]
+        $fieldName = $matches[2]
+        if (-not $StudentData['_extension_data']) {
+            $StudentData['_extension_data'] = @{
+                _table_extension = @{
+                    name = $tableName
+                    _field = @()
+                }
+            }
+        }
+
+        $tableExtension = $StudentData['_extension_data']['_table_extension']
+        if ($tableExtension.name -ne $tableName) {
+            throw "A student payload cannot contain multiple extension tables ('$($tableExtension.name)' and '$tableName')."
+        }
+        $tableExtension['_field'] += @{
+            name = $fieldName
+            value = $Value
+        }
     }
     elseif ($FieldPath -match '^@(.+)$') {
-        # Expansion fields - handled separately in Build-UpdatePayload via Merge-ExpansionFieldChanges
-        # This warning should only appear if expansion fields are used outside of UPDATE operations
-        Write-Warning "Expansion field should be handled by Merge-ExpansionFieldChanges: $FieldPath"
+        $fieldParts = $matches[1] -split '\.'
+        $target = $StudentData
+        for ($index = 0; $index -lt $fieldParts.Count - 1; $index++) {
+            $part = $fieldParts[$index]
+            if (-not $target[$part]) {
+                $target[$part] = @{}
+            }
+            $target = $target[$part]
+        }
+        $target[$fieldParts[-1]] = if ($Value -is [datetime]) { $Value.ToString('yyyy-MM-dd') } else { $Value }
     }
     else {
         # Direct field mapping - handle date formatting if needed
@@ -813,6 +846,10 @@ function Invoke-CreateStudent {
         }
 
         $uri = "$script:PowerSchoolBaseUrl/ws/v1/student"
+        $extensionTable = $Payload.students.student._extension_data._table_extension.name
+        if ($extensionTable) {
+            $uri += "?extensions=$([uri]::EscapeDataString($extensionTable))"
+        }
 
         Write-Verbose "Making API call to create student"
         Write-Verbose "URI: POST $uri"

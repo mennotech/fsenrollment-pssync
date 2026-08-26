@@ -54,10 +54,15 @@ function Compare-StudentFields {
     # Only compare fields specified in CheckForChanges array
     # Use column mappings to determine PowerSchool field paths
     foreach ($fieldName in $CheckForChanges) {
-        $csvValue = $CsvStudent.$fieldName
+        $isCustomField = $fieldName -match '^CustomFields\.(.+)$'
+        $customFieldName = if ($isCustomField) { $matches[1] } else { $null }
+        $csvValue = if ($isCustomField) { $CsvStudent.CustomFields[$customFieldName] } else { $CsvStudent.$fieldName }
         
         # Find the PowerSchool field mapping for this field
-        $mapping = $ColumnMappings | Where-Object { $_.EntityProperty -eq $fieldName } | Select-Object -First 1
+        $mapping = $ColumnMappings | Where-Object {
+            ($isCustomField -and $_.CustomField -eq $customFieldName) -or
+            (-not $isCustomField -and $_.EntityProperty -eq $fieldName)
+        } | Select-Object -First 1
         
         if ($mapping -and $mapping.PowerSchoolAPIField) {
             $psFieldPath = $mapping.PowerSchoolAPIField
