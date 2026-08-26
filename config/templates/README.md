@@ -82,45 +82,31 @@ For simple CSV formats with one entity per row, use column mappings with EntityT
     KeyField = 'StudentNumber'
     PowerSchoolKeyField = 'local_id'
     PowerSchoolKeyDataType = 'int'
+    PowerSchoolApiMapName = 'PowerSchoolStudentApi'
     # Fields to check for changes during comparison
     CheckForChanges = @('FirstName', 'MiddleName', 'LastName', 'Street', 'City', 'State', 'Zip')
     CustomParser = $null
-    # EntityType is inherited from template-level setting for all mappings
-    # IMPORTANT: PowerSchoolAPIField specifies the PowerQuery field name for data retrieval and comparison
-    # For Students: Use REST API field paths (e.g., 'name.first_name', '@demographics.birth_date')
-    # For Contacts: Use PowerQuery field names (e.g., 'person_firstName', 'emailaddress_emailAddress')
-    # The submit functions handle field name conversion when syncing changes back to PowerSchool
+    # EntityType is inherited from the template. Source mappings only normalize data.
     ColumnMappings = @(
-        @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; DataType = 'string'; PowerSchoolAPIField = 'local_id'; PowerSchoolDataType = 'int' }
-        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string'; PowerSchoolAPIField = 'name.first_name' }
-        @{ CSVColumn = 'DOB'; EntityProperty = 'DOB'; DataType = 'datetime'; PowerSchoolAPIField = '@demographics.birth_date' }
-        @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string'; PowerSchoolAPIField = '@addresses.physical.street' }
-        # ... more mappings (no EntityType needed in each mapping)
+        @{ CSVColumn = 'Student_Number'; EntityProperty = 'StudentNumber'; DataType = 'string'; PowerSchoolKeyDataType = 'int' }
+        @{ CSVColumn = 'First_Name'; EntityProperty = 'FirstName'; DataType = 'string' }
+        @{ CSVColumn = 'DOB'; EntityProperty = 'DOB'; DataType = 'datetime' }
+        @{ CSVColumn = 'Street'; EntityProperty = 'Street'; DataType = 'string' }
     )
 }
 ```
 
-### PowerSchoolAPIField Naming Convention
+### Maintained PowerSchool Maps
 
-**IMPORTANT**: The `PowerSchoolAPIField` property has different formats depending on the entity type:
+Source templates do not define destination fields. `PowerSchoolApiMapName`
+selects a file in `config/powerschool-maps`:
 
-1. **For Student data** (using REST API):
-   - Format: REST API field paths
-   - Examples: `'local_id'`, `'name.first_name'`, `'@demographics.birth_date'`
-   - Used for both retrieval via GET /ws/v1/student/{id} and updates via PATCH
+- Student templates use `PowerSchoolStudentApi`, which contains REST API paths.
+- Contact templates use `PowerSchoolContactsPowerQuery`, which contains flat
+  PowerQuery result fields used for comparison.
 
-2. **For Contact data** (using PowerQuery Data Access API):
-   - Format: PowerQuery flat field names with entity prefix
-   - Examples: `'person_firstName'`, `'person_lastName'`, `'emailaddress_emailAddress'`, `'phonenumber_phoneNumber'`
-   - Used for retrieval via PowerQuery (com.fsenrollment.dats.person, etc.)
-   - **Note**: When submitting updates, Submit-PSContactChange converts these to REST API format automatically
-
-**Why the difference?**
-- Students use PowerSchool's REST API directly for both retrieval and updates
-- Contacts use PowerQuery for efficient bulk retrieval but REST API for updates
-- The conversion is handled automatically by the submit functions
-
-**Common pitfall**: Don't confuse PowerQuery field names (`person_firstName`) with REST API field names (`firstName`). The template always uses PowerQuery format for contacts, and the code handles conversion during updates.
+Contact submission converts mapped PowerQuery names such as `person_firstName`
+to the corresponding REST API field names.
 
 **Important - Association IDs for Emails, Phones, and Addresses:**
 
@@ -303,7 +289,9 @@ To add support for a new CSV format:
 
 ### PowerSchoolAPIField Syntax
 
-The `PowerSchoolAPIField` property in column mappings defines how the field maps to PowerSchool's API structure. This is critical for:
+The `PowerSchoolAPIField` property is used only in maintained files under
+`config/powerschool-maps`. It defines how normalized properties map to
+PowerSchool and supports:
 1. **Change detection**: Comparing CSV data with PowerSchool API responses
 2. **Change application**: Syncing updates back to PowerSchool via API
 3. **Automatic expansion detection**: System automatically detects required API expansions
@@ -342,7 +330,8 @@ The `PowerSchoolAPIField` property in column mappings defines how the field maps
 
 ### Automatic Expansion/Extension Detection
 
-The `Get-RequiredPowerSchoolFields` function analyzes your template's `PowerSchoolAPIField` mappings and automatically determines which expansions and extensions are required:
+`Get-RequiredPowerSchoolFields` resolves the selected maintained map and
+automatically determines which expansions and extensions are required:
 
 ```powershell
 $csvData = Import-FSCsv -Path './students.csv' -TemplateName 'your_template'
@@ -364,7 +353,7 @@ CheckForChanges = @('FirstName', 'MiddleName', 'LastName', 'Street', 'City', 'St
 
 - Only fields listed in `CheckForChanges` are compared between CSV and PowerSchool data
 - If a field changes, it's included in the `Updated` results from `Compare-PSStudent`
-- Fields must have `PowerSchoolAPIField` mappings to be properly compared and synced
+- Fields must exist in the selected PowerSchool map to be compared and synced
 - Add all fields you want to monitor, including address, demographic, and enrollment fields
 
 ## Data Type Conversion

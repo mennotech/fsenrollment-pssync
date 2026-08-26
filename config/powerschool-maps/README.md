@@ -5,6 +5,7 @@ This directory contains one maintained map per PowerSchool import or API format.
 Current maps:
 
 - `PowerSchoolStudentApi.psd1`: Student API field paths
+- `PowerSchoolContactsPowerQuery.psd1`: Contact PowerQuery result fields
 - `StudentsQuickImport.psd1`: Quick Import Students columns
 
 Additional formats should use separate files, such as `DM-Student-Email.psd1` and `DM-Contacts.psd1`.

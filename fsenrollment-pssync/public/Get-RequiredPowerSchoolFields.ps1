@@ -22,7 +22,7 @@
 
 .PARAMETER TemplateMetadata
     Template metadata from PSNormalizedData. Maintained API maps are loaded from
-    config/powerschool-maps; legacy inline mappings remain supported.
+    config/powerschool-maps.
 
 .OUTPUTS
     PSCustomObject with properties: Extensions (array), Expansions (array)

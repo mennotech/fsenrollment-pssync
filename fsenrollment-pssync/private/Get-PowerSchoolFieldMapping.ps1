@@ -5,15 +5,15 @@
     Gets the PowerSchool API field mapping for an entity property from template metadata.
 
 .DESCRIPTION
-    This private helper function looks up the PowerSchoolAPIField mapping for a given entity 
-    property from template metadata. Provides a fallback to default mappings if template 
-    metadata is not available.
+    Looks up the PowerSchoolAPIField mapping for an entity property from the
+    maintained map selected by template metadata. Provides defaults when map
+    metadata is unavailable.
 
 .PARAMETER EntityProperty
     The name of the entity property to get the PowerSchool API field for (e.g., 'FirstName', 'MiddleName').
 
 .PARAMETER TemplateMetadata
-    Optional template metadata containing ColumnMappings with PowerSchoolAPIField mappings.
+    Optional template metadata containing PowerSchoolApiMapName.
 
 .OUTPUTS
     String representing the PowerSchool API field name, or $null if no mapping found.
