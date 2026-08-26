@@ -60,6 +60,7 @@
         'ConvertFrom-SecureCredential'
         'Import-EnvironmentCredentials'
         'ConvertTo-ContactChangesCsv'
+        'Merge-PSContactExport'
         'Export-PSContactImportFile'
         'Export-PSStudentImportFile'
     )
