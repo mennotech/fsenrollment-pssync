@@ -1,0 +1,142 @@
+﻿CATEGORY,Contact Demographics,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Email Address		",,,,Phone Number,,,,,,,,Address ,,,,,,,,,,,,,,,,,STUDENT NAME,Student,,,,Relationship Information,,,,,,Relationship Flags,,,,,,,
+"FIELD NAME
+(Save this header row when exporting your final file, remove the others)",New Contact Identifier,Contact ID,Prefix,First Name,Middle Name,Last Name,Suffix,Gender,Employer,Is Active,State Contact ID,Exclude From State Reporting,PERSONCOREFIELDS.countryOfOrigin,PERSONCOREFIELDS.dob,PERSONCOREFIELDS.educationLevel,PERSONCOREFIELDS.employmentStatus,PERSONCOREFIELDS.govWorkLoc,PERSONCOREFIELDS.isAvailableAtWork,PERSONCOREFIELDS.isDeceased,PERSONCOREFIELDS.isOnActiveDuty,PERSONCOREFIELDS.livesOnBase,PERSONCOREFIELDS.maidenName,PERSONCOREFIELDS.militaryStatus,PERSONCOREFIELDS.needsInterpreterAssist,PERSONCOREFIELDS.occupation,PERSONCOREFIELDS.payGrade,PERSONCOREFIELDS.serviceBranch,PERSONCOREFIELDS.ssn,Email Address,Contact Email Address ID,Email Type,Is Primary Email Address,Extension,Is SMS,PHONENUMBERCOREFIELDS.isUnlisted,Contact Phone Number ID,phoneNumberAsEntered,Phone Type,Phone Number Priority Order,Is Preferred,Street,Line Two,Unit,City,State,Postal Code,Geocode Latitude,Geocode Longitude,PERSONADDRESSCOREFIELDS.addressVerification,PERSONADDRESSCOREFIELDS.county,PERSONADDRESSCOREFIELDS.isAddressVerified,PERSONADDRESSCOREFIELDS.line3,Contact Address ID,Address Type,Address Priority Order,Address Start Date,Address End Date,* NOT MAPPED *,studentNumber,Contact Priority Order,Student Contact ID,Student Contact Detail ID,Relationship Type,Original Contact Type,Relationship Note,Relationship Start Date,Relationship End Date,STUDENTCONTACTASSOCCOREFIELDS.legalGuardian,Contact Has Custody,Contact Lives With,Contact Allow School Pickup,Is Emergency Contact,Contact Receives Mailings,STUDENTCONTACTDETAILCOREFIELDS.classroomParticipation,STUDENTCONTACTDETAILCOREFIELDS.isCaregiver,STUDENTCONTACTDETAILCOREFIELDS.isVolunteer
+REQUIRED FIELDS,Required for new contacts,Required for updating contacts,,,,Required once per contact.,,,,,,,,,,,,,,,,,,,,,,,"Required for new email addresses. 
+
+Required for updating email addresses, if Contact Email Address ID is blank.",Recommended for updating email addresses,,,,,,Recommended for updating phone,"Required for new phone numbers. 
+
+Required for updating phone, if Contact Phone Number ID is blank.",,,,,,,,,,,,,,,,Required for updating contacts,,,,,,Required for new student contact associations,,Required for updating the active student contact association,Requried for updating historical student contact detail associations,,Required for systems that have not fully transitioned to Student Contacts.,,,,,,,,,,,,
+FIELD FORMAT,String,Number,,String 50,String 30,String 50,String 40,String 40,String 4000,Boolean,String 40,Boolean,String 10,Date,String 10,String 20,String 30,Boolean,Boolean,Boolean,Boolean,Boolean,String 10,Boolean,String 10,String 10,String 10,String 10,String 255,Number,String 40,Boolean,String 10,Boolean,Boolean,Number,String 50,String 40,Number 10,Boolean,String 100,String 100,String 30,String 100,String 40,String 10,Num 16,Num 16,String 10,String 50,Boolean,String 100,Number,String 40,Num 10,Date,Date,,Number,Number,Number,Number,String 40,String 40,String 4000,Date,Date,Boolean,Boolean,Boolean,Boolean,Boolean,Boolean,String 50,Boolean,Boolean
+VALID VALUES / NOTES,"Required to add a new contact. Specifying the same identifier value on multiple rows indicates that the rows are related. If an identifier value is not included, an ID value is required.","Required to update a contact. Specifying the same ID value on multiple rows indicates that the rows are related. If an ID value is not included, an identifier value is required.","Code set values. Defaults to not set, if not specified.
+
+Mr.
+Mrs.
+Ms.
+{Custom}",,,"Required on at least one related row. An error occurs if multiple rows have values that conflict with each other.
+
+Specify #delete on every row on which the contact ID appears to delete the entire contact.","Code set values. Defaults to not set, if not specified.
+
+Jr.
+II
+III
+Sr.
+{Custom}","Code set values. Defaults to not set, if not specified.
+
+M
+F
+{Custom}",,"1 = YES
+0 = NO
+BLANK = NO",,"1 = YES
+0 = NO
+BLANK = NO",,,The person's education level. ,The person's employment status.,Indicates whether or not the person works for the federal or state government.,"Indicates whether or not the person is available when at work. Valid values: 1=True, 0=False.Optional.","Indicates whether or not the person is deceased. Valid values: 1=True, 0=False. Optional.","Indicates whether or not the person is on active duty. Valid values: 1=True, 0=False. Optional.","Indicates whether or not the person lives on base. Valid values: 1=True, 0=False. Optional.",The person's maiden name.,The person's military status.,"Indicates whether or not the person needs an interpreter's assistance. Valid values: 1=True, 0=False. Optional.",The person's occupation.,The person's military pay grade. ,The person's military service branch.,The person's social security number.,"Must be a valid email address format (somebody@example.com). Same email address (case-insensitive) cannot be included on two related rows unless the EmailType and IsPrimaryEmailAddress values are also specified with the same value which indicates a duplicate.
+
+If an imported email address is marked as primary, then it becomes the first and the rest are bumped down. Otherwise, it is added at the end. If update is specified and the record cannot be found, its value will be added.
+
+Specify #delete to remove the email address from the contact.",PersonEmailAddressAssocID. The ID that matches existing records (for updating).,"From the CodeSet table.
+
+Current
+Additional
+{Custom}","Boolean flag. Defaults to false, if not specified. A contact can only have one primary email address so related rows with more than one true IsPrimaryEmailAddress value will be rejected except in the case of a duplicate.
+1 = YES
+0 = NO
+BLANK = NO",,"1 = YES
+0 = NO
+BLANK = NO","Indicates whether or not the person's phone number is unlisted. Valid values: 1=True, 0=False. Optional.",PhoneNumberAssocID. The ID that matches existing records (for updating).,"The main field for entering phone numbers. 
+
+Extensions should be entered into the ""Extension"" field.
+
+Specify #delete to remove the phone number from the contact.","From the CodeSet table.
+
+Daytime
+Home
+Mobile
+Work
+{Custom}","Must be a positive integer if specified. Cannot use the same value more than once for related rows unless it is a duplicate. If not specified, a default value will be set. ","1 = YES
+0 = NO
+BLANK = NO","Every field except for address type must match in order to be considered a duplicate. Any other deviation of values on related rows is considered a new address. If it is a duplicate and priority order does not match, the row is rejected.
+
+Specify #delete to remove the address from the contact.",,,,"From the CodeSet table.
+
+State or Province 2-char Code Set Values",,,,Indicates how the person's address was verified.  ,"The county element of the person's address.
+
+Static text, not tied to the CodeSet table.","Indicates whether or not the person's address has been verified.
+
+Valid values: 1=True, 0=False. Optional.","The third line of the person's address.
+
+*Will only display if the Contacts page is customized.",AddressAssocID. The ID that matches existing records (for updating).,"From the CodeSet table.
+
+Home
+Mailing
+{Custom}",,,,Optional column to display the student's name and not just their student number to assist in import file creation. Will not be imported or used.,"Specify #delete to remove the student from the contact.
+
+[Students]Student_Number field, not the DCID or ID field.","Indicates the preferred order in which the student's contacts will appear. Valid values are 1, 2, 3, etc. or blank.
+
+If blank, the contact appears at the end of list of contacts for the student.
+
+If the contact priority order is set in the import file for a student contact association, contact priority order of existing associations will be adjusted accordingly, if necessary.",StudentContactAssocID. The ContactID that matches existing contact records (for updating).,"In order to update an existing association, a value in this field will update the specific StudentContactDetail record. Leaving this field empty will update the Active Detail Record for the existing association.
+
+To add a new detail record in the existing association, use #new in this field","From the CodeSet table.
+
+Aunt
+Brother
+Father
+Friend
+Grandfather
+Grandmother
+Mother
+Neighbor
+Other
+Sister
+Uncle
+{Custom}","From the CodeSet table.
+
+Mother
+Father
+Guardian
+Emergency1
+Emergency2
+Emergency3
+{Custom}",,,,"Indicates whether or not the person is a legal guardian. Valid values: 1=True, 0=False. Optional.
+
+*Will only display if the Contacts page is customized.","1 = YES
+0 = NO
+BLANK = NO","1 = YES
+0 = NO
+BLANK = NO","1 = YES
+0 = NO
+BLANK = NO","1 = YES
+0 = NO
+BLANK = NO","1 = YES
+0 = NO
+BLANK = NO","Description of contact's classroom participation for their respective students.
+
+*Will only display if the Contacts page is customized.","Indicates whether or not the contact is a caregiver. Valid values: 1=True, 0=False.Optional.
+
+*Will only display if the Contacts page is customized.","Indicates whether or not the contact is a volunteer. Valid values: 1=True, 0=False. Optional.
+
+*Will only display if the Contacts page is customized."
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

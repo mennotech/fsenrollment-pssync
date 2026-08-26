@@ -137,10 +137,8 @@ function Compare-PSContact {
                 $checkForChanges = @('FirstName', 'MiddleName', 'LastName', 'Gender', 'Employer')
             }
             
-            # Get Contact entity column mappings from TemplateMetadata
-            if ($CsvData.TemplateMetadata.ColumnMappings) {
-                $columnMappings = $CsvData.TemplateMetadata.ColumnMappings
-            }
+            $columnMappings = Get-PowerSchoolApiMappings -TemplateMetadata $CsvData.TemplateMetadata |
+                Where-Object EntityType -eq 'Contact'
             
             # Get CheckForChanges for Relationship entity from TemplateMetadata
             if ($CsvData.TemplateMetadata.RelationshipCheckForChanges) {

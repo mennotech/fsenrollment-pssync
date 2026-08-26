@@ -1,0 +1,40 @@
+﻿Contact Demographics,,,,,,,,,,,Email Address,,,,Phone Number,,,,,,,Address ,,,,,,,,,,,,,,Student,,,Relationship Information,,,,,Relationship Flags,,,,
+New Contact Identifier,Contact ID,prefix,firstName,middleName,lastName,suffix,gender,employer,stateContactNumber,isActive,emailAddress,Contact Email Address ID,emailType,isPrimaryEmailAddress,phoneNumberAsEntered,extension,Contact Phone Number ID,phoneType,phoneNumberPriorityOrder,isSMS,isPreferred,street,linetwo,unit,city,state,postalCode,geocodeLatitude,geocodeLongitude,addressType,addressPriorityOrder,Contact Address ID,addressStartDate,addressEndDate,* NOT MAPPED *,studentNumber,Contact Priority Order,Student Contact ID,originalContactType,relationshipType,relationshipNote,relationshipStartDate,relationshipEndDate,contactHasCustody,contactLivesWith,contactAllowSchoolPickup,isEmergencyContact,contactReceivesMailings
+1,,Mrs.,Carol,Martin,Brady,,F,,,1,carole.brady@fake.email,,Current,1,555-602-1974,,,Home,1,0,1,422 Clinton Way,,,Jackson,MS,39209,,,Home,1,,2015-06-10,,"Brady, Greg",880001,,,Mother,Mother,,2015-06-10,,1,1,1,,1
+1,,,,,,,,,,,,,,,555-602-8904,,,Mobile,2,1,0,1632 Aurora Street,,,Jackson,MS,39209,,,Home,2,,2011-04-24,2015-06-09,"Brady, Marsha",880002,,,Mother,Mother,,,,1,1,1,,1
+1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Peter",880003,,,Mother,Mother,,2015-06-10,,1,1,1,,1
+1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Jan",880004,,,Mother,Mother,,,,1,1,1,,1
+1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Bobby",880005,,,Mother,Mother,,2015-06-10,,1,1,1,,1
+1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Cindy",880006,,,Mother,Mother,,,,1,1,1,,1
+2,,Mr.,Mike,,Brady,,M,"Phillips Architects, LLC",,1,mike.brady@fake.email,,Current,1,555-602-1974,,,Home,2,0,1,422 Clinton Way,,,Jackson,MS,39209,,,Home,,,,,"Brady, Greg",880001,,,Father,Father,,,,1,1,1,,1
+2,,,,,,,,,,,,,,,555-602-1900,,,Daytime,1,0,0,,,,,,,,,,,,,,"Brady, Marsha",880002,,,Father,Father,,2015-06-10,,1,1,1,,1
+2,,,,,,,,,,,,,,,555-641-8733,,,Mobile,3,1,0,,,,,,,,,,,,,,"Brady, Peter",880003,,,Father,Father,,,,1,1,1,,1
+2,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Jan",880004,,,Father,Father,,2015-06-10,,1,1,1,,1
+2,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Bobby",880005,,,Father,Father,,,,1,1,1,,1
+2,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Cindy",880006,,,Father,Father,,2015-06-10,,1,1,1,,1
+3,,Ms.,Alice,,Nelson,,F,,,1,underpaid.maid@gmail.com,,Current,1,555-602-1974,,,Home,1,0,1,422 Clinton Way,,,Jackson,MS,39209,,,Home,,,,,"Brady, Greg",880001,,,Emergency1,Other,,,,,,1,1,
+3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Marsha",880002,,,Emergency1,Other,,,,,,1,1,
+3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Peter",880003,,,Emergency1,Other,,,,,,1,1,
+3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Jan",880004,,,Emergency1,Other,,,,,,1,1,
+3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Bobby",880005,,,Emergency1,Other,,,,,,1,1,
+3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Cindy",880006,,,Emergency1,Other,,,,,,1,1,
+4,,Mr.,Sam,,Franklin,,M,Sam's Butcher Shop,,1,sam@thebutcherman.com,,Current,1,555-610-3000,,,Work,1,0,1,615 Main Street,,,Jackson,MS,39209,,,Mailing,1,,,,"Brady, Greg",880001,,,Emergency2,Other,Alice's boyfriend,,,,,,1,
+4,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Marsha",880002,,,Emergency2,Other,Alice's boyfriend,,,,,,1,
+4,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Peter",880003,,,Emergency2,Other,Alice's boyfriend,,,,,,1,
+4,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Jan",880004,,,Emergency2,Other,Alice's boyfriend,,,,,,1,
+4,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Bobby",880005,,,Emergency2,Other,Alice's boyfriend,,,,,,1,
+4,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Brady, Cindy",880006,,,Emergency2,Other,Alice's boyfriend,,,,,,1,
+10,,Mr.,Cameron,Scott,Tucker,,M,,,1,fizbo@gmail.com,,Current,1,555-607-8412 ,,,Mobile,1,1,1,,,,,,,,,,,,,,"Tucker-Pritchett, Lily Elizabeth",20122025,,,,Father,Adopted 9/23/2009,2009-09-23,,1,1,1,,1
+10,,,,,,,,,,,,,,,555-607-2018 ,,,Home,2,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+11,,Mr.,Mitchell,Vincent,Pritchett,,M,Grady and Associates LLP,,1,cmitchell@gradyassoc.com,,Current,1,555-607-7303 ,,,Mobile,1,1,1,,,,,,,,,,,,,,"Tucker-Pritchett, Lily Elizabeth",20122025,,,,Father,Adopted 9/23/2009,2009-09-23,,1,1,1,,1
+12,,Mrs.,Claire,Pritchett,Dunphy,,F,Pritchett's Closets & Blinds,,1,claire@pritchett-closets.com,,Current,1,555-607-4717 ,,,Mobile,1,1,1,,,,,,,,,,,,,,"Tucker-Pritchett, Lily Elizabeth",20122025,,,,Aunt,,,,,,1,1,
+13,,Mr.,Jason,"""Jay""",Pritchett,,M,Pritchett's Closets & Blinds,,1,jay@pritchett-closets.com,,Current,1,555-602-2100 ,,,Mobile,1,1,1,,,,,,,,,,,,,,"Tucker-Pritchett, Lily Elizabeth",20122025,,,,Grandfather,,,,,,1,1,
+14,,Mrs.,Glóría,Marie,Delgado-Pritchett ,,F,,,1,,,,,555-607-8456 ,,,Mobile,1,1,1,,,,,,,,,,,,,,"Tucker-Pritchett, Lily Elizabeth",20122025,,,,Grandmother,,,,,,,1,
+15,,Mr.,Phil,,Dunphy,,M,,,1,,,,,555-607-4900 ,,,Mobile,1,1,1,,,,,,,,,,,,,,"Tucker-Pritchett, Lily Elizabeth",20122025,,,,Uncle,,,,,,1,1,
+16,,Mrs.,Barb,,Tucker,,F,,,1,,,,,,,,,,,,,,,,,,,,,,,,,"Tucker-Pritchett, Lily Elizabeth",20122025,,,,Grandmother,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Updated Records,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,1,Mr.,Nice,,Guy,,M,,,,updated@email.com,1111,,,111-222-3333,,2222,Home,2,,,1234 Updated Address,,,,,,,,,,1234,,,,,1,55555,Father,,,,,,,,,
+,1,,,,,,,,,,anotherupdated@email.com,1112,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,33,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,55,Ms.,Jane,Doe,#delete,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

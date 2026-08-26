@@ -8,7 +8,7 @@
     Performs field-by-field comparison between a CSV contact (PSContact) and a PowerSchool
     PowerQuery person object. Returns a list of fields that have changed with old and new values.
     
-    Uses ColumnMappings from template configuration to determine PowerQuery field names.
+    Uses maintained map entries to determine PowerQuery field names.
     If ColumnMappings are not provided, uses default field mappings.
 
 .PARAMETER CsvContact
@@ -21,7 +21,7 @@
     Array of field names to check for changes. Only these fields will be compared.
 
 .PARAMETER ColumnMappings
-    Array of column mapping objects from the template containing PowerSchoolAPIField mappings.
+    Array of resolved PowerSchool map entries containing PowerSchoolAPIField mappings.
     Note: PowerSchoolAPIField contains PowerQuery field names (e.g., 'person_firstName'), not REST API field names.
 
 .OUTPUTS
@@ -34,7 +34,7 @@
 
 .NOTES
     This is a private function used internally by Compare-PSContact.
-    Maps PSContact properties to PowerSchool PowerQuery person field names using template ColumnMappings.
+    Maps PSContact properties to PowerSchool PowerQuery person field names.
     
     NAMING CONVENTION:
     - PowerSchoolAPIField = PowerQuery field name (e.g., 'person_firstName') - used for comparison

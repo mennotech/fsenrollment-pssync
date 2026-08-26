@@ -42,8 +42,8 @@
     
     Write-Host "New: $($changes.New.Count), Updated: $($changes.Updated.Count)"
     
-    Compares students using template-driven field mapping. Get-PowerSchoolStudent automatically
-    detects required extensions and expansions from the template's PowerSchoolAPIField mappings.
+    Compares students using the maintained map selected by the source template.
+    Get-PowerSchoolStudent automatically detects required extensions and expansions from that map.
 
 .NOTES
     This function performs field-by-field comparison to detect what changed.
@@ -139,7 +139,8 @@ function Compare-PSStudent {
                     $psStudent = $psLookup[$matchKey]
                     
                     # Pass checkForChanges array and column mappings to Compare-StudentFields
-                    $changes = Compare-StudentFields -CsvStudent $csvStudent -PowerSchoolStudent $psStudent -CheckForChanges $checkForChanges -ColumnMappings $CsvData.TemplateMetadata.ColumnMappings
+                    $apiMappings = Get-PowerSchoolApiMappings -TemplateMetadata $CsvData.TemplateMetadata
+                    $changes = Compare-StudentFields -CsvStudent $csvStudent -PowerSchoolStudent $psStudent -CheckForChanges $checkForChanges -ColumnMappings $apiMappings
                     
                     if ($changes.Count -gt 0) {
                         # Student has changes

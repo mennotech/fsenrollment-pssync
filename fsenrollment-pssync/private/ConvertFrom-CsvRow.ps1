@@ -32,7 +32,10 @@ function ConvertFrom-CsvRow {
         [object]$CsvRow,
 
         [Parameter(Mandatory = $true)]
-        [hashtable]$TemplateConfig
+        [hashtable]$TemplateConfig,
+
+        [Parameter(Mandatory = $false)]
+        [hashtable]$MappingContext = @{}
     )
 
     try {
@@ -42,7 +45,7 @@ function ConvertFrom-CsvRow {
 
         # Apply column mappings to the entity
         $dateTimeFormat = if ($TemplateConfig.DateTimeFormat) { $TemplateConfig.DateTimeFormat } else { $null }
-        Invoke-ColumnMapping -CsvRow $CsvRow -Entity $entity -ColumnMappings $TemplateConfig.ColumnMappings -DateTimeFormat $dateTimeFormat
+        Invoke-ColumnMapping -CsvRow $CsvRow -Entity $entity -ColumnMappings $TemplateConfig.ColumnMappings -DateTimeFormat $dateTimeFormat -MappingContext $MappingContext
 
         return $entity
     }

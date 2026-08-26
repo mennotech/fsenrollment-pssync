@@ -34,7 +34,7 @@
 
 .PARAMETER TemplateMetadata
     Template metadata hashtable from Import-FSCsv. When provided, automatically detects required
-    expansions and extensions from PowerSchoolAPIField mappings in the template.
+    expansions and extensions from the selected maintained PowerSchool map.
 
 .PARAMETER TemplateName
     Name of the template configuration file (without .psd1 extension). When provided, loads the

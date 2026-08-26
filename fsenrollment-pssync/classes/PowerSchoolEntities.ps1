@@ -13,6 +13,10 @@
 class PSStudent {
     [string]$StudentNumber
     [string]$SchoolID
+    [string]$NextSchool
+    [string]$HomeRoom
+    [string]$EntryCode
+    [string]$Email
     [string]$FirstName
     [string]$MiddleName
     [string]$LastName
@@ -32,14 +36,18 @@ class PSStudent {
     [string]$MailingCity
     [string]$MailingState
     [string]$MailingZip
+    [string]$Allergies
+    [string]$MedicalAlert
+    [hashtable]$CustomFields
     [int]$SchedNextYearGrade
-    [string]$NextSchool
     [int]$SchedScheduled
     [int]$SchedYearOfGraduation
     [string]$TransferComment
     [string]$FamilyIdent
 
-    PSStudent() {}
+    PSStudent() {
+        $this.CustomFields = @{}
+    }
     
     # Factory method to create from PSCustomObject (e.g., from JSON deserialization)
     static [PSStudent] FromObject([object]$obj) {
@@ -50,6 +58,18 @@ class PSStudent {
         }
         if ($obj.PSObject.Properties['SchoolID']) {
             $student.SchoolID = $obj.SchoolID
+        }
+        if ($obj.PSObject.Properties['NextSchool']) {
+            $student.NextSchool = $obj.NextSchool
+        }
+        if ($obj.PSObject.Properties['HomeRoom']) {
+            $student.HomeRoom = $obj.HomeRoom
+        }
+        if ($obj.PSObject.Properties['EntryCode']) {
+            $student.EntryCode = $obj.EntryCode
+        }
+        if ($obj.PSObject.Properties['Email']) {
+            $student.Email = $obj.Email
         }
         if ($obj.PSObject.Properties['FirstName']) {
             $student.FirstName = $obj.FirstName
@@ -107,6 +127,24 @@ class PSStudent {
         }
         if ($obj.PSObject.Properties['MailingZip']) {
             $student.MailingZip = $obj.MailingZip
+        }
+        if ($obj.PSObject.Properties['Allergies']) {
+            $student.Allergies = $obj.Allergies
+        }
+        if ($obj.PSObject.Properties['MedicalAlert']) {
+            $student.MedicalAlert = $obj.MedicalAlert
+        }
+        if ($obj.PSObject.Properties['CustomFields'] -and $null -ne $obj.CustomFields) {
+            if ($obj.CustomFields -is [System.Collections.IDictionary]) {
+                foreach ($key in $obj.CustomFields.Keys) {
+                    $student.CustomFields[$key] = $obj.CustomFields[$key]
+                }
+            }
+            else {
+                foreach ($property in $obj.CustomFields.PSObject.Properties) {
+                    $student.CustomFields[$property.Name] = $property.Value
+                }
+            }
         }
         if ($obj.PSObject.Properties['SchedNextYearGrade']) {
             $student.SchedNextYearGrade = [int]$obj.SchedNextYearGrade

@@ -35,6 +35,11 @@ docs/
 │   ├── plugin.xml
 │   ├── queries_root/
 │   └── *.named_queries.md
+├── powerschool import templates/        # PowerSchool import reference CSV files
+│   ├── Students_Data_Import_Template_2022_09.csv
+│   ├── Student_Contacts_Data_Import_Template_2022_09.csv
+│   ├── Student_Contacts_Example_Data_Import_Template_2022_09.csv
+│   └── readme.md
 └── powerschool-api-docs/               # Complete API reference
     ├── plugins/
     └── README.md
@@ -70,6 +75,9 @@ docs/
 
 ### 🔧 PowerSchool Plugin (`powerschool api plugin/`)
 - **[Plugin Files](powerschool%20api%20plugin/)** - PowerQuery plugin XML files and documentation
+
+### PowerSchool Import Templates (`powerschool import templates/`)
+- **[Import Template Reference](powerschool%20import%20templates/readme.md)** - PowerSchool student and contact import templates, instructional-row handling, and maintained-map integration
 
 ## 📝 Documentation Guidelines
 
