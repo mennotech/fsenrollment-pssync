@@ -45,7 +45,10 @@ function Invoke-ColumnMapping {
         [array]$ColumnMappings,
 
         [Parameter(Mandatory = $false)]
-        [string]$DateTimeFormat
+        [string]$DateTimeFormat,
+
+        [Parameter(Mandatory = $false)]
+        [hashtable]$MappingContext = @{}
     )
 
     foreach ($mapping in $ColumnMappings) {
@@ -54,7 +57,7 @@ function Invoke-ColumnMapping {
         $dataType = $mapping.DataType
         
         # Resolve direct, constant, or transformed values from the template mapping
-        $value = Resolve-ColumnMappingValue -CsvRow $CsvRow -Mapping $mapping
+        $value = Resolve-ColumnMappingValue -CsvRow $CsvRow -Mapping $mapping -MappingContext $MappingContext
         
         # Skip if value is null or empty string
         if ([string]::IsNullOrWhiteSpace($value)) {

@@ -102,9 +102,10 @@ function Import-FSCsv {
                 
                 # Determine the target collection based on EntityType
                 $entityType = $templateConfig.EntityType
+                $mappingContext = @{ Sequences = @{} }
                 
                 foreach ($row in $csvData) {
-                    $entity = ConvertFrom-CsvRow -CsvRow $row -TemplateConfig $templateConfig
+                    $entity = ConvertFrom-CsvRow -CsvRow $row -TemplateConfig $templateConfig -MappingContext $mappingContext
                     
                     # Add to the appropriate collection based on entity type
                     switch ($entityType) {

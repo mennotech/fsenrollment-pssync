@@ -25,7 +25,7 @@
             Transform = 'ComposeString'
             Parts = @(
                 @{ Column = 'Applying For Grade'; Operations = @(@{ Name = 'GraduationYear'; SchoolYearStart = 2026; FinalGrade = 12 }, @{ Name = 'Right'; Count = 2 }) }
-                @{ Literal = '00' }
+                @{ Sequence = @{ Width = 2 } }
             )
         }
         @{ EntityProperty = 'FTEID'; DataType = 'string'; Transform = 'Constant'; Value = '551' }
@@ -46,7 +46,6 @@
             )
         }
         @{ EntityProperty = 'FirstName'; DataType = 'string'; Transform = 'CoalesceColumns'; Columns = @('Student''s Preferred Name (if different from legal first name)', 'First Name') }
-        @{ CSVColumn = 'Middle Name(s)'; EntityProperty = 'MiddleName'; DataType = 'string' }
         @{ CSVColumn = 'Last Name'; EntityProperty = 'LastName'; DataType = 'string' }
         @{ CSVColumn = 'First Name'; CustomField = 'legal_givenname'; DataType = 'string' }
         @{ CSVColumn = 'Last Name'; CustomField = 'legal_surname'; DataType = 'string' }
@@ -57,20 +56,20 @@
 
         @{ EntityProperty = 'Street'; DataType = 'string'; Transform = 'JoinColumns'; Columns = @('Street Address', 'Street Address Line 2'); Separator = ' ' }
         @{ CSVColumn = 'City'; EntityProperty = 'City'; DataType = 'string' }
-        @{ CSVColumn = 'State / Province'; EntityProperty = 'State'; DataType = 'string' }
-        @{ CSVColumn = 'Postal / Zip Code'; EntityProperty = 'Zip'; DataType = 'string' }
+        @{ CSVColumn = 'State / Province'; EntityProperty = 'State'; DataType = 'string'; Transform = 'NormalizeStateProv'; Countries = @('CA'); Format = 'Abbreviation'; OnInvalid = 'Keep' }
+        @{ CSVColumn = 'Postal / Zip Code'; EntityProperty = 'Zip'; DataType = 'string'; Transform = 'NormalizePostalCode'; Format = 'Spaced'; OnInvalid = 'Keep' }
 
-        @{ EntityProperty = 'MailingStreet'; DataType = 'string'; Transform = 'JoinColumns'; Columns = @('Mailing Street Address', 'Mailing Street Address Line 2'); Separator = ' ' }
-        @{ CSVColumn = 'Mailing City'; EntityProperty = 'MailingCity'; DataType = 'string' }
-        @{ CSVColumn = 'Mailing State / Province'; EntityProperty = 'MailingState'; DataType = 'string' }
-        @{ CSVColumn = 'Mailing Postal / Zip Code'; EntityProperty = 'MailingZip'; DataType = 'string' }
+        @{ EntityProperty = 'MailingStreet'; DataType = 'string'; Transform = 'CoalesceColumnGroups'; ColumnGroups = @(@('Mailing Street Address', 'Mailing Street Address Line 2'), @('Street Address', 'Street Address Line 2')); Separator = ' ' }
+        @{ EntityProperty = 'MailingCity'; DataType = 'string'; Transform = 'CoalesceColumns'; Columns = @('Mailing City', 'City') }
+        @{ EntityProperty = 'MailingState'; DataType = 'string'; Transform = 'NormalizeStateProv'; Columns = @('Mailing State / Province', 'State / Province'); Countries = @('CA'); Format = 'Abbreviation'; OnInvalid = 'Keep' }
+        @{ EntityProperty = 'MailingZip'; DataType = 'string'; Transform = 'NormalizePostalCode'; Columns = @('Mailing Postal / Zip Code', 'Postal / Zip Code'); Format = 'Spaced'; OnInvalid = 'Keep' }
 
         @{ CSVColumn = 'Church Attending'; CustomField = 'church_name'; DataType = 'string' }
         @{ CSVColumn = 'Denomination'; CustomField = 'church_denomination'; DataType = 'string' }
         @{ CSVColumn = 'MB Health # - 9 Digit'; CustomField = 'phin_9digit'; DataType = 'string' }
         @{ CSVColumn = 'MB Health # - 6 Digit'; CustomField = 'phin_6digit'; DataType = 'string' }
-        @{ CSVColumn = 'Allergies:'; EntityProperty = 'Allergies'; DataType = 'string'; Transform = 'NormalizeEmpty'; EmptyValues = @('None', 'None known', 'No know Allergies') }
-        @{ CSVColumn = 'Allergies:'; CustomField = 'HAS_FOOD_ALLERGY'; DataType = 'bool'; Transform = 'NonEmptyFlag'; EmptyValues = @('None', 'None known', 'No know Allergies') }
-        @{ CSVColumn = 'Medical Restrictions & Medications:'; EntityProperty = 'MedicalAlert'; DataType = 'string'; Transform = 'NormalizeEmpty'; EmptyValues = @('None') }
+        @{ CSVColumn = 'Allergies:'; EntityProperty = 'Allergies'; DataType = 'string'; Transform = 'NormalizeEmpty'; EmptyValues = @('None', 'NA', 'None known', 'No know Allergies') }
+        @{ CSVColumn = 'Allergies:'; CustomField = 'HAS_FOOD_ALLERGY'; DataType = 'bool'; Transform = 'NonEmptyFlag'; EmptyValues = @('None', 'NA', 'None known', 'No know Allergies') }
+        @{ CSVColumn = 'Medical Restrictions & Medications:'; EntityProperty = 'MedicalAlert'; DataType = 'string'; Transform = 'NormalizeEmpty'; EmptyValues = @('None',"NA") }
     )
 }

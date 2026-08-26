@@ -25,7 +25,7 @@ Describe 'custom_csv_import_1 template' {
     It 'Applies constants and computed values' {
         $student = $script:data.Students | Where-Object LastName -eq 'Wall'
 
-        $student.StudentNumber | Should -Be '3100'
+        $student.StudentNumber | Should -Be '3101'
         $student.FTEID | Should -Be '551'
         $student.SchoolID | Should -Be '961453'
         $student.NextSchool | Should -Be '961453'
@@ -43,7 +43,7 @@ Describe 'custom_csv_import_1 template' {
         $student.LastName | Should -Be 'Hiebert'
         $student.CustomFields.legal_givenname | Should -Be 'Maxwell'
         $student.CustomFields.legal_middlenames | Should -Be 'Henry'
-        $student.StudentNumber | Should -Be '3700'
+        $student.StudentNumber | Should -Be '3701'
         $student.Email | Should -Be 'maxh37@sc.school'
     }
 
@@ -54,17 +54,99 @@ Describe 'custom_csv_import_1 template' {
         }
     }
 
+    It 'Increments sequences within each composed prefix' {
+        InModuleScope FSEnrollment-PSSync {
+            $mapping = @{
+                EntityProperty = 'StudentNumber'
+                Transform = 'ComposeString'
+                Parts = @(
+                    @{ Column = 'Prefix' }
+                    @{ Sequence = @{ Width = 2 } }
+                )
+            }
+            $context = @{ Sequences = @{} }
+
+            $values = @(
+                Resolve-ColumnMappingValue -CsvRow @{ Prefix = '31' } -Mapping $mapping -MappingContext $context
+                Resolve-ColumnMappingValue -CsvRow @{ Prefix = '31' } -Mapping $mapping -MappingContext $context
+                Resolve-ColumnMappingValue -CsvRow @{ Prefix = '37' } -Mapping $mapping -MappingContext $context
+            )
+
+            $values | Should -Be @('3101', '3102', '3701')
+        }
+    }
+
+    It 'Supports a configured sequence start' {
+        InModuleScope FSEnrollment-PSSync {
+            $mapping = @{
+                EntityProperty = 'StudentNumber'
+                Transform = 'ComposeString'
+                Parts = @(
+                    @{ Column = 'Prefix' }
+                    @{ Sequence = @{ Width = 2; Start = 25 } }
+                )
+            }
+            $context = @{ Sequences = @{} }
+
+            $values = @(
+                Resolve-ColumnMappingValue -CsvRow @{ Prefix = '31' } -Mapping $mapping -MappingContext $context
+                Resolve-ColumnMappingValue -CsvRow @{ Prefix = '31' } -Mapping $mapping -MappingContext $context
+            )
+
+            $values | Should -Be @('3125', '3126')
+        }
+    }
+
+    It 'Normalizes Canadian postal code formats and invalid values' {
+        InModuleScope FSEnrollment-PSSync {
+            ConvertTo-NormalizedPostalCode -Value 'a1b2 c3' -Format Spaced -OnInvalid Keep |
+                Should -Be 'A1B 2C3'
+            ConvertTo-NormalizedPostalCode -Value 'A1B 2C3' -Format Compact -OnInvalid Keep |
+                Should -Be 'A1B2C3'
+            ConvertTo-NormalizedPostalCode -Value 'bad code!' -Format Spaced -OnInvalid Keep |
+                Should -Be 'bad code!'
+            ConvertTo-NormalizedPostalCode -Value 'bad code!' -Format Spaced -OnInvalid Skip |
+                Should -BeNullOrEmpty
+            ConvertTo-NormalizedPostalCode -Value 'a1b2c3extra' -Format Compact -OnInvalid Truncate |
+                Should -Be 'A1B2C3'
+        }
+    }
+
+    It 'Normalizes state and province names for allowed countries' {
+        InModuleScope FSEnrollment-PSSync {
+            ConvertTo-NormalizedStateProvince -Value 'Manitoba' -Countries CA -Format Abbreviation -OnInvalid Keep |
+                Should -Be 'MB'
+            ConvertTo-NormalizedStateProvince -Value 'mb' -Countries Canada -Format FullName -OnInvalid Keep |
+                Should -Be 'Manitoba'
+            ConvertTo-NormalizedStateProvince -Value 'New York' -Countries US -Format Abbreviation -OnInvalid Keep |
+                Should -Be 'NY'
+            ConvertTo-NormalizedStateProvince -Value 'California' -Countries CA -Format Abbreviation -OnInvalid Skip |
+                Should -BeNullOrEmpty
+            { ConvertTo-NormalizedStateProvince -Value 'California' -Countries CA -Format Abbreviation -OnInvalid Throw } |
+                Should -Throw "State/province 'California' is not valid for countries: CA."
+        }
+    }
+
     It 'Maps separate physical and mailing address columns' {
         $student = $script:data.Students | Where-Object LastName -eq 'Hiebert'
 
         $student.Street | Should -Be '30155 Rd 32 E'
         $student.City | Should -Be 'Steinbach'
-        $student.State | Should -Be 'Mb'
+        $student.State | Should -Be 'MB'
         $student.Zip | Should -Be 'R5G1 N9'
         $student.MailingStreet | Should -Be 'Box 2424 Group 4'
         $student.MailingCity | Should -Be 'steinbach'
         $student.MailingState | Should -Be 'MB'
-        $student.MailingZip | Should -Be 'R5g1n9'
+        $student.MailingZip | Should -Be 'R5G 1N9'
+    }
+
+    It 'Falls back to the physical address when mailing fields are blank' {
+        $student = $script:data.Students | Where-Object LastName -eq 'Wall'
+
+        $student.MailingStreet | Should -Be '41084 Road 33 East'
+        $student.MailingCity | Should -Be 'Blumenort'
+        $student.MailingState | Should -Be 'MB'
+        $student.MailingZip | Should -Be 'R0A 0C1'
     }
 
     It 'Stores extension values as custom fields' {

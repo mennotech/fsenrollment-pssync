@@ -46,24 +46,74 @@ imported custom name. For example, `church_name` becomes
 custom fields are not maintained in output maps.
 
 Standard mappings may specify `Value` with `Transform = 'Constant'`, or named
-transforms such as `NamePart`, `CoalesceColumns`, `GenderCode`, `Lookup`,
-`JoinColumns`, `ComposeString`, `NormalizeEmpty`, and `NonEmptyFlag`.
+transforms such as `NamePart`, `CoalesceColumns`, `CoalesceColumnGroups`,
+`GenderCode`, `Lookup`, `JoinColumns`, `ComposeString`,
+`NormalizePostalCode`, `NormalizeStateProv`, `NormalizeEmpty`, and
+`NonEmptyFlag`.
+
+`CoalesceColumns` returns the first populated column. `CoalesceColumnGroups`
+returns the first group containing a value and joins that group's populated
+columns with `Separator`; this supports falling back from a multi-line mailing
+street to a multi-line physical street without mixing the groups.
 
 `ComposeString` builds values from declarative parts. Each part may contain a
-literal, one column, or an ordered list of fallback columns. Operations are
-restricted to the built-in allowlist; templates cannot execute scriptblocks or
-arbitrary PowerShell code.
+literal, one column, an ordered list of fallback columns, or a fixed-width
+sequence. A sequence increments for rows with the same previously composed
+prefix. `Start` is optional and defaults to `1`. Operations are restricted to
+the built-in allowlist; templates cannot execute scriptblocks or arbitrary
+PowerShell code.
+
+Sequence values follow source row order. They are suitable for a controlled
+one-time assignment, but not as durable identifiers when later files may be
+reordered or have rows inserted. Persistent identifiers require a stored
+assignment registry or a source-system ID.
 
 ```powershell
 @{
-    EntityProperty = 'Email'
+    EntityProperty = 'StudentNumber'
     Transform = 'ComposeString'
     Parts = @(
-        @{ Columns = @('Preferred Name', 'First Name'); Operations = @('Trim', 'Alphanumeric', 'Lower') }
-        @{ Column = 'Last Name'; Operations = @(@{ Name = 'First'; Count = 1 }, 'Lower') }
         @{ Column = 'Grade'; Operations = @(@{ Name = 'GraduationYear'; SchoolYearStart = 2026; FinalGrade = 12 }, @{ Name = 'Right'; Count = 2 }) }
-        @{ Literal = '@school.example' }
+        @{ Sequence = @{ Width = 2; Start = 25 } }
     )
+}
+```
+
+`NormalizeStateProv` accepts subdivision abbreviations or full names and limits
+matches to `Countries`. Built-in country aliases are `CA`, `CAN`, `Canada`,
+`US`, `USA`, and `United States`. If `Countries` is omitted, Canada and the
+United States are both allowed. `Format` defaults to `Abbreviation` and also
+supports `FullName`. `OnInvalid` defaults to `Keep` and supports `Keep`, `Skip`,
+and `Throw`.
+
+```powershell
+@{
+    CSVColumn = 'State / Province'
+    EntityProperty = 'State'
+    Transform = 'NormalizeStateProv'
+    Countries = @('CA')
+    Format = 'Abbreviation'
+    OnInvalid = 'Keep'
+}
+```
+
+`NormalizePostalCode` removes separators, uppercases Canadian postal codes,
+and emits either `A1B 2C3` (`Format = 'Spaced'`, the default) or `A1B2C3`
+(`Format = 'Compact'`). `OnInvalid` defaults to `Keep` and supports:
+
+- `Keep`: return the original trimmed value.
+- `Skip`: return an empty value so the mapping is not assigned.
+- `Truncate`: strip non-alphanumeric characters, uppercase, and retain at most
+    the first six characters. The truncated result is formatted but is not
+    guaranteed to be a valid Canadian postal code.
+
+```powershell
+@{
+        CSVColumn = 'Postal Code'
+        EntityProperty = 'Zip'
+        Transform = 'NormalizePostalCode'
+        Format = 'Spaced'
+        OnInvalid = 'Keep'
 }
 ```
 
